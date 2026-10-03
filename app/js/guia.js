@@ -55,8 +55,10 @@ const GUIA = [
     ['Apagar todos os dados', 'Configurações › Dados e ajustes › Apagar tudo', 'Apaga os dados do aparelho e da conta Google. Não dá para desfazer.']]],
   ['Avisos e tela inicial', [
     ['Lembretes de contas (só no Android)', 'Configurações › Lembretes', 'Ligue as notificações e escolha a antecedência. Tire o app da economia de bateria para os avisos chegarem na hora.'],
-    ['Widgets (só no Android)', 'Configurações › Widgets', 'Quadros do app na tela inicial: Resumo (você escolhe as linhas), Saldo do mês, Contas a vencer e Porquinho. O porquinho nos outros widgets é opcional.'],
-    ['Atualizações', 'Configurações › Procurar atualizações', 'O app procura versão nova ao abrir e mostra o que vem nela. A versão web se atualiza ao recarregar.']]],
+    ['Widgets (só no Android)', 'Configurações › Widgets', 'Quadros do app na tela inicial: Resumo (você escolhe as linhas), Gastos (a lista dos gastos do mês; você escolhe o grupo e a ordem), Saldo do mês, Contas a vencer e Mascote. O fundo acompanha a cor do app ou o tema especial (ou fica escuro), as listas rolam dentro do widget e o mascote é o mesmo do app.'],
+    ['Abertura animada', 'Ao abrir o app', 'Uma animação rápida nas cores escolhidas ou no jeito do tema especial; um toque pula. Some com as animações desligadas (Configurações › Aparência).'],
+    ['Atalho com nome livre (só no Android)', 'Configurações › Ícone e bloqueio › Criar atalho com o meu nome', 'Cria na tela inicial um atalho do app com o nome que você escrever e o ícone escolhido. Na lista de apps continua o nome da lista.'],
+    ['Atualizações', 'Configurações › Procurar atualizações', 'O app procura versão nova ao abrir e mostra o que vem nela, um aviso de cada vez. O botão avisa também quando você já está na versão mais recente.']]],
   ['Aparência', [
     ['Tema, cor e tamanho do texto', 'Configurações › Aparência', 'Claro, escuro ou automático; cor do app; texto de pequeno a maior.'],
     ['Idioma', 'Configurações › Aparência › Idioma', 'Português, inglês ou espanhol. O assistente entende só português.'],

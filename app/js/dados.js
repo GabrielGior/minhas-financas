@@ -17,7 +17,7 @@ function logErr(onde, e){
 }
 addEventListener('error', e => logErr('erro na tela', (e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0)));
 addEventListener('unhandledrejection', e => logErr('promessa', e.reason));
-const APP_VERSION = '1.44'; // manter igual ao versionName do build.gradle
+const APP_VERSION = '1.45'; // manter igual ao versionName do build.gradle
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 // Ícones do app: desenhos em dois tons (traço + preenchimento translúcido nas partes com class="d"),
 // todos numa grade de 24×24. I('nome', tamanho) devolve o <svg>; a cor vem do texto ao redor (currentColor).
@@ -427,6 +427,8 @@ function applyTheme(){
   st.setProperty('--line', sk ? sk[8] : dark ? hslHex(h, s * .38, 19) : hslHex(h, s * .5, 90));
   st.setProperty('--muted', sk ? sk[9] : dark ? hslHex(h, s * .22, 68) : hslHex(h, s * .2, 37));
   if (sk) st.setProperty('--text', sk[10]); else st.removeProperty('--text');
+  // Cores da tela de abertura da próxima vez (lidas pelo index.html antes de tudo).
+  try { localStorage.setItem('financas-abre', JSON.stringify([sk ? sk[4] : c[1], sk ? sk[5] : c[2]])); } catch(e){}
   // barras do sistema no APK
   if (window.Android && Android.cores) Android.cores(bg, card, dark);
   else if (window.Android && Android.tema) Android.tema(dark);
@@ -901,7 +903,21 @@ function updateWidget(){
   const frase = {feliz:'Oinc! Mês no azul', ok:'Tudo sob controle', triste:'Segura o cartão…'}[humor];
   Android.widget(JSON.stringify({mes:m[0].toUpperCase() + m.slice(1), saldo:fmt(tin - tout), negativo:tin - tout < 0, ganhos:fmt(tin), gastos:fmt(tout),
     fun:!!db.prefs.fun, frase, linhas:widgetLines(), pig:db.prefs.widgetPig ?? !!db.prefs.fun, humor, skin:db.prefs.skin || '',
-    contas:upcomingBills().slice(0, 5).map(b => ({t:` · ${b.diff < 0 ? 'atrasada' : b.diff === 0 ? 'hoje' : 'dia ' + dueDay(b.x, curYM)}`, v:fmt(b.x.value), c:b.diff <= 0 ? 'out' : ''})), porco:{humor, frase, gastos:fmt(tout), sub:tin > 0 ? `gastos: ${Math.round(tout / tin * 100)}% dos ganhos` : 'gastos do mês'}}));
+    // cor = cor do app (o fundo dos widgets acompanha); fundo = 'tema' (cor ou tema especial) ou 'escuro'; pct = gastos sobre ganhos.
+    cor:db.prefs.color, fundo:db.prefs.widgetFundo || 'tema', pct:tin > 0 ? Math.min(100, Math.round(tout / tin * 100)) : tout > 0 ? 100 : 0,
+    ...widgetGastos(),
+    contas:upcomingBills().slice(0, 12).map(b => ({t:b.x.desc, s:b.diff < 0 ? 'atrasada' : b.diff === 0 ? 'vence hoje' : 'vence dia ' + dueDay(b.x, curYM), v:fmt(b.x.value), c:b.diff <= 0 ? 'out' : '', k:(CAT_GASTO[b.x.cat] || CAT_GASTO.outros)[2]})), porco:{humor, frase, gastos:fmt(tout), sub:tin > 0 ? `gastos: ${Math.round(tout / tin * 100)}% dos ganhos` : 'gastos do mês'}}));
+}
+// Widget "Gastos": a lista dos gastos do mês, como na aba Gastos. db.prefs.widgetLista = qual grupo ('' = todos) e
+// db.prefs.widgetOrdem = 'valor' (maiores primeiro) ou '' (a ordem dos grupos do app). Vai até 40 linhas.
+function widgetGastos(){
+  const p = db.prefs, g = GRUPOS[p.widgetLista], todos = expensesOf(curYM);
+  let l = g ? todos.filter(g[1]) : p.grpOrder.flatMap(k => todos.filter(GRUPOS[k][1]));
+  if (p.widgetOrdem === 'valor') l = [...l].sort((a, b) => b.value - a.value);
+  const m = monthName(curYM).split(' ')[0];
+  return {listaTitulo:(g ? g[0] : 'Gastos') + ' de ' + m, listaSub:l.length ? `${l.length} ${l.length > 1 ? 'lançamentos' : 'lançamento'} · ${fmt(sum(l, x => x.value))}` : '',
+    lista:l.slice(0, 40).map(x => { const c = CAT_GASTO[x.cat] || CAT_GASTO.outros;
+      return {t:x.desc, s:c[1] + (x.kind === 'installment' ? ` · parcela ${x.num}/${x.n}` : x.fixed ? (x.fixed === 'y' ? ' · anual' : isSub(x) ? ' · assinatura' : ' · fixo') : x.day ? ' · dia ' + x.day : ''), v:fmt(x.value), c:'out', k:c[2]}; })};
 }
 // Linhas do widget Resumo: as escolhidas em Configurações > Widgets, na ordem; as que não têm dado são puladas. [{t, v, c}]
 function widgetLines(){
@@ -918,7 +934,7 @@ function widgetLines(){
     vales:() => (temVale('va') || temVale('vr')) && ['Saldo dos vales', fmt(valeSaldo('va') + valeSaldo('vr')), ''],
     parcelas:() => { const v = sum(expensesOf(curYM).filter(x => x.kind === 'installment'), x => x.value); return v > 0 && ['Parcelas do mês', fmt(v), 'out']; },
     previsao:() => { const n = addMonths(curYM, 1), s = totalIn(n) - totalOut(n); return [(s < 0 ? 'Falta em ' : 'Sobra em ') + monthName(n).split(' ')[0], fmt(Math.abs(s)), s < 0 ? 'out' : 'in']; }};
-  return db.prefs.layout.widget.filter(b => b.on).map(b => itens[b.k]()).filter(Boolean).slice(0, 5).map(([t, v, c]) => ({t, v, c}));
+  return db.prefs.layout.widget.filter(b => b.on).map(b => itens[b.k]()).filter(Boolean).map(([t, v, c]) => ({t, v, c}));
 }
 
 // ---------- Contas bancárias ----------

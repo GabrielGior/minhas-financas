@@ -15,6 +15,7 @@ function onAtalho(){
 funVisit();
 if (lang() !== 'pt'){ document.documentElement.lang = LOCALES[lang()]; trAll(); } // partes fixas da página (login, bloqueio)
 render();
+abertura();
 restoreFromIdb();
 save(false);
 updateRates();
@@ -26,7 +27,7 @@ if (needGate()){
 } else {
   // Quem já usava o app antes do aviso de conta nova: a conta atual vira a "última usada", sem repetir as boas-vindas.
   if (canSync() && !sync.account && Android.conta && Android.conta()){ sync.account = Android.conta(); saveSync(); }
-  syncNow(); startSheets(); onFoto(); onAtalho(); // o convite do bloqueio vem no fim das telas de início
+  syncNow(); aposAbertura(() => { startSheets(); onFoto(); onAtalho(); }); // depois da animação de abertura; o convite do bloqueio vem no fim das telas de início
 }
 let saiuEm = 0;
 document.addEventListener('visibilitychange', () => {

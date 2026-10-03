@@ -24,6 +24,14 @@ addEventListener('orientationchange', () => setTimeout(ajustarLargura, 150)); //
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
+<!-- Tela de abertura: já nasce na cor escolhida (guardada por applyTheme); o desenho e a animação vêm de abertura(), em js/arte.js. -->
+<div id="abre"><div id="abreIn"></div></div>
+<script>
+try {
+  var abreCor = JSON.parse(localStorage.getItem('financas-abre') || 'null'), hex = /^#[0-9a-f]{3,8}$/i;
+  if (abreCor && hex.test(abreCor[0]) && hex.test(abreCor[1])) document.getElementById('abre').style.background = 'linear-gradient(135deg,' + abreCor[0] + ',' + abreCor[1] + ')';
+} catch(e){}
+</script>
 <div id="topbar"></div>
 <div id="app"></div>
 <button class="fab" id="fab" onclick="addNew()" aria-label="Adicionar">+</button>
@@ -63,6 +71,7 @@ addEventListener('orientationchange', () => setTimeout(ajustarLargura, 150)); //
 <script src="js/novidades.js"></script>
 <script src="js/guia.js"></script>
 <script src="js/config.js"></script>
+<script src="js/arte.js"></script>
 <script src="js/planilha.js"></script>
 <script src="js/idioma.js"></script>
 <script src="js/web.js"></script>

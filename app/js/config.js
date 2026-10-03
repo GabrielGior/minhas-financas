@@ -123,14 +123,16 @@ function funCheck(){
   }
   try { localStorage.setItem(FUN_KEY, JSON.stringify(funState)); } catch(e){}
 }
-// Mascote de cada tema especial. Cada um é um personagem: [claro, médio, forte, fenda, bochecha, olhos, boca, partes].
-// partes (todas opcionais): orelhas (atrás da cabeça), cabeca (no lugar do rosto redondo), focinho (no lugar do
-// focinho de porco), sob (por cima da cabeça, por baixo dos olhos), sobre (por cima de tudo), semFenda (sem a
-// fenda de cofrinho). Sem tema especial, o porquinho rosa clássico (não segue a cor do app).
+// Mascote de cada tema especial. Cada tema tem um personagem próprio (não é o porquinho fantasiado):
+// [claro, médio, forte, fenda, bochecha, olhos, boca, partes]. As partes trocam pedaços do desenho-base:
+// orelhas (atrás da cabeça), cabeca (no lugar do rosto redondo), focinho (no lugar do focinho de porco; ' ' = sem),
+// sob (por cima da cabeça, por baixo dos olhos), sobre (por cima de tudo), pes (no lugar das patas; ' ' = sem),
+// semRabo, semFenda (a fenda de cofrinho) e semBrilho. Os olhos (em 43,55 e 77,55) e a boca mudam com o humor em todos.
+// Sem tema especial, o porquinho rosa clássico (não segue a cor do app, para continuar parecendo um porco).
 const MASCOTES = {
   '':['#ffc6d9', '#f58fb3', '#ec7aa3', '#c2527c', '#ff5f95', '#4a2338', '#b8456f', {}],
   // Robô: cabeça quadrada, antena, parafusos, grade no lugar do focinho e visor verde.
-  hacker:['#4ade80', '#16a34a', '#15803d', '#052e16', '#bbf7d0', '#03120a', '#052e16', {semFenda:true,
+  hacker:['#4ade80', '#16a34a', '#15803d', '#052e16', '#bbf7d0', '#03120a', '#052e16', {semFenda:true, semRabo:true,
     orelhas:'<path d="M60 30V15" stroke="#16a34a" stroke-width="3.500"/><circle cx="60" cy="11" r="5" fill="#bbf7d0"/><rect x="15" y="52" width="10" height="20" rx="4" fill="#15803d"/><rect x="95" y="52" width="10" height="20" rx="4" fill="#15803d"/>',
     cabeca:'<rect x="23" y="29" width="74" height="66" rx="17" fill="url(#pigG)"/>',
     focinho:'<rect x="45" y="63" width="30" height="13" rx="5" fill="#15803d"/><path d="M52 66v7M60 66v7M68 66v7" stroke="#052e16" stroke-width="2.200" stroke-linecap="round"/>',
@@ -138,97 +140,130 @@ const MASCOTES = {
   // Unicórnio: chifre dourado, crina colorida, cílios e estrelinha.
   boneca:['#fff0f8', '#f9a8d4', '#f472b6', '#be185d', '#ff5f95', '#500724', '#be185d', {semFenda:true,
     orelhas:'<path d="M60 2l8 28H52z" fill="#fde68a"/><path d="M56 13l8 2.500M54.500 21l11 3" stroke="#f59e0b" stroke-width="1.800" stroke-linecap="round"/><path d="M27 40c-10 10-12 28-5 44" stroke="#c026d3" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M34 31c-12 4-18 16-18 30" stroke="#a855f7" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M44 26c-10-2-20 4-25 14" stroke="#38bdf8" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M84 36c5-10 3-18-3-20-6 3-9 9-10 16z" fill="#f9a8d4"/>',
+    focinho:'<ellipse cx="60" cy="72" rx="13" ry="9" fill="#f9a8d4"/><ellipse cx="55.500" cy="72" rx="1.800" ry="2.600" fill="#be185d"/><ellipse cx="64.500" cy="72" rx="1.800" ry="2.600" fill="#be185d"/>',
     sobre:'<path d="M36 50l-4-3M40 48l-2-4M84 50l4-3M80 48l2-4" stroke="#500724" stroke-width="2" stroke-linecap="round"/><path d="M90 74l1.600 3.300 3.600.500-2.600 2.500.600 3.600-3.200-1.700-3.200 1.700.600-3.600-2.600-2.500 3.600-.500z" fill="#facc15"/>'}],
-  // Piloto: capacete com número, viseira e cachecol.
-  corrida:['#fecaca', '#f87171', '#dc2626', '#7f1d1d', '#fecaca', '#1f2937', '#7f1d1d', {semFenda:true,
-    sobre:'<path d="M21 52a39 34 0 0 1 78 0z" fill="#dc2626"/><path d="M21 52h78" stroke="#111827" stroke-width="4"/><path d="M52 18.500h16V50H52z" fill="#fff"/><text x="60" y="41" text-anchor="middle" font-size="17" font-weight="800" font-family="sans-serif" fill="#dc2626">7</text><rect x="27" y="46" width="66" height="19" rx="9.500" fill="#38bdf8" opacity=".3" stroke="#111827" stroke-width="2.400"/><path d="M30 92c14 8 46 8 60 0l3 8c-16 8-50 8-66 0z" fill="#facc15"/><path d="M84 95l14 10-6-13z" fill="#eab308"/>'}],
+  // Carro de corrida vermelho, visto de frente: faróis no lugar dos olhos, grade e aerofólio.
+  corrida:['#f87171', '#dc2626', '#991b1b', '#7f1d1d', '#fecaca', '#111827', '#111827', {semFenda:true, semRabo:true, semBrilho:true,
+    pes:'<rect x="22" y="82" width="19" height="22" rx="7" fill="#111827"/><rect x="79" y="82" width="19" height="22" rx="7" fill="#111827"/>',
+    orelhas:'<rect x="20" y="20" width="80" height="8" rx="3.500" fill="#7f1d1d"/><path d="M32 28v12M88 28v12" stroke="#7f1d1d" stroke-width="5"/>',
+    cabeca:'<path d="M38 32h44l11 20H27z" fill="#dc2626"/><path d="M42 36h36l7 13H35z" fill="#bae6fd"/><rect x="17" y="46" width="86" height="46" rx="15" fill="url(#pigG)"/>',
+    sob:'<circle cx="43" cy="56" r="10.500" fill="#fef9c3"/><circle cx="77" cy="56" r="10.500" fill="#fef9c3"/><path d="M56 46h8v19h-8z" fill="#fff"/>',
+    focinho:'<rect x="47" y="67" width="26" height="10" rx="4.500" fill="#111827"/><path d="M53 69.500v5M60 69.500v5M67 69.500v5" stroke="#4b5563" stroke-width="1.600"/>'}],
   // Gato DJ: orelhas pontudas, bigodes, focinho pequeno e fones.
   neon:['#c4b5fd', '#8b5cf6', '#7c3aed', '#4c1d95', '#22d3ee', '#1e1b4b', '#f472b6', {semFenda:true,
     orelhas:'<path d="M31 46 25 8l28 20zM89 46l6-38-28 20z" fill="#8b5cf6"/><path d="M34 37 31 17l15 11zM86 37l3-20-15 11z" fill="#f472b6"/>',
     focinho:'<path d="M55.500 65h9l-4.500 5.500z" fill="#f472b6"/><path d="M41 67H23M41 72l-17 5M79 67h18M79 72l17 5" stroke="#1e1b4b" stroke-width="1.700" stroke-linecap="round"/>',
     sobre:'<path d="M23 60a37 40 0 0 1 74 0" stroke="#22d3ee" stroke-width="4.500" fill="none"/><rect x="15" y="54" width="12" height="22" rx="6" fill="#22d3ee"/><rect x="93" y="54" width="12" height="22" rx="6" fill="#22d3ee"/><path d="M18 60v10M102 60v10" stroke="#f472b6" stroke-width="2" stroke-linecap="round"/>'}],
   // Coruja estudiosa: tufos, olhões com óculos e bico.
-  papel:['#f5deb3', '#d6a77a', '#b98a5e', '#7c4a2d', '#e9a68a', '#3b2a1a', '#7c4a2d', {semFenda:true,
+  papel:['#f5deb3', '#d6a77a', '#b98a5e', '#7c4a2d', '#e9a68a', '#3b2a1a', '#7c4a2d', {semFenda:true, semRabo:true,
     orelhas:'<path d="M33 42 27 11l25 17zM87 42l6-31-25 17z" fill="#b98a5e"/>',
     sob:'<circle cx="43" cy="55" r="14" fill="#fff7e6"/><circle cx="77" cy="55" r="14" fill="#fff7e6"/><path d="M40 86q20 12 40 0" stroke="#b98a5e" stroke-width="2" fill="none" stroke-dasharray="3 4" stroke-linecap="round"/>',
     focinho:'<path d="M53 63h14l-7 13z" fill="#e0a02b"/>',
     sobre:'<circle cx="43" cy="55" r="14" fill="none" stroke="#3b2a1a" stroke-width="2.600"/><circle cx="77" cy="55" r="14" fill="none" stroke="#3b2a1a" stroke-width="2.600"/><path d="M57 55h6" stroke="#3b2a1a" stroke-width="2.600"/>'}],
-  // Porquinho de férias: chapéu de palha com fita, óculos de sol e flor.
-  praia:['#ffd9a8', '#fb923c', '#f97316', '#c2410c', '#fdba74', '#431407', '#c2410c', {semFenda:true,
-    sobre:'<ellipse cx="60" cy="33" rx="43" ry="8.500" fill="#eab308"/><path d="M37 33c0-17 10-24 23-24s23 7 23 24z" fill="#facc15"/><path d="M37.500 29h45" stroke="#dc2626" stroke-width="5"/><rect x="33" y="48" width="23" height="13" rx="6" fill="#0e7490"/><rect x="64" y="48" width="23" height="13" rx="6" fill="#0e7490"/><path d="M56 53h8" stroke="#0e7490" stroke-width="3"/><g fill="#f472b6"><circle cx="86" cy="24" r="3.500"/><circle cx="92" cy="28" r="3.500"/><circle cx="90" cy="35" r="3.500"/><circle cx="83" cy="34" r="3.500"/><circle cx="81" cy="28" r="3.500"/></g><circle cx="86.500" cy="30" r="3" fill="#fde047"/>'}],
-  // O pintor: chapéu de palha, barba ruiva e uma estrela do quadro.
-  noite:['#ffe6cc', '#f2c097', '#e3a070', '#a85d2f', '#f59e0b', '#1b2a6b', '#8a3d12', {semFenda:true,
-    sob:'<path d="M27 70c2 34 64 34 66 0-6 12-18 15-33 15s-27-3-33-15z" fill="#d9772b"/><path d="M36 84l-2 6M48 90l-1 7M60 91v8M72 90l1 7M84 84l2 6" stroke="#b85c1c" stroke-width="2.200" stroke-linecap="round"/>',
-    sobre:'<ellipse cx="60" cy="34" rx="44" ry="8" fill="#c9a227"/><path d="M36 34c0-16 10-23 24-23s24 7 24 23z" fill="#e3c04a"/><path d="M36.500 30h47" stroke="#1b2a6b" stroke-width="4.500"/><path d="M40 24l8-6M52 20l6-6M66 20l6-5" stroke="#c9a227" stroke-width="1.800" stroke-linecap="round"/><path d="M98 20l2.200 4.500 5 .700-3.600 3.500.900 5-4.500-2.400-4.500 2.400.900-5-3.600-3.500 5-.700z" fill="#f4d35e"/>'}],
-  // Aprendiz de magia: chapéu pontudo com estrelas, óculos redondos e cachecol listrado.
-  bruxo:['#ffd9c7', '#f4a98a', '#e08a68', '#9a4b2d', '#f59e0b', '#2a1216', '#9a4b2d', {semFenda:true,
-    sobre:'<ellipse cx="60" cy="34" rx="40" ry="7" fill="#2e1657"/><path d="M64 2 37 33h48z" fill="#3b1d6e"/><path d="M41 29h40" stroke="#eab308" stroke-width="3.500"/><circle cx="58" cy="19" r="1.800" fill="#fde047"/><circle cx="68" cy="24" r="1.300" fill="#fde047"/><circle cx="52" cy="26" r="1.300" fill="#fde047"/><circle cx="43" cy="55" r="9.500" fill="none" stroke="#2a1216" stroke-width="2.400"/><circle cx="77" cy="55" r="9.500" fill="none" stroke="#2a1216" stroke-width="2.400"/><path d="M52.500 55h15" stroke="#2a1216" stroke-width="2.400"/><path d="M30 91c14 9 46 9 60 0l2 8c-16 9-48 9-64 0z" fill="#7f1d1d"/><path d="M42 96l2 8M56 99v8M70 98l-1 8M82 95l-3 8" stroke="#eab308" stroke-width="4"/>'}],
-  // Astronauta: capacete de vidro, antena e reflexo.
-  espaco:['#ffc6d9', '#f58fb3', '#ec7aa3', '#c2527c', '#ff5f95', '#4a2338', '#b8456f', {semFenda:true,
-    orelhas:'<path d="M30 40c-6-12-3-22 4-24 8 2 14 8 16 16zM90 40c6-12 3-22-4-24-8 2-14 8-16 16z" fill="#f58fb3"/><rect x="34" y="86" width="52" height="18" rx="8" fill="#e2e8f0"/><circle cx="60" cy="96" r="4" fill="#38bdf8"/>',
-    sobre:'<circle cx="60" cy="57" r="45" fill="#bae6fd" opacity=".16"/><circle cx="60" cy="57" r="45" fill="none" stroke="#e2e8f0" stroke-width="4.500"/><path d="M28 38c6-10 14-16 24-19" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/><path d="M96 22l8-10" stroke="#e2e8f0" stroke-width="3"/><circle cx="105" cy="10" r="4" fill="#f87171"/>'}],
+  // Caranguejo: garras para cima, perninhas e chapéu de palha.
+  praia:['#fca5a5', '#ef4444', '#dc2626', '#991b1b', '#fecaca', '#450a0a', '#450a0a', {semFenda:true, semRabo:true, focinho:' ',
+    pes:'<path d="M27 84l-11 9M33 90l-9 12M39 93l-4 11M93 84l11 9M87 90l9 12M81 93l4 11" stroke="#dc2626" stroke-width="5" stroke-linecap="round"/>',
+    orelhas:'<path d="M24 52C8 46 4 28 13 18c2 9 8 11 13 9-3 9 1 16 6 18zM96 52c16-6 20-24 11-34-2 9-8 11-13 9 3 9-1 16-6 18z" fill="#ef4444"/>',
+    cabeca:'<ellipse cx="60" cy="66" rx="41" ry="30" fill="url(#pigG)"/>',
+    sobre:'<ellipse cx="60" cy="38" rx="24" ry="5.500" fill="#eab308"/><path d="M47 38c0-10 6-14 13-14s13 4 13 14z" fill="#facc15"/><path d="M47.500 35h25" stroke="#0e7490" stroke-width="3"/>'}],
+  // Lua cheia do quadro: crateras, halo e estrelas em volta.
+  noite:['#fff3b0', '#f4d35e', '#e0b93a', '#c99a1d', '#f59e0b', '#1b2a6b', '#1b2a6b', {semFenda:true, semRabo:true, pes:' ', focinho:' ',
+    orelhas:'<circle cx="60" cy="60" r="50" fill="#f4d35e" opacity=".16"/><circle cx="60" cy="60" r="44" fill="#f4d35e" opacity=".2"/>',
+    cabeca:'<circle cx="60" cy="60" r="38" fill="url(#pigG)"/>',
+    sob:'<circle cx="34" cy="78" r="5" fill="#e0b93a" opacity=".7"/><circle cx="86" cy="80" r="6.500" fill="#e0b93a" opacity=".7"/><circle cx="84" cy="36" r="3.500" fill="#e0b93a" opacity=".7"/><circle cx="60" cy="30" r="2.500" fill="#e0b93a" opacity=".7"/>',
+    sobre:'<path d="M14 26l2 4.200 4.600.600-3.300 3.200.800 4.600-4.100-2.200-4.100 2.200.800-4.600-3.300-3.200 4.600-.600zM104 84l1.600 3.300 3.600.500-2.600 2.500.600 3.600-3.200-1.700-3.200 1.700.600-3.600-2.600-2.500 3.600-.500z" fill="#fff6bf"/><path d="M96 18c6-6 14-4 15 2s-5 8-8 5" stroke="#9cc0e7" stroke-width="2.200" fill="none" stroke-linecap="round"/>'}],
+  // Sapo mago: olhos saltados, narinas e chapéu pontudo com estrelas.
+  bruxo:['#86efac', '#22c55e', '#16a34a', '#14532d', '#fda4af', '#052e16', '#052e16', {semFenda:true, semRabo:true, semBrilho:true,
+    orelhas:'<circle cx="43" cy="44" r="16" fill="#22c55e"/><circle cx="77" cy="44" r="16" fill="#22c55e"/>',
+    cabeca:'<ellipse cx="60" cy="70" rx="41" ry="28" fill="url(#pigG)"/>',
+    sob:'<circle cx="43" cy="52" r="11.500" fill="#fff"/><circle cx="77" cy="52" r="11.500" fill="#fff"/>',
+    focinho:'<circle cx="56" cy="71" r="1.600" fill="#14532d"/><circle cx="64" cy="71" r="1.600" fill="#14532d"/>',
+    pes:'<ellipse cx="38" cy="98" rx="12" ry="6" fill="#16a34a"/><ellipse cx="82" cy="98" rx="12" ry="6" fill="#16a34a"/>',
+    sobre:'<ellipse cx="60" cy="31" rx="19" ry="4.500" fill="#2e1657"/><path d="M62 2 47 30h27z" fill="#3b1d6e"/><path d="M49 27h23" stroke="#eab308" stroke-width="3"/><circle cx="59" cy="17" r="1.600" fill="#fde047"/><circle cx="65" cy="22" r="1.200" fill="#fde047"/>'}],
+  // Alienígena: cabeçona, olhos enormes e antenas.
+  espaco:['#a7f3d0', '#34d399', '#10b981', '#047857', '#6ee7b7', '#d1fae5', '#064e3b', {semFenda:true, semRabo:true, focinho:' ',
+    orelhas:'<path d="M45 32 36 12M75 32l9-20" stroke="#34d399" stroke-width="3.500" stroke-linecap="round"/><circle cx="35" cy="10" r="5.500" fill="#fde047"/><circle cx="85" cy="10" r="5.500" fill="#fde047"/>',
+    cabeca:'<path d="M20 54c0-23 17-36 40-36s40 13 40 36-17 44-40 44-40-21-40-44z" fill="url(#pigG)"/>',
+    sob:'<ellipse cx="43" cy="55" rx="11.500" ry="15" fill="#022c22" transform="rotate(-16 43 55)"/><ellipse cx="77" cy="55" rx="11.500" ry="15" fill="#022c22" transform="rotate(16 77 55)"/>'}],
   // Raposa: orelhas pontudas, cara branca e nariz preto, com uma folha.
   floresta:['#fdba74', '#f97316', '#ea580c', '#9a3412', '#fed7aa', '#3b1d0a', '#7c2d12', {semFenda:true,
     orelhas:'<path d="M30 46 22 8l30 20zM90 46l8-38-30 20z" fill="#ea580c"/><path d="M33 37 29 18l15 10zM87 37l4-19-15 10z" fill="#fff7ed"/>',
     sob:'<path d="M23 64c5 22 24 32 37 32s32-10 37-32c-9 9-21 12-37 12s-28-3-37-12z" fill="#fff7ed"/>',
     focinho:'<ellipse cx="60" cy="71" rx="5.500" ry="4" fill="#3b1d0a"/>',
     sobre:'<path d="M60 30c-2-12 6-20 18-20-1 12-8 19-18 20z" fill="#4d7c0f"/><path d="M61 29c4-7 9-12 16-18" stroke="#a3e635" stroke-width="1.600" fill="none"/>'}],
-  // Porquinho de videogame antigo: tudo em quadradinhos.
-  retro:['#ffb3cf', '#ff7fae', '#e85a90', '#a83263', '#ff5f95', '#2b1020', '#a83263', {semFenda:true,
-    orelhas:'<rect x="26" y="18" width="18" height="18" fill="#ff7fae"/><rect x="76" y="18" width="18" height="18" fill="#ff7fae"/><rect x="32" y="24" width="8" height="12" fill="#e85a90"/><rect x="80" y="24" width="8" height="12" fill="#e85a90"/>',
-    cabeca:'<path d="M30 30h60v6h6v52h-6v6H30v-6h-6V36h6z" fill="url(#pigG)"/>',
-    focinho:'<rect x="46" y="62" width="28" height="16" fill="#e85a90"/><rect x="52" y="66" width="5" height="8" fill="#a83263"/><rect x="63" y="66" width="5" height="8" fill="#a83263"/>',
-    sobre:'<rect x="90" y="8" width="8" height="8" fill="#facc15"/><rect x="98" y="16" width="6" height="6" fill="#fb7185"/><rect x="14" y="12" width="6" height="6" fill="#38bdf8"/>'}],
+  // Monstrinho de videogame antigo: tudo em quadradinhos, com antenas e perninhas.
+  retro:['#c4b5fd', '#8b5cf6', '#6d28d9', '#4c1d95', '#f0abfc', '#12121c', '#12121c', {semFenda:true, semRabo:true, semBrilho:true, focinho:' ',
+    orelhas:'<path d="M34 14h8v8h8v8h-8v-8h-8zM86 14h-8v8h-8v8h8v-8h8z" fill="#8b5cf6"/>',
+    cabeca:'<path d="M34 30h52v8h8v8h8v32h-8v8h-8v8H34v-8h-8v-8h-8V46h8v-8h8z" fill="url(#pigG)"/>',
+    pes:'<path d="M34 94h12v10H34zM74 94h12v10H74z" fill="#6d28d9"/>',
+    sob:'<path d="M35 47h16v16H35zM69 47h16v16H69z" fill="#fff"/>',
+    sobre:'<path d="M100 8h7v7h-7z" fill="#facc15"/><path d="M12 16h6v6h-6z" fill="#fb7185"/>'}],
   // Dragãozinho da noite: escuro, olhos verdes, chifres e asas.
   dragao:['#4b5563', '#1f2937', '#111827', '#030712', '#4ade80', '#a3e635', '#9ca3af', {semFenda:true,
     orelhas:'<path d="M24 62C6 52 2 30 7 20c8 9 18 14 27 24zM96 62c18-10 22-32 17-42-8 9-18 14-27 24z" fill="#1f2937"/><path d="M34 42 20 12l26 16zM86 42l14-30-26 16z" fill="#111827"/><path d="M50 30l-4-14 10 9zM70 30l4-14-10 9z" fill="#111827"/>',
     focinho:'<circle cx="55" cy="70" r="2" fill="#030712"/><circle cx="65" cy="70" r="2" fill="#030712"/>',
     sob:'<ellipse cx="43" cy="55" rx="9" ry="8" fill="#030712"/><ellipse cx="77" cy="55" rx="9" ry="8" fill="#030712"/>'}],
-  // Piloto das antigas: capacete branco de faixa vermelha, viseira azul e lenço.
-  grandprix:['#ffc6d9', '#f58fb3', '#ec7aa3', '#c2527c', '#ff5f95', '#4a2338', '#b8456f', {semFenda:true,
-    sobre:'<path d="M21 52a39 34 0 0 1 78 0z" fill="#f8fafc"/><path d="M54 18.500h12V50H54z" fill="#dc2626"/><path d="M21 52h78" stroke="#1d4ed8" stroke-width="4"/><rect x="27" y="46" width="66" height="19" rx="9.500" fill="#93c5fd" opacity=".35" stroke="#1e3a8a" stroke-width="2.400"/><path d="M30 92c14 8 46 8 60 0l3 8c-16 8-50 8-66 0z" fill="#dc2626"/><path d="M24 97l-12 8 14 0z" fill="#b91c1c"/>'}],
-  // Piloto de rua: boné para trás, óculos escuros e corrente dourada.
-  rua:['#ffc6d9', '#f58fb3', '#ec7aa3', '#c2527c', '#ff5f95', '#4a2338', '#b8456f', {semFenda:true,
-    sobre:'<path d="M24 46a36 30 0 0 1 72 0z" fill="#1c1917"/><path d="M24 42h72v5H24z" fill="#fb923c"/><path d="M90 44l18 2-16 6z" fill="#1c1917"/><rect x="32" y="49" width="24" height="12" rx="3" fill="#0c0a09"/><rect x="64" y="49" width="24" height="12" rx="3" fill="#0c0a09"/><path d="M56 53h8" stroke="#0c0a09" stroke-width="3"/><path d="M36 51h8" stroke="#a3e635" stroke-width="1.600" stroke-linecap="round"/><path d="M38 92q22 13 44 0" stroke="#fbbf24" stroke-width="3.500" fill="none" stroke-dasharray="2.500 3" stroke-linecap="round"/>'}],
-  // Piloto de drift: faixa na testa com o sol vermelho.
-  drift:['#ffc6d9', '#f58fb3', '#ec7aa3', '#c2527c', '#ff5f95', '#4a2338', '#b8456f', {
-    sobre:'<path d="M23 46q37-13 74 0v8q-37-13-74 0z" fill="#f8fafc"/><circle cx="60" cy="43" r="5.500" fill="#dc2626"/><path d="M96 47l12-5-3 12zM97 50l9 8-10-2z" fill="#f8fafc"/><path d="M36 49l10-4M84 49l-10-4" stroke="#4a2338" stroke-width="2.200" stroke-linecap="round"/>'}],
-  // Fusquinha de corrida: bege, com as faixas e os óculos de piloto antigo na testa.
-  fusca:['#fff7e6', '#f3e3bf', '#e2cb9a', '#a8894e', '#f59e0b', '#3b2f1a', '#a8894e', {semFenda:true,
-    sob:'<path d="M52 28.500h5V96h-5z" fill="#dc2626" opacity=".85"/><path d="M57 28h6v68h-6z" fill="#fff" opacity=".9"/><path d="M63 28.500h5V96h-5z" fill="#1d4ed8" opacity=".85"/>',
-    sobre:'<path d="M24 40q36-12 72 0" stroke="#3b2f1a" stroke-width="3.500" fill="none"/><circle cx="46" cy="36" r="8" fill="#bae6fd" stroke="#3b2f1a" stroke-width="2.600"/><circle cx="74" cy="36" r="8" fill="#bae6fd" stroke="#3b2f1a" stroke-width="2.600"/><circle cx="90" cy="80" r="8" fill="#fff" stroke="#3b2f1a" stroke-width="1.500"/><text x="90" y="83.500" text-anchor="middle" font-size="9" font-weight="800" font-family="sans-serif" fill="#3b2f1a">12</text>'}],
-  // Viking: elmo de ferro com chifres e barba loira trançada.
-  vikings:['#ffc6d9', '#f58fb3', '#ec7aa3', '#c2527c', '#ff5f95', '#4a2338', '#b8456f', {semFenda:true,
-    orelhas:'<path d="M28 42C12 38 8 22 12 10c6 11 15 16 24 20zM92 42c16-4 20-20 16-32-6 11-15 16-24 20z" fill="#fef3c7"/>',
-    sob:'<path d="M27 70c2 32 64 32 66 0-6 12-18 15-33 15s-27-3-33-15z" fill="#eab308"/><path d="M44 96l-2 10M52 98l-1 9M68 98l1 9M76 96l2 10" stroke="#ca8a04" stroke-width="3" stroke-linecap="round"/>',
-    sobre:'<path d="M24 48a36 30 0 0 1 72 0z" fill="#94a3b8"/><path d="M24 48h72" stroke="#64748b" stroke-width="5"/><path d="M57 19h6v29h-6z" fill="#64748b"/><circle cx="36" cy="44" r="2" fill="#e2e8f0"/><circle cx="84" cy="44" r="2" fill="#e2e8f0"/>'}],
-  // Espartano: elmo de bronze com crista vermelha e protetores.
-  espartano:['#ffc6d9', '#f58fb3', '#ec7aa3', '#c2527c', '#ff5f95', '#4a2338', '#b8456f', {semFenda:true,
-    sobre:'<path d="M53 2h14l3 30H50z" fill="#dc2626"/><path d="M50 8h20M50.500 16h19M51 24h18" stroke="#991b1b" stroke-width="1.600"/><path d="M24 48a36 30 0 0 1 72 0z" fill="#b45309"/><path d="M24 48v24l9 7V48zM96 48v24l-9 7V48z" fill="#b45309"/><path d="M56.500 46h7v20l-3.500 4-3.500-4z" fill="#92400e"/><path d="M24 48h72" stroke="#fbbf24" stroke-width="2.500"/>'}]
+  // Carro de fórmula antigo, branco: rodas à mostra, bico fino, asa dianteira e número.
+  grandprix:['#ffffff', '#e2e8f0', '#cbd5e1', '#94a3b8', '#fecaca', '#0f172a', '#0f172a', {semFenda:true, semRabo:true, semBrilho:true,
+    pes:'<rect x="6" y="58" width="21" height="40" rx="9" fill="#111827"/><rect x="93" y="58" width="21" height="40" rx="9" fill="#111827"/><rect x="13" y="92" width="94" height="9" rx="4" fill="#dc2626"/>',
+    orelhas:'<rect x="30" y="20" width="60" height="9" rx="3.500" fill="#1d4ed8"/><path d="M50 29h20v12H50z" fill="#1e3a8a"/><path d="M27 70h8M85 70h8" stroke="#64748b" stroke-width="4"/>',
+    cabeca:'<rect x="31" y="36" width="58" height="58" rx="20" fill="url(#pigG)"/>',
+    sob:'<path d="M56 36h8v12h-8z" fill="#dc2626"/>',
+    focinho:'<circle cx="60" cy="72" r="9" fill="#dc2626"/><text x="60" y="76" text-anchor="middle" font-size="12" font-weight="800" font-family="sans-serif" fill="#fff">8</text>'}],
+  // Buldogue de rua: orelhas caídas, focinhão, dentinhos, boné para trás e corrente.
+  rua:['#e7d3bd', '#c9a27e', '#a67c52', '#7a5a3a', '#f5b7a0', '#1c1917', '#1c1917', {semFenda:true,
+    orelhas:'<path d="M27 38c-14 2-18 22-11 38 9-5 13-16 14-28zM93 38c14 2 18 22 11 38-9-5-13-16-14-28z" fill="#a67c52"/>',
+    focinho:'<ellipse cx="60" cy="76" rx="21" ry="15" fill="#f5e6d3"/><ellipse cx="60" cy="67" rx="6.500" ry="4.500" fill="#1c1917"/><path d="M60 71.500v7" stroke="#1c1917" stroke-width="2"/>',
+    sobre:'<path d="M52 84.500l1.500-4M68 84.500l-1.500-4" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M25 46a35 28 0 0 1 70 0z" fill="#1c1917"/><path d="M25 42.500h70v4.500H25z" fill="#fb923c"/><path d="M90 44l19 3-17 6z" fill="#1c1917"/><path d="M38 95q22 11 44 0" stroke="#fbbf24" stroke-width="3.500" fill="none" stroke-dasharray="2.500 3" stroke-linecap="round"/>'}],
+  // Gato da sorte: branco, pata levantada, coleira vermelha com guizo e mancha dourada.
+  drift:['#ffffff', '#f1f5f9', '#e2e8f0', '#cbd5e1', '#fda4af', '#1f2937', '#b91c1c', {semFenda:true, semRabo:true,
+    orelhas:'<path d="M31 46 25 9l28 21zM89 46l6-37-28 21z" fill="#f1f5f9"/><path d="M34 37 31 19l15 11zM86 37l3-18-15 11z" fill="#ef4444"/><path d="M95 62c11-4 15-19 10-32-8 0-14 7-14 15z" fill="#f1f5f9"/><path d="M98 36v6M103 38l-1 6" stroke="#cbd5e1" stroke-width="1.600" stroke-linecap="round"/>',
+    sob:'<path d="M68 30c9-3 18 3 21 12-8 3-17-1-21-12z" fill="#f59e0b" opacity=".85"/>',
+    focinho:'<path d="M55.500 66h9l-4.500 5.500z" fill="#f472b6"/><path d="M41 68H25M41 73l-15 4M79 68h16M79 73l15 4" stroke="#94a3b8" stroke-width="1.600" stroke-linecap="round"/>',
+    sobre:'<path d="M31 90q29 13 58 0" stroke="#dc2626" stroke-width="6" fill="none" stroke-linecap="round"/><circle cx="60" cy="98" r="6" fill="#fbbf24" stroke="#d97706" stroke-width="1.500"/><path d="M60 98v3" stroke="#92400e" stroke-width="1.600"/>'}],
+  // Fusquinha de corrida, visto de frente: redondinho, faróis, faixas e número no capô.
+  fusca:['#fffaf0', '#f3e3bf', '#e2cb9a', '#a8894e', '#f59e0b', '#3b2f1a', '#3b2f1a', {semFenda:true, semRabo:true, semBrilho:true,
+    pes:'<rect x="23" y="84" width="17" height="20" rx="7" fill="#1f2937"/><rect x="80" y="84" width="17" height="20" rx="7" fill="#1f2937"/>',
+    orelhas:'<circle cx="18" cy="62" r="5" fill="#cbd5e1"/><circle cx="102" cy="62" r="5" fill="#cbd5e1"/>',
+    cabeca:'<path d="M20 72c0-32 17-46 40-46s40 14 40 46v12c0 6-4 9-10 9H30c-6 0-10-3-10-9z" fill="url(#pigG)"/><path d="M38 46c2-10 11-15 22-15s20 5 22 15z" fill="#bae6fd"/>',
+    sob:'<path d="M52 27h5v66h-5z" fill="#dc2626" opacity=".9"/><path d="M57 26.500h6V93h-6z" fill="#fff"/><path d="M63 27h5v66h-5z" fill="#1d4ed8" opacity=".9"/><circle cx="43" cy="56" r="10.500" fill="#fef9c3" stroke="#cbd5e1" stroke-width="2"/><circle cx="77" cy="56" r="10.500" fill="#fef9c3" stroke="#cbd5e1" stroke-width="2"/>',
+    focinho:'<circle cx="60" cy="72" r="8.500" fill="#fff" stroke="#3b2f1a" stroke-width="1.500"/><text x="60" y="75.500" text-anchor="middle" font-size="9" font-weight="800" font-family="sans-serif" fill="#3b2f1a">12</text>',
+    sobre:'<rect x="24" y="92" width="72" height="5" rx="2.500" fill="#cbd5e1"/>'}],
+  // Urso viking: orelhas redondas, focinho claro e elmo de ferro com chifres.
+  vikings:['#c8a27c', '#a47148', '#7f5539', '#5e3c23', '#e6b8a2', '#2b1d12', '#2b1d12', {semFenda:true,
+    orelhas:'<circle cx="28" cy="36" r="13" fill="#a47148"/><circle cx="92" cy="36" r="13" fill="#a47148"/><circle cx="28" cy="36" r="6.500" fill="#e6b8a2"/><circle cx="92" cy="36" r="6.500" fill="#e6b8a2"/><path d="M30 40C14 36 10 20 14 8c6 11 15 16 24 20zM90 40c16-4 20-20 16-32-6 11-15 16-24 20z" fill="#fef3c7"/>',
+    focinho:'<ellipse cx="60" cy="74" rx="17" ry="13" fill="#f1dcc3"/><ellipse cx="60" cy="67.500" rx="6.500" ry="4.500" fill="#2b1d12"/><path d="M60 72v6" stroke="#2b1d12" stroke-width="2"/>',
+    sobre:'<path d="M25 47a35 29 0 0 1 70 0z" fill="#94a3b8"/><path d="M25 47h70" stroke="#64748b" stroke-width="5"/><path d="M57 19h6v28h-6z" fill="#64748b"/><circle cx="37" cy="43" r="2" fill="#e2e8f0"/><circle cx="83" cy="43" r="2" fill="#e2e8f0"/>'}],
+  // Leão espartano: juba, focinho claro e crista vermelha.
+  espartano:['#fde68a', '#f59e0b', '#d97706', '#92400e', '#fcd34d', '#451a03', '#451a03', {semFenda:true,
+    orelhas:'<circle cx="60" cy="60" r="49" fill="#92400e"/><path d="M60 8l8 10 12-6 2 13 13 0-4 12 12 6-9 9 8 10-12 4 3 13-13-1-3 13-11-7-9 9-9-9-11 7-3-13-13 1 3-13-12-4 8-10-9-9 12-6-4-12 13 0 2-13 12 6z" fill="#b45309"/><circle cx="31" cy="32" r="9" fill="#f59e0b"/><circle cx="89" cy="32" r="9" fill="#f59e0b"/>',
+    focinho:'<ellipse cx="60" cy="74" rx="16" ry="12" fill="#fef3c7"/><path d="M54 67h12l-6 6.500z" fill="#451a03"/><path d="M60 73.500v5" stroke="#451a03" stroke-width="2"/>',
+    sobre:'<path d="M53 0h14l3 24H50z" fill="#dc2626"/><path d="M50.500 7h19M50 14h20" stroke="#991b1b" stroke-width="1.600"/><path d="M27 42q33-15 66 0v6q-33-13-66 0z" fill="#b45309"/><path d="M27 45q33-14 66 0" stroke="#fbbf24" stroke-width="2" fill="none"/>'}]
 };
-// Mascote visto de frente; mood: 'feliz', 'ok' ou 'triste'.
-function pigSvg(mood){
-  const [claro, medio, forte, fenda, bochecha, escuro, boca, p] = MASCOTES[db.prefs.skin] || MASCOTES[''];
-  const triste = mood === 'triste', feliz = mood === 'feliz';
+// Mascote visto de frente; mood: 'feliz', 'ok' ou 'triste'. tema: de qual tema (padrão: o que está em uso).
+function pigSvg(mood, tema = db.prefs.skin){
+  const [claro, medio, forte, fenda, bochecha, escuro, boca, p] = MASCOTES[tema] || MASCOTES[''];
+  const triste = mood === 'triste', feliz = mood === 'feliz', g = 'pigG' + (tema || '');
   const olho = x => `<circle cx="${x}" cy="55" r="5" fill="${escuro}"/><circle cx="${x + 1.8}" cy="53.2" r="1.7" fill="#fff"/>`;
   const olhos = feliz ? `<path d="M38 57q5-7 10 0M72 57q5-7 10 0" stroke="${escuro}" stroke-width="3" fill="none" stroke-linecap="round"/>` : olho(43) + olho(77);
   const extra = triste ? `<path d="M36 48l10-4M84 48l-10-4" stroke="${escuro}" stroke-width="2.6" stroke-linecap="round"/><path d="M89 58c2.2 3.2 3.2 5.2 3.2 6.8a3.2 3.2 0 0 1-6.400 0c0-1.600 1-3.600 3.200-6.800z" fill="#7dd3fc"/>` : '';
+  const parte = (s, padrao) => (s == null ? padrao : s).replace(/url\(#pigG\)/g, `url(#${g})`);
   return `<svg class="pig ${mood}" viewBox="0 0 120 110" width="104" height="95" aria-hidden="true">
-    <defs><linearGradient id="pigG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${claro}"/><stop offset="1" stop-color="${medio}"/></linearGradient></defs>
+    <defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${claro}"/><stop offset="1" stop-color="${medio}"/></linearGradient></defs>
     <ellipse cx="60" cy="104" rx="30" ry="4" fill="#000" opacity=".16"/>
     <g class="moeda"><circle cx="60" cy="10" r="7.5" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"/><path d="M60 6.5v7" stroke="#b45309" stroke-width="2" stroke-linecap="round"/></g>
     <g class="corpo">
-    <path d="M95 70c8-2 10 5 5 7s-2 7 3 6" stroke="${medio}" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-    <rect x="38" y="88" width="14" height="14" rx="6" fill="${forte}"/><rect x="68" y="88" width="14" height="14" rx="6" fill="${forte}"/>
-    ${p.orelhas || `<path d="M30 40c-6-12-3-22 4-24 8 2 14 8 16 16zM90 40c6-12 3-22-4-24-8 2-14 8-16 16z" fill="${medio}"/>
-    <path d="M34 36c-3-8-2-14 2-16 5 2 8 6 10 11zM86 36c3-8 2-14-2-16-5 2-8 6-10 11z" fill="${forte}"/>`}
-    ${p.cabeca || '<ellipse cx="60" cy="62" rx="38" ry="34" fill="url(#pigG)"/>'}
+    ${p.semRabo ? '' : `<path d="M95 70c8-2 10 5 5 7s-2 7 3 6" stroke="${medio}" stroke-width="3.5" fill="none" stroke-linecap="round"/>`}
+    ${parte(p.pes, `<rect x="38" y="88" width="14" height="14" rx="6" fill="${forte}"/><rect x="68" y="88" width="14" height="14" rx="6" fill="${forte}"/>`)}
+    ${parte(p.orelhas, `<path d="M30 40c-6-12-3-22 4-24 8 2 14 8 16 16zM90 40c6-12 3-22-4-24-8 2-14 8-16 16z" fill="${medio}"/>
+    <path d="M34 36c-3-8-2-14 2-16 5 2 8 6 10 11zM86 36c3-8 2-14-2-16-5 2-8 6-10 11z" fill="${forte}"/>`)}
+    ${parte(p.cabeca, '<ellipse cx="60" cy="62" rx="38" ry="34" fill="url(#pigG)"/>')}
     ${p.semFenda ? '' : `<rect x="50" y="30.5" width="20" height="4" rx="2" fill="${fenda}"/>`}
-    <ellipse cx="41" cy="43" rx="9" ry="4.5" fill="#fff" opacity=".4" transform="rotate(-28 41 43)"/>
+    ${p.semBrilho ? '' : '<ellipse cx="41" cy="43" rx="9" ry="4.5" fill="#fff" opacity=".4" transform="rotate(-28 41 43)"/>'}
     ${p.sob || ''}${olhos}${extra}
     <circle cx="32" cy="69" r="6" fill="${bochecha}" opacity=".4"/><circle cx="88" cy="69" r="6" fill="${bochecha}" opacity=".4"/>
-    ${p.focinho || `<ellipse cx="60" cy="69" rx="15" ry="11" fill="${forte}"/>
-    <ellipse cx="54.5" cy="69" rx="2.6" ry="3.6" fill="${boca}"/><ellipse cx="65.5" cy="69" rx="2.6" ry="3.6" fill="${boca}"/>`}
+    ${parte(p.focinho, `<ellipse cx="60" cy="69" rx="15" ry="11" fill="${forte}"/>
+    <ellipse cx="54.5" cy="69" rx="2.6" ry="3.6" fill="${boca}"/><ellipse cx="65.5" cy="69" rx="2.6" ry="3.6" fill="${boca}"/>`)}
     <path d="${feliz ? 'M52 84q8 7 16 0' : triste ? 'M54 88q6-5 12 0' : 'M54 85q6 3 12 0'}" stroke="${boca}" stroke-width="2.6" fill="none" stroke-linecap="round"/>
     ${p.sobre || ''}</g></svg>`;
 }
@@ -410,7 +445,7 @@ function openSettings(sec){
     <div class="btns" style="margin-top:0"><button class="btn" onclick="openTour(0, true)">${I('book')}Ver o tutorial</button><button class="btn" onclick="maybeNews(true)">${I('sparkle')}Novidades da versão</button></div>
     ${window.Android && Android.atualizar ? `<label>Atualizações</label>
     <div class="hint" style="margin-top:0">Versão ${APP_VERSION}. O app procura atualizações sozinho ao abrir e as aplica na abertura seguinte.</div>
-    <div class="btns"><button class="btn" onclick="toast('Procurando atualização…');Android.atualizar()">${I('refresh')}Procurar atualização agora</button></div>` : ''}`],
+    <div class="btns"><button class="btn" onclick="procurarAtualizacao()">${I('refresh')}Procurar atualização agora</button></div>` : ''}`],
   ['aparencia', 'sun', 'Aparência', 'Idioma, tema, cores, texto e modo divertido', `
     <label>Idioma</label>
     <div class="btns" style="margin-top:0">${Object.entries(LANGS).map(([k, v]) => `<button class="btn ${lang() === k ? 'primary' : ''}" style="padding:11px 4px" onclick="setLang('${k}')">${v}</button>`).join('')}</div>
@@ -444,10 +479,14 @@ function openSettings(sec){
     <label>Cor do ícone do app</label>
     <div class="swatches">${Object.entries(ICONES).map(([k,c]) => `<button class="sw ${N.icone() === k ? 'on' : ''}" style="background:linear-gradient(135deg,${c[1]},${c[2]});border-radius:14px" onclick="nativeOpts().setIcone('${k}');openSettings()" aria-label="${c[0]}" title="${c[0]}"></button>`).join('')}</div>
     ${window.Android && Android.setIconeApp ? `<label>Desenho do ícone</label>
-    <div class="btns" style="margin-top:0">${[['b', 'Gráfico'], ['p', 'Porquinho'], ...(SKINS[Android.icone()] ? [['t', 'Do tema']] : [])].map(([k, t]) => `<button class="btn ${Android.iconeDesenho() === k ? 'primary' : ''}" onclick="Android.setIconeApp(Android.icone(),'${k}',Android.iconeNome());openSettings()">${t}</button>`).join('')}</div>
+    <div class="icoGrid">${iconeDesenhos(Android.icone()).map(k => `<button class="${Android.iconeDesenho() === k ? 'on' : ''}" onclick="Android.setIconeApp(Android.icone(),'${k}',Android.iconeNome());openSettings()">${iconeSvg(Android.icone(), k)}<small>${ICON_DESENHOS[k][0]}</small></button>`).join('')}</div>
+    ${SKINS[Android.icone()] ? '<div class="hint">Os outros desenhos (moeda, carteira, cofre…) existem para as doze cores comuns: escolha uma delas acima para vê-los.</div>' : Android.criarAtalho ? '' : '<div class="hint">Há mais desenhos (moeda, carteira, cofre…) na versão nova do app: toque em Procurar atualizações.</div>'}
     <label>Nome do app na tela inicial</label>
     <div class="btns" style="margin-top:0;flex-wrap:wrap">${APP_NOMES.map((t, i) => `<button class="btn ${Number(Android.iconeNome()) === i ? 'primary' : ''}" style="padding:11px 6px;flex:1 0 40%" onclick="Android.setIconeApp(Android.icone(),Android.iconeDesenho(),${i});openSettings()">${t}</button>`).join('')}</div>` : ''}
-    <div class="hint">Ao trocar a cor, o desenho ou o nome, o Android fecha o app: é só abrir de novo pelo ícone novo. Se o ícone sumir da tela inicial, adicione de novo pela lista de apps. O Android só deixa escolher entre os nomes desta lista.</div>
+    <div class="hint">Ao trocar a cor, o desenho ou o nome, o Android fecha o app: é só abrir de novo pelo ícone novo. Se o ícone sumir da tela inicial, adicione de novo pela lista de apps.</div>
+    ${window.Android && Android.criarAtalho ? `<label>Outro nome, escrito por você</label>
+    <div class="hint" style="margin-top:0">O Android só deixa o app trocar de nome entre os da lista acima. Para um nome livre, o app cria na tela inicial um atalho com o nome que você escrever e o ícone escolhido aqui; na lista de apps continua o nome da lista.</div>
+    <div class="btns"><button class="btn" onclick="askAtalho()">${I('edit')}Criar atalho com o meu nome</button></div>` : ''}
     <label>Pedir senha ou biometria ao abrir</label>
     <div class="btns" style="margin-top:0">${[[true, I('lock') + 'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${lockOn === v ? 'primary' : ''}" onclick="nativeOpts().setBloqueio(${v});openSettings()">${t}</button>`).join('')}</div>
     ${lockOn ? '<div class="hint">Para desligar, o app pede a senha ou a biometria. Ao sair da conta Google, o bloqueio desliga sozinho.</div>' : ''}
@@ -467,14 +506,21 @@ function openSettings(sec){
     <div class="hint">Vale para gastos fixos com dia de vencimento. O app avisa em cada antecedência marcada e de novo no dia do vencimento, por volta das 9h. Sem nenhuma marcada, avisa só no dia.</div>${window.Android && Android.bateria ? `${batLivre ? '' : `<div class="btns"><button class="btn" onclick="Android.bateria()">Tirar o app da economia de bateria</button></div>`}
     <div class="hint">Em alguns celulares (Samsung, Xiaomi, Motorola) a economia de bateria atrasa ou corta os lembretes. Na tela que abre, procure "Minhas Finanças" e escolha "Não otimizar". O app também reagenda os lembretes quando o celular reinicia e quando é atualizado.</div>` : ''}`],
   ['widgets', 'chart', 'Widgets', 'Tela inicial do celular: resumo, saldo e porquinho', !(window.Android && Android.widget) ? '' : `
-    <div class="hint" style="margin-top:0">Widgets são quadros do app na tela inicial do celular. Há quatro: <b>Resumo</b> (você escolhe as linhas), <b>Saldo do mês</b>, <b>Contas a vencer</b> e <b>Porquinho</b> (a cara do mês e os gastos).</div>
-    <label>Porquinho nos widgets Resumo, Saldo e Contas</label>
-    <div class="btns" style="margin-top:0">${[[true, 'Com porquinho'], [false, 'Sem porquinho']].map(([v, t]) => `<button class="btn ${(p.widgetPig ?? !!p.fun) === v ? 'primary' : ''}" onclick="setPref('widgetPig',${v})">${t}</button>`).join('')}</div>
+    <div class="hint" style="margin-top:0">Widgets são quadros do app na tela inicial do celular. Há cinco: <b>Resumo</b> (você escolhe as linhas), <b>Gastos</b> (a lista dos gastos do mês), <b>Saldo do mês</b>, <b>Contas a vencer</b> e <b>Mascote</b> (a cara do mês e os gastos). O que você muda aqui vale na hora para os widgets que já estão na tela inicial.</div>
+    <label>Fundo dos widgets</label>
+    <div class="btns" style="margin-top:0">${[['tema', p.skin ? 'Tema especial' : 'Cor do app'], ['escuro', 'Escuro']].map(([v, t]) => `<button class="btn ${(p.widgetFundo || 'tema') === v ? 'primary' : ''}" onclick="setPref('widgetFundo','${v}')">${t}</button>`).join('')}</div>
+    <label>Mascote nos widgets Resumo, Gastos, Saldo e Contas</label>
+    <div class="btns" style="margin-top:0">${[[true, 'Com mascote'], [false, 'Sem mascote']].map(([v, t]) => `<button class="btn ${(p.widgetPig ?? !!p.fun) === v ? 'primary' : ''}" onclick="setPref('widgetPig',${v})">${t}</button>`).join('')}</div>
+    <div class="hint">É o mesmo mascote do app: o porquinho ou o personagem do tema especial, com a cara do mês.</div>
     <label>Widget Resumo</label>
     <div class="btns" style="margin-top:0"><button class="btn" onclick="openLayoutEdit('widget')">${I('sliders')}Escolher o que aparece</button></div>
-    <div class="hint">Aparecem até 5 linhas, na ordem escolhida. Linhas sem dado (por exemplo, sem conta a vencer) são puladas.</div>
+    <div class="hint">As linhas aparecem na ordem escolhida; se não couberem, dá para rolar dentro do widget ou aumentá-lo (segure o dedo nele e puxe a borda). Linhas sem dado (por exemplo, sem conta a vencer) são puladas.</div>
+    <label>Widget Gastos: o que listar</label>
+    <div class="btns" style="margin-top:0;flex-wrap:wrap">${[['', 'Todos'], ...Object.entries(GRUPOS).map(([k, g]) => [k, g[0]])].map(([k, t]) => `<button class="btn ${(p.widgetLista || '') === k ? 'primary' : ''}" style="padding:11px 6px;flex:1 0 30%" onclick="setPref('widgetLista','${k}')">${t}</button>`).join('')}</div>
+    <label>Widget Gastos: ordem</label>
+    <div class="btns" style="margin-top:0">${[['', 'Como no app'], ['valor', 'Maiores primeiro']].map(([k, t]) => `<button class="btn ${(p.widgetOrdem || '') === k ? 'primary' : ''}" onclick="setPref('widgetOrdem','${k}')">${t}</button>`).join('')}</div>
     ${Android.fixarWidget ? `<label>Pôr na tela inicial</label>
-    <div class="btns" style="margin-top:0;flex-wrap:wrap">${[['resumo', 'Resumo'], ['saldo', 'Saldo do mês'], ['contas', 'Contas a vencer'], ['porco', 'Porquinho']].map(([k, t]) => `<button class="btn" style="padding:11px 6px" onclick="if(!Android.fixarWidget('${k}'))tell('Esta tela inicial não aceita o pedido. Segure o dedo num espaço vazio da tela inicial, toque em Widgets e procure Minhas Finanças.')">${t}</button>`).join('')}</div>
+    <div class="btns" style="margin-top:0;flex-wrap:wrap">${[['resumo', 'Resumo'], ...(Android.criarAtalho ? [['gastos', 'Gastos']] : []), ['saldo', 'Saldo do mês'], ['contas', 'Contas a vencer'], ['porco', 'Mascote']].map(([k, t]) => `<button class="btn" style="padding:11px 6px;flex:1 0 30%" onclick="if(!Android.fixarWidget('${k}'))tell('Esta tela inicial não aceita o pedido. Segure o dedo num espaço vazio da tela inicial, toque em Widgets e procure Minhas Finanças.')">${t}</button>`).join('')}</div>
     <div class="hint">O Android pede sua confirmação. Também dá para adicionar segurando o dedo num espaço vazio da tela inicial › Widgets › Minhas Finanças.</div>` : ''}`],
   ['conta', 'cloud', 'Conta e sincronização', 'Conta Google, sincronização e cópias', syncHtml],
   ['compart', 'people', 'Conta compartilhada', sync.shared ? 'Ligada: vocês veem os mesmos dados' : 'Casal ou família: os mesmos dados em dois celulares', syncHtml ? shareHtml() : ''],
@@ -508,7 +554,7 @@ function openSettings(sec){
     <div class="btns foot"><button class="btn" onclick="openSettings('')">Voltar</button><button class="btn primary" onclick="closeForm()">Fechar</button></div>`
   : `<h3>Configurações</h3>
     <div class="setGrid">${S.map(([k, ic, t, d]) => `<button class="setTile" onclick="openSettings('${k}')"><span>${I(ic, 22)}</span><b>${t}</b><small>${d}</small></button>`).join('')}</div>
-    ${window.Android && Android.atualizar ? `<div class="btns"><button class="btn" onclick="toast('Procurando atualização…');Android.atualizar()">${I('refresh')}Procurar atualizações</button></div>` : WEB_APP ? `<div class="btns"><button class="btn" onclick="location.reload()">${I('refresh')}Procurar atualizações</button></div>` : ''}
+    ${(window.Android && Android.atualizar) || WEB_APP ? `<div class="btns"><button class="btn" onclick="procurarAtualizacao()">${I('refresh')}Procurar atualizações</button></div>` : ''}
     <div class="btns foot"><button class="btn primary" onclick="closeForm()">Fechar</button></div>
     <div class="hint" style="text-align:center" onclick="diagTap()">Minhas Finanças · versão ${APP_VERSION}</div>`);
   settingsOpen = true;
@@ -517,7 +563,25 @@ function openSettings(sec){
 async function setSkin(k){
   setPref('skin', k);
   if (k && window.Android && Android.setIconeApp && Android.icone() !== k
-    && await ask(`Trocar também o ícone do app para combinar com o tema ${SKINS[k][0]}?\n\nO Android fecha o app ao trocar o ícone: é só abrir de novo pelo ícone novo.`, 'Trocar o ícone')) Android.setIconeApp(k, 't', Android.iconeNome()); // o ícone do tema: as barras e o símbolo dele
+    && await ask(`Trocar também o ícone do app para combinar com o tema ${SKINS[k][0]}?\n\nO Android fecha o app ao trocar o ícone: é só abrir de novo pelo ícone novo.`, 'Trocar o ícone')) Android.setIconeApp(k, 't', Android.iconeNome()); // o ícone do tema: o mascote dele e as barras do app
+}
+// Nome livre para o app: o Android só troca o nome do app entre os que estão no APK; então o app pede à tela inicial
+// um atalho com o nome escrito pela pessoa e o ícone (cor e desenho) em uso.
+function askAtalho(){
+  settingsOpen = false; F = null;
+  showSheet(`<h3>Atalho com o seu nome</h3>
+    <div class="hint" style="margin-top:0">O atalho aparece na tela inicial com o nome que você escrever e este ícone. O Android pede sua confirmação e, em alguns celulares, põe um selo pequeno do app no canto do atalho.</div>
+    <div style="display:flex;justify-content:center;margin:8px 0 4px">${iconeSvg(Android.icone(), Android.iconeDesenho(), 76)}</div>
+    <label for="atNome">Nome</label>
+    <input id="atNome" type="text" maxlength="30" autocomplete="off" placeholder="Ex.: Meu cofre" value="${esc(sync.atalhoNome || (myName() ? 'Finanças de ' + myName() : ''))}" onkeydown="if(event.key==='Enter')atalhoCriar()">
+    <div class="btns foot"><button class="btn" onclick="openSettings('seguranca')">Voltar</button><button class="btn primary" onclick="atalhoCriar()">Criar atalho</button></div>`);
+}
+function atalhoCriar(){
+  const nome = document.getElementById('atNome').value.trim().slice(0, 30);
+  if (!nome) return tell('Escreva o nome do atalho.');
+  sync.atalhoNome = nome; saveSync();
+  if (Android.criarAtalho(nome, Android.icone(), Android.iconeDesenho())) openSettings('seguranca');
+  else tell('Esta tela inicial não aceita criar atalhos pelo app.');
 }
 // Guia do app (Configurações): todas as funções (GUIA, em js/guia.js), por assunto, com busca.
 function guideHtml(){
@@ -1250,19 +1314,42 @@ function tourDone(daConfig){
 const VER_KEY = 'financas-versao';
 // Atualização automática (só no APK; ver Updater no lado nativo). tipo: 'web' = telas novas baixadas, entram na próxima
 // abertura; 'apk' = é preciso instalar um APK novo (mudou a parte nativa); 'nada' e 'erro' = resposta à busca manual.
-async function onAtualizacao(tipo, versao, url, novas){
-  if (tipo === 'web'){
-    // Com algo aberto (formulário, outra tela), só avisa; a versão nova entra na próxima abertura.
-    if (sheetOpen() || !document.getElementById('gate').hidden) toast(`Versão ${versao} baixada. Ela entra na próxima vez que você abrir o app.`);
-    else openUpdate(versao, novas, '');
-  }
-  else if (tipo === 'nada') toast('O app já está na versão mais recente.');
-  else if (tipo === 'erro') toast('Não consegui procurar atualizações (sem internet?).');
-  else if (tipo === 'apk' && sync.apkAsk !== versao + dayStr(Date.now())){ // no máximo uma vez por dia
-    sync.apkAsk = versao + dayStr(Date.now()); saveSync();
-    if (!sheetOpen() && document.getElementById('gate').hidden) return openUpdate(versao, novas, url);
-    if (await ask(`Saiu a versão ${versao} do app. Esta atualização precisa ser instalada: o Android vai baixar o arquivo e pedir sua confirmação.\n\nSeus dados continuam no aparelho e na sua conta.`, 'Baixar')) Android.abrir(url);
-  }
+// Um aviso de cada vez: se outra tela estiver aberta (novidades, tutorial, login, bloqueio), o aviso de versão nova
+// espera ela fechar (updPend/updFlush) em vez de aparecer por cima. Com um formulário aberto, só um recado curto.
+// updManual = a pessoa tocou em "Procurar atualizações": aí a resposta aparece sempre, mesmo que seja "já está em dia".
+let updManual = false, updPend = null;
+function procurarAtualizacao(){
+  if (!(window.Android && Android.atualizar)) return webProcurar();
+  updManual = true; toast('Procurando atualização…'); Android.atualizar();
+}
+function onAtualizacao(tipo, versao, url, novas){
+  const manual = updManual; updManual = false;
+  if (tipo === 'nada') return tell(`Você já está na versão mais recente (${APP_VERSION}).`);
+  if (tipo === 'erro') return tell('Não consegui procurar atualizações. Confira a internet e tente de novo.');
+  if (tipo !== 'web' && tipo !== 'apk') return;
+  if (tipo === 'apk' && !manual && sync.apkAsk === versao + dayStr(Date.now())) return; // sozinho, no máximo uma vez por dia
+  if (tipo === 'web' && !manual && F) return toast(`Versão ${versao} baixada. Ela entra na próxima vez que você abrir o app.`);
+  updPend = {versao, novas, url:tipo === 'apk' ? url : ''};
+  updFlush(manual);
+}
+const updOcupado = () => sheetOpen() || ['gate', 'lockAsk'].some(id => !document.getElementById(id).hidden) || !!document.getElementById('abre');
+// Mostra o aviso pendente quando a tela estiver livre (agora = pedido pela pessoa: troca a tela das Configurações).
+function updFlush(agora){
+  clearTimeout(updFlush.t);
+  if (!updPend) return;
+  if (agora !== true && updOcupado()){ updFlush.t = setTimeout(updFlush, 1200); return; }
+  const u = updPend; updPend = null;
+  if (u.url){ sync.apkAsk = u.versao + dayStr(Date.now()); saveSync(); }
+  openUpdate(u.versao, u.novas, u.url);
+}
+// Versão web: confere a versão publicada; se for mais nova, recarrega (o app busca os arquivos novos na rede).
+async function webProcurar(){
+  toast('Procurando atualização…');
+  try {
+    const j = await (await fetch('https://raw.githubusercontent.com/GabrielGior/minhas-financas-app/main/atualizacao/versao.json?t=' + Date.now(), {cache:'no-store'})).json();
+    if (verNum(j.versao) <= verNum(APP_VERSION)) return tell(`Você já está na versão mais recente (${APP_VERSION}).`);
+    if (await ask(`Saiu a versão ${j.versao}. Atualizar agora? Seus dados não mudam.`, 'Atualizar')) location.reload();
+  } catch(e){ tell('Não consegui procurar atualizações. Confira a internet e tente de novo.'); }
 }
 const newsHtml = lista => lista.map(([t, s]) => `<div class="item" style="cursor:default"><span class="in">${I('sparkle', 22)}</span><div class="mid"><b style="white-space:normal">${esc(t)}</b><small>${esc(s)}</small></div></div>`).join('');
 // Aviso de versão nova, com a prévia do que vem nela. url vazio: as telas já foram baixadas e basta recarregar;

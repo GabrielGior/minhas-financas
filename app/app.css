@@ -511,3 +511,31 @@ html[data-fun=on] .ico:active,html[data-fun=on] .item:active .ico{animation:pigP
 [data-skin=espartano] .card{border:1px solid var(--line)}
 [data-skin=espartano] h1{text-transform:uppercase;letter-spacing:.08em}
 [data-skin=espartano] #app.enter{animation:skEspartano .2s ease-out}
+/* Tela de abertura (ver abertura() em js/arte.js): cobre o app por um instante, na cor escolhida ou do tema especial. */
+#abre{position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;overflow:hidden}
+#abre.fim{animation:abreFim .4s ease-in forwards;pointer-events:none}
+@keyframes abreFim{to{opacity:0;transform:scale(1.14)}}
+#abreIn{text-align:center}
+#abreIn svg{display:block;margin:0 auto;filter:drop-shadow(0 10px 18px rgba(0,0,0,.28))}
+#abreIn b{display:block;margin-top:16px;font-size:22px;letter-spacing:.2px;animation:abreTxt .4s .3s ease-out both}
+@keyframes abreTxt{from{opacity:0;transform:translateY(10px)}}
+.abreBar{transform-box:fill-box;transform-origin:bottom;animation:abreSobe .5s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes abreSobe{from{transform:scaleY(0)}}
+/* O mascote chega de um jeito por família de tema: queda (padrão), velocidade, magia, tecnologia, força e calma. */
+.abreM{animation:abreCai .6s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes abreCai{from{opacity:0;transform:translateY(-70px) scale(.7)}}
+#abre[data-g=vel] .abreM{animation:abreVel .55s cubic-bezier(.1,.9,.3,1) both}
+@keyframes abreVel{from{opacity:0;transform:translateX(-140%) skewX(-18deg)}60%{opacity:1;transform:translateX(7%) skewX(7deg)}}
+#abre[data-g=magia] .abreM{animation:abreMagia .65s cubic-bezier(.2,1.2,.4,1) both}
+@keyframes abreMagia{from{opacity:0;transform:scale(0) rotate(-220deg)}}
+#abre[data-g=tec] .abreM{animation:abreTec .6s steps(7) both}
+@keyframes abreTec{0%{opacity:0;clip-path:inset(0 0 100% 0)}35%{opacity:1;clip-path:inset(0 0 50% 0);transform:translateX(-7px)}55%{transform:translateX(7px)}75%{clip-path:inset(0 0 10% 0);transform:translateX(-3px)}100%{clip-path:inset(0);transform:none}}
+#abre[data-g=forca] .abreM{animation:abreForca .6s cubic-bezier(.3,0,.2,1) both}
+@keyframes abreForca{0%{opacity:0;transform:translateY(-160px) scale(1.6)}50%{opacity:1;transform:none}64%{transform:translate(-6px,3px) rotate(-2deg)}78%{transform:translate(5px,-2px) rotate(1.5deg)}90%{transform:translate(-2px,0)}}
+#abre[data-g=calma] .abreM{animation:abreCalma .7s ease-out both}
+@keyframes abreCalma{from{opacity:0;transform:translateY(46px)}}
+/* Desenhos do ícone do app (Configurações > Ícone e bloqueio): escolhe-se pela figura. */
+.icoGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.icoGrid button{display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 2px;border:2px solid transparent;border-radius:16px;background:var(--bg);color:var(--text);font:inherit;cursor:pointer}
+.icoGrid button.on{border-color:var(--brand)}
+.icoGrid small{font-size:11.5px;color:var(--muted)}
