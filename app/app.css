@@ -483,3 +483,31 @@ html[data-fun=on] .ico:active,html[data-fun=on] .item:active .ico{animation:pigP
 [data-skin=dragao] .hero{box-shadow:0 0 22px color-mix(in srgb,var(--brand2) 40%,transparent);border:1px solid #14532d}
 [data-skin=dragao] .card{border:1px solid var(--line)}
 [data-skin=dragao] #app.enter{animation:skDragao .24s cubic-bezier(.2,.9,.3,1)}
+/* Temas Grand Prix, Corrida de rua, Drift, Fusca de corrida, Vikings e Espartano */
+@keyframes skGrandprix{from{opacity:0;transform:translateX(60px)}}
+@keyframes skRua{0%{opacity:0;transform:scale(1.05);filter:brightness(1.5)}100%{filter:none}}
+@keyframes skDrift{0%{opacity:0;transform:translateX(46px) rotate(2.500deg)}70%{transform:translateX(-5px) rotate(-.500deg)}}
+@keyframes skFusca{0%{opacity:0;transform:translateY(14px)}55%{transform:translateY(-5px)}80%{transform:translateY(2px)}}
+@keyframes skVikings{from{opacity:0;transform:translateY(26px)}}
+@keyframes skEspartano{from{opacity:0;transform:scale(1.06)}}
+[data-skin=grandprix] h1,[data-skin=grandprix] h2{font-style:italic}
+[data-skin=grandprix] .hero{border-bottom:5px solid #1d4ed8}
+[data-skin=grandprix] #app.enter{animation:skGrandprix .18s cubic-bezier(.2,.9,.3,1)}
+[data-skin=rua] .hero{box-shadow:0 10px 26px -8px color-mix(in srgb,var(--brand2) 60%,transparent);border:1px solid #44403c}
+[data-skin=rua] .card{border:1px solid var(--line)}
+[data-skin=rua] h1{text-transform:uppercase;letter-spacing:.03em}
+[data-skin=rua] #app.enter{animation:skRua .22s ease-out}
+[data-skin=drift] body{background:radial-gradient(circle at 84% 90px,rgba(239,68,68,.35) 0 54px,transparent 56px),var(--bg)}
+[data-skin=drift] .card{border:1px solid var(--line)}
+[data-skin=drift] #app.enter{animation:skDrift .26s ease-out}
+[data-skin=fusca] .hero{background:linear-gradient(90deg,transparent calc(50% - 21px),#b91c1c calc(50% - 21px) calc(50% - 8px),#fff calc(50% - 8px) calc(50% + 8px),#1d4ed8 calc(50% + 8px) calc(50% + 21px),transparent calc(50% + 21px)) top/100% 5px no-repeat,linear-gradient(135deg,var(--hero1),var(--hero2))}
+[data-skin=fusca] .card{border:1px solid var(--line);box-shadow:none}
+[data-skin=fusca] #app.enter{animation:skFusca .3s ease-out}
+[data-skin=vikings] body,[data-skin=vikings] button,[data-skin=vikings] input{font-family:Georgia,"Times New Roman",serif}
+[data-skin=vikings] .card,[data-skin=vikings] .hero{border:1px solid var(--line)}
+[data-skin=vikings] h1{letter-spacing:.05em;text-transform:uppercase}
+[data-skin=vikings] #app.enter{animation:skVikings .24s cubic-bezier(.2,.9,.3,1)}
+[data-skin=espartano] .hero{border-top:4px solid #fbbf24}
+[data-skin=espartano] .card{border:1px solid var(--line)}
+[data-skin=espartano] h1{text-transform:uppercase;letter-spacing:.08em}
+[data-skin=espartano] #app.enter{animation:skEspartano .2s ease-out}

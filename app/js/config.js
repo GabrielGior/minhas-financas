@@ -183,7 +183,28 @@ const MASCOTES = {
   dragao:['#4b5563', '#1f2937', '#111827', '#030712', '#4ade80', '#a3e635', '#9ca3af', {semFenda:true,
     orelhas:'<path d="M24 62C6 52 2 30 7 20c8 9 18 14 27 24zM96 62c18-10 22-32 17-42-8 9-18 14-27 24z" fill="#1f2937"/><path d="M34 42 20 12l26 16zM86 42l14-30-26 16z" fill="#111827"/><path d="M50 30l-4-14 10 9zM70 30l4-14-10 9z" fill="#111827"/>',
     focinho:'<circle cx="55" cy="70" r="2" fill="#030712"/><circle cx="65" cy="70" r="2" fill="#030712"/>',
-    sob:'<ellipse cx="43" cy="55" rx="9" ry="8" fill="#030712"/><ellipse cx="77" cy="55" rx="9" ry="8" fill="#030712"/>'}]
+    sob:'<ellipse cx="43" cy="55" rx="9" ry="8" fill="#030712"/><ellipse cx="77" cy="55" rx="9" ry="8" fill="#030712"/>'}],
+  // Piloto das antigas: capacete branco de faixa vermelha, viseira azul e lenço.
+  grandprix:['#ffc6d9', '#f58fb3', '#ec7aa3', '#c2527c', '#ff5f95', '#4a2338', '#b8456f', {semFenda:true,
+    sobre:'<path d="M21 52a39 34 0 0 1 78 0z" fill="#f8fafc"/><path d="M54 18.500h12V50H54z" fill="#dc2626"/><path d="M21 52h78" stroke="#1d4ed8" stroke-width="4"/><rect x="27" y="46" width="66" height="19" rx="9.500" fill="#93c5fd" opacity=".35" stroke="#1e3a8a" stroke-width="2.400"/><path d="M30 92c14 8 46 8 60 0l3 8c-16 8-50 8-66 0z" fill="#dc2626"/><path d="M24 97l-12 8 14 0z" fill="#b91c1c"/>'}],
+  // Piloto de rua: boné para trás, óculos escuros e corrente dourada.
+  rua:['#ffc6d9', '#f58fb3', '#ec7aa3', '#c2527c', '#ff5f95', '#4a2338', '#b8456f', {semFenda:true,
+    sobre:'<path d="M24 46a36 30 0 0 1 72 0z" fill="#1c1917"/><path d="M24 42h72v5H24z" fill="#fb923c"/><path d="M90 44l18 2-16 6z" fill="#1c1917"/><rect x="32" y="49" width="24" height="12" rx="3" fill="#0c0a09"/><rect x="64" y="49" width="24" height="12" rx="3" fill="#0c0a09"/><path d="M56 53h8" stroke="#0c0a09" stroke-width="3"/><path d="M36 51h8" stroke="#a3e635" stroke-width="1.600" stroke-linecap="round"/><path d="M38 92q22 13 44 0" stroke="#fbbf24" stroke-width="3.500" fill="none" stroke-dasharray="2.500 3" stroke-linecap="round"/>'}],
+  // Piloto de drift: faixa na testa com o sol vermelho.
+  drift:['#ffc6d9', '#f58fb3', '#ec7aa3', '#c2527c', '#ff5f95', '#4a2338', '#b8456f', {
+    sobre:'<path d="M23 46q37-13 74 0v8q-37-13-74 0z" fill="#f8fafc"/><circle cx="60" cy="43" r="5.500" fill="#dc2626"/><path d="M96 47l12-5-3 12zM97 50l9 8-10-2z" fill="#f8fafc"/><path d="M36 49l10-4M84 49l-10-4" stroke="#4a2338" stroke-width="2.200" stroke-linecap="round"/>'}],
+  // Fusquinha de corrida: bege, com as faixas e os óculos de piloto antigo na testa.
+  fusca:['#fff7e6', '#f3e3bf', '#e2cb9a', '#a8894e', '#f59e0b', '#3b2f1a', '#a8894e', {semFenda:true,
+    sob:'<path d="M52 28.500h5V96h-5z" fill="#dc2626" opacity=".85"/><path d="M57 28h6v68h-6z" fill="#fff" opacity=".9"/><path d="M63 28.500h5V96h-5z" fill="#1d4ed8" opacity=".85"/>',
+    sobre:'<path d="M24 40q36-12 72 0" stroke="#3b2f1a" stroke-width="3.500" fill="none"/><circle cx="46" cy="36" r="8" fill="#bae6fd" stroke="#3b2f1a" stroke-width="2.600"/><circle cx="74" cy="36" r="8" fill="#bae6fd" stroke="#3b2f1a" stroke-width="2.600"/><circle cx="90" cy="80" r="8" fill="#fff" stroke="#3b2f1a" stroke-width="1.500"/><text x="90" y="83.500" text-anchor="middle" font-size="9" font-weight="800" font-family="sans-serif" fill="#3b2f1a">12</text>'}],
+  // Viking: elmo de ferro com chifres e barba loira trançada.
+  vikings:['#ffc6d9', '#f58fb3', '#ec7aa3', '#c2527c', '#ff5f95', '#4a2338', '#b8456f', {semFenda:true,
+    orelhas:'<path d="M28 42C12 38 8 22 12 10c6 11 15 16 24 20zM92 42c16-4 20-20 16-32-6 11-15 16-24 20z" fill="#fef3c7"/>',
+    sob:'<path d="M27 70c2 32 64 32 66 0-6 12-18 15-33 15s-27-3-33-15z" fill="#eab308"/><path d="M44 96l-2 10M52 98l-1 9M68 98l1 9M76 96l2 10" stroke="#ca8a04" stroke-width="3" stroke-linecap="round"/>',
+    sobre:'<path d="M24 48a36 30 0 0 1 72 0z" fill="#94a3b8"/><path d="M24 48h72" stroke="#64748b" stroke-width="5"/><path d="M57 19h6v29h-6z" fill="#64748b"/><circle cx="36" cy="44" r="2" fill="#e2e8f0"/><circle cx="84" cy="44" r="2" fill="#e2e8f0"/>'}],
+  // Espartano: elmo de bronze com crista vermelha e protetores.
+  espartano:['#ffc6d9', '#f58fb3', '#ec7aa3', '#c2527c', '#ff5f95', '#4a2338', '#b8456f', {semFenda:true,
+    sobre:'<path d="M53 2h14l3 30H50z" fill="#dc2626"/><path d="M50 8h20M50.500 16h19M51 24h18" stroke="#991b1b" stroke-width="1.600"/><path d="M24 48a36 30 0 0 1 72 0z" fill="#b45309"/><path d="M24 48v24l9 7V48zM96 48v24l-9 7V48z" fill="#b45309"/><path d="M56.500 46h7v20l-3.500 4-3.500-4z" fill="#92400e"/><path d="M24 48h72" stroke="#fbbf24" stroke-width="2.500"/>'}]
 };
 // Mascote visto de frente; mood: 'feliz', 'ok' ou 'triste'.
 function pigSvg(mood){
@@ -267,7 +288,31 @@ const FUN_TEMA = {
   dragao:{
     feliz:['Voo tranquilo: sobram {v}, {nome}.', 'Tesouro protegido: {v} guardados.', 'Nenhum invasor no ninho de moedas.', 'Rugido de alegria: mês no azul!', 'Planando com {v} de folga.', 'Dragão bem alimentado, bolso também.'],
     ok:['Céu limpo sobre a ilha, {nome}.', 'De olho no tesouro.', 'Pousou algum gasto hoje? Anota.', 'Asas abertas, vento a favor.', 'Tudo calmo na caverna.', 'Patrulha sem novidades.'],
-    triste:['Fogo no orçamento: faltam {v}.', 'O tesouro encolheu {v}, {nome}.', 'Tempestade à frente. Faltam {v}.', 'Queimamos {v} a mais.', 'Hora de voar baixo nos gastos.', 'O ninho precisa de mais moedas.']}
+    triste:['Fogo no orçamento: faltam {v}.', 'O tesouro encolheu {v}, {nome}.', 'Tempestade à frente. Faltam {v}.', 'Queimamos {v} a mais.', 'Hora de voar baixo nos gastos.', 'O ninho precisa de mais moedas.']},
+  grandprix:{
+    feliz:['Vitória de ponta a ponta: sobram {v}!', 'Bandeira quadriculada, {nome}: mês no azul.', 'Largada perfeita e {v} no tanque.', 'Campeão da economia desta temporada.', 'Volta de honra com {v} de sobra.', 'Motor cantando, bolso sorrindo.'],
+    ok:['Reta longa, {nome}. Ritmo constante.', 'Conferindo os mostradores do orçamento.', 'Passou no box hoje? Anota o gasto.', 'Nada de sustos na pista.', 'Seguimos no vácuo dos gastos.', 'Corrida limpa até aqui.'],
+    triste:['Rodamos na curva: faltam {v}.', 'Bandeira amarela, {nome}. Faltam {v}.', 'O motor pediu arrego: {v} atrás.', 'Abandonar? Jamais. Mas faltam {v}.', 'Hora de trocar a estratégia.', 'Perdemos posições para os boletos.']},
+  rua:{
+    feliz:['Quarto de milha vencido: sobram {v}.', 'Nitro guardado, {nome}: {v} no bolso.', 'Família, contas pagas e {v} sobrando.', 'Arrancada limpa neste mês.', 'Motor turbinado, carteira também.', 'Ganhamos o racha contra os boletos.'],
+    ok:['Rodando na boa, {nome}.', 'Sem pisar fundo no cartão.', 'Abasteceu hoje? Lança o gasto.', 'Noite calma no asfalto.', 'De olho no retrovisor dos gastos.', 'Marcha lenta, tudo sob controle.'],
+    triste:['Queimamos a largada: faltam {v}.', 'Acabou o nitro, {nome}. Faltam {v}.', 'Motor fundido no orçamento: {v}.', 'Perdemos o racha deste mês.', 'Hora de voltar pra garagem e rever os gastos.', 'O tanque secou. Faltam {v}.']},
+  drift:{
+    feliz:['Curva perfeita: sobram {v}, {nome}.', 'Deslizando com {v} de folga.', 'O rei do drift fecha no azul.', 'Fumaça nos pneus, não na carteira.', 'Controle total: {v} guardados.', 'Descida da montanha sem um arranhão.'],
+    ok:['Carro alinhado, {nome}.', 'Entrando na curva com calma.', 'Anotou o gasto antes da próxima curva?', 'Traseira firme, orçamento também.', 'Noite tranquila na cidade.', 'Ajustando o ponto de frenagem.'],
+    triste:['Saímos de traseira: faltam {v}.', 'Bateu no muro, {nome}. Faltam {v}.', 'Pneus carecas no orçamento: {v}.', 'Curva fechada demais este mês.', 'Hora de treinar o controle dos gastos.', 'Perdemos a traseira. Faltam {v}.']},
+  fusca:{
+    feliz:['Bip-bip! Sobraram {v}, {nome}.', 'Pequeno, valente e com {v} no porta-luvas.', 'Cruzamos a linha na frente dos boletos.', 'Motor traseiro, saldo dianteiro.', 'Hoje eu empino de alegria.', 'Quem diria: o fusquinha venceu o mês.'],
+    ok:['Rodando redondinho, {nome}.', 'Devagar e sempre a gente chega.', 'Parou pra abastecer? Anota aí.', 'Nenhum barulho estranho no orçamento.', 'Farol aceso, olho nos gastos.', 'Na estrada, sem pressa.'],
+    triste:['Enguiçou: faltam {v}.', 'Preciso de um empurrãozinho, {nome}. Faltam {v}.', 'Furou o pneu do orçamento: {v}.', 'Subida difícil este mês.', 'Vamos pra oficina rever os gastos.', 'Engasguei. Faltam {v}.']},
+  vikings:{
+    feliz:['Saque glorioso: sobram {v}, {nome}!', 'O baú está cheio. Skol!', 'Os deuses sorriem: {v} de folga.', 'Banquete garantido neste mês.', 'Velas ao vento e ouro no porão.', 'Digno de uma saga: mês no azul.'],
+    ok:['Mar calmo no fiorde, {nome}.', 'Remando no ritmo.', 'Algum gasto na travessia? Anota.', 'O escudo está firme.', 'Sem tempestade à vista.', 'O clã está em paz com as contas.'],
+    triste:['O baú foi saqueado: faltam {v}.', 'Inverno duro, {nome}. Faltam {v}.', 'Naufragaram {v} moedas.', 'Os corvos trazem más notícias.', 'Hora de afiar o machado nos gastos.', 'Faltam {v}. À luta!']},
+  espartano:{
+    feliz:['Vitória! Sobram {v}, {nome}.', 'Disciplina dá resultado: {v} guardados.', 'O orçamento resistiu como uma muralha.', 'Batalha vencida este mês.', 'Escudo erguido, saldo positivo.', 'Honra e {v} no cofre.'],
+    ok:['Formação mantida, {nome}.', 'Guardando a passagem do orçamento.', 'Algum gasto em combate? Anota.', 'Sem baixas por enquanto.', 'Vigília tranquila.', 'Treino diário: anotar tudo.'],
+    triste:['Perdemos terreno: faltam {v}.', 'Batalha dura, {nome}. Faltam {v}.', 'O inimigo levou {v}.', 'Recuar para reagrupar os gastos.', 'Um guerreiro não desiste: vamos rever.', 'A muralha cedeu. Faltam {v}.']}
 };
 // Bloco do Resumo: o porquinho reage ao saldo do mês atual. Tocar nele troca a fala.
 function funMascot(){
