@@ -317,6 +317,7 @@ function viewGastos(){
   </div>
   <div id="expList">${expListHtml()}</div>`,
   acoes: () => `<div class="btns"><button class="btn" onclick="document.getElementById('stmt').click()">${I('upload')}Importar extrato</button><button class="btn" onclick="shown(printReport)">${I('doc')}Relatório (PDF)</button></div>
+  <div class="btns"><button class="btn" onclick="openSheetLink()">${I('doc')}${sheetId() ? 'Planilha do Google (ligada)' : 'Exportar para uma planilha do Google ligada ao app'}</button></div>
   <div class="btns" style="margin-bottom:12px"><button class="btn" onclick="exportCsv()">${I('download')}Exportar planilha de ${m.slice(0,4)} (CSV)</button></div>`
   };
   return `${head('Gastos', 'gastos')}${gastosSeg()}

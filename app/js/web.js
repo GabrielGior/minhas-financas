@@ -37,6 +37,7 @@ if (WEB_APP) (() => {
     const email = document.getElementById('shEmail'), code = document.getElementById('shCode');
     if (fam && email) return {k:sync.shared ? 'invite' : 'start', v:email.value};
     if (fam && code) return {k:'join', v:code.value};
+    if (fam && document.getElementById('shCreate')) return {k:'sheet'};
     return {k:'sync'};
   }
 
@@ -97,13 +98,14 @@ if (WEB_APP) (() => {
     const d = depois; depois = null;
     if (d.erro){
       if (d.k === 'login') document.getElementById('gateMsg').textContent = 'Não foi possível entrar com o Google. Tente de novo.';
-      else if (['start', 'invite', 'join'].includes(d.k)) famNegado();
+      else if (['start', 'invite', 'join', 'sheet'].includes(d.k)) famNegado();
       return; // renovação silenciosa que falhou: o status da sincronização avisa que é preciso entrar de novo
     }
     if (d.k === 'login') loginGoogle();
     else if (d.k === 'start') shareStart(d.v, true);
     else if (d.k === 'invite') shareInvite(d.v);
     else if (d.k === 'join') shareJoin(d.v);
+    else if (d.k === 'sheet') sheetCreate(true);
     else syncNow();
   };
 })();

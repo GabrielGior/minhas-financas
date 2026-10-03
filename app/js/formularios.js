@@ -311,13 +311,20 @@ function fieldHtml(f){
   if (f.type === 'icons') return `<input id="${id}" type="hidden"><div class="iconGrid">${Object.entries(ICON_NAMES).map(([k, n]) => `<button type="button" data-i="${k}" aria-label="${n}" title="${n}" onclick="pickIcon('${f.k}','${k}')">${I(k, 23)}</button>`).join('')}</div>`;
   if (f.type === 'colors') return `<input id="${id}" type="hidden"><div class="swatches colorGrid">${CAT_COLORS.map(c => `<button type="button" class="sw" data-c="${c}" style="background:${c}" aria-label="Cor ${c}" onclick="setField('${f.k}','${c}')"></button>`).join('')}</div>`;
   if (f.type === 'month' || f.type === 'date') return `<input id="${id}" type="hidden"><button type="button" class="pickBtn" id="p_${f.k}" onclick="pickField('${f.k}')"></button>`;
-  if (f.big) return `<div class="bigVal"><span>R$</span><input id="${id}" type="text" inputmode="decimal" placeholder="0,00" autocomplete="off"></div>`;
-  return `<input id="${id}" type="text" ${f.type === 'money' || f.type === 'num' ? 'inputmode="decimal"' : f.type === 'int' ? 'inputmode="numeric"' : ''} placeholder="${f.type === 'money' ? '0,00' : f.ph || ''}" autocomplete="off">` +
+  // Valor de um gasto em vermelho e de um ganho em verde, para confirmar o que está sendo lançado.
+  const cor = !['value', 'total'].includes(f.k) || !F ? '' : F.col === 'incomes' ? 'in' : ['expenses', 'installments'].includes(F.col) ? 'out' : '';
+  if (f.big) return `<div class="bigVal ${cor}"><span>R$</span><input id="${id}" type="text" inputmode="numeric" placeholder="0,00" autocomplete="off"></div>`;
+  return `<input id="${id}" type="text" ${f.type === 'money' ? `inputmode="numeric" class="${cor}"` : f.type === 'num' ? 'inputmode="decimal"' : f.type === 'int' ? 'inputmode="numeric"' : ''} placeholder="${f.type === 'money' ? '0,00' : f.ph || ''}" autocomplete="off">` +
     (f.type === 'asset' ? '<div id="assetList"></div>' : '') +
     (f.sug ? `<div class="chips sug" id="sug_${f.k}" hidden></div>` : '');
 }
 // Cores oferecidas para uma categoria (as mesmas famílias das categorias de fábrica).
 const CAT_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#ef4444', '#f97316', '#f59e0b', '#eab308', '#65a30d', '#16a34a', '#14b8a6', '#0ea5e9', '#2563eb', '#b45309', '#64748b'];
+// Texto digitado num campo de dinheiro → valor com os centavos: só os números contam, os dois últimos são os centavos.
+function centsMask(s){
+  const d = String(s).replace(/\D/g, '').replace(/^0+/, '').slice(0, 13);
+  return d ? (+d / 100).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '';
+}
 function setField(k, v){ const el = document.getElementById('f_' + k); el.value = v; el.oninput(); }
 
 // Redesenha os componentes de lista (até 4 opções: botões lado a lado; mais que isso: botão que abre o seletor), mês e data.
@@ -423,6 +430,9 @@ function openForm(col, item, preset = {}){
     el.value = vals[f.k] ?? '';
     // Valor atual que não está mais na lista (ex.: categoria escondida): entra como opção para não se perder.
     if (f.type === 'select' && vals[f.k] && el.value !== vals[f.k]){ el.add(new Option(f.k === 'cat' ? ((CAT_GASTO[vals.cat] || CAT_GANHO[vals.cat] || [0, vals.cat])[1]) : vals[f.k], vals[f.k])); el.value = vals[f.k]; }
+    // Valores em dinheiro: a pessoa digita só os números e a vírgula dos centavos entra sozinha (1 → 0,01; 1234 → 12,34).
+    // Vale para o que é digitado; valores postos pelo app (setField, comprovante lido) já chegam prontos.
+    if (f.type === 'money') el.addEventListener('input', () => { el.value = centsMask(el.value); el.setSelectionRange(el.value.length, el.value.length); });
     el.oninput = el.onchange = () => {
       F.vals[f.k] = el.value; F.touched[f.k] = true;
       if (cfg.onChange) cfg.onChange(f.k, F.vals, !F.id, F.touched);

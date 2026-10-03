@@ -393,3 +393,7 @@ html[data-fun=on] .ico:active,html[data-fun=on] .item:active .ico{animation:pigP
 .lvls i.on{background:var(--brand)}
 /* Folha ou seletor fechando (ainda deslizando para baixo) não recebe toques: evita acionar duas telas de uma vez */
 .sheet:not(.open){pointer-events:none}
+
+/* Valor no formulário: vermelho no gasto, verde no ganho */
+.bigVal.out input,input.out{color:var(--out)}
+.bigVal.in input,input.in{color:var(--in)}

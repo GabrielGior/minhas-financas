@@ -235,12 +235,15 @@ function openSettings(sec){
   F = null;
   // [chave, ícone, título, descrição, conteúdo ('' = categoria não existe neste aparelho)]
   const S = [
-  ['perfil', 'person', 'Perfil', 'Seu nome, saudação e tutorial', `
+  ['perfil', 'person', 'Perfil', 'Seu nome, tutorial e atualizações', `
     <label>Seu nome</label>
     <div class="hint" style="margin-top:0">${myName() ? `${greeting()} O nome aparece no topo do Resumo e nas mensagens do app.` : 'Ainda sem nome. Ele aparece no topo do Resumo e nas mensagens do app.'}${sync.shared ? ' Na conta compartilhada, cada pessoa vê o próprio nome no seu celular.' : ''}</div>
     <div class="btns"><button class="btn" onclick="askName(true)">${I('person')}${myName() ? 'Trocar o nome' : 'Informar o nome'}</button></div>
     <label>Ajuda</label>
-    <div class="btns" style="margin-top:0"><button class="btn" onclick="openTour(0, true)">${I('book')}Ver o tutorial</button><button class="btn" onclick="maybeNews(true)">${I('sparkle')}Novidades da versão</button></div>`],
+    <div class="btns" style="margin-top:0"><button class="btn" onclick="openTour(0, true)">${I('book')}Ver o tutorial</button><button class="btn" onclick="maybeNews(true)">${I('sparkle')}Novidades da versão</button></div>
+    ${window.Android && Android.atualizar ? `<label>Atualizações</label>
+    <div class="hint" style="margin-top:0">Versão ${APP_VERSION}. O app procura atualizações sozinho ao abrir e as aplica na abertura seguinte.</div>
+    <div class="btns"><button class="btn" onclick="toast('Procurando atualização…');Android.atualizar()">${I('refresh')}Procurar atualização agora</button></div>` : ''}`],
   ['aparencia', 'sun', 'Aparência', 'Idioma, tema, cores, texto e modo divertido', `
     <label>Idioma</label>
     <div class="btns" style="margin-top:0">${Object.entries(LANGS).map(([k, v]) => `<button class="btn ${lang() === k ? 'primary' : ''}" style="padding:11px 4px" onclick="setLang('${k}')">${v}</button>`).join('')}</div>
@@ -304,6 +307,8 @@ function openSettings(sec){
     ${archHtml()}
     <label>Lixeira</label>
     <div class="btns" style="margin-top:0"><button class="btn" onclick="openTrash()">${I('trash')}Lançamentos excluídos (${db.trash.length})</button></div>
+    <label>Planilha do Google</label>
+    <div class="btns" style="margin-top:0"><button class="btn" onclick="openSheetLink()">${I('doc')}${sheetId() ? 'Planilha ligada ao app' : 'Criar planilha ligada ao app'}</button></div>
     <label>Backup em arquivo</label>
     <div class="btns" style="margin-top:0"><button class="btn" onclick="exportData()">${I('download')}Exportar</button><button class="btn" onclick="document.getElementById('file').click()">${I('upload')}Importar</button></div>
     ${sync.fileAt ? `<div class="hint">Cópia automática semanal: a última foi em ${new Date(sync.fileAt).toLocaleDateString('pt-BR')}, na pasta <span style="overflow-wrap:anywhere">${esc(sync.fileDir || '')}</span> do celular (são guardadas as 8 mais recentes; a pasta é apagada se o app for desinstalado).</div>` : ''}
@@ -762,6 +767,7 @@ async function syncNow(interactive){
     clearTimeout(retryTimer);
     await dailyBackup().catch(() => {}); // a cópia diária não pode derrubar a sincronização
     await syncPhotos().catch(() => {});  // comprovantes pendentes: se falhar, ficam na fila para a próxima vez
+    await sheetSync().catch(() => {});   // planilha do Google ligada ao app (se houver)
   } catch(e){
     if (e.status !== 0 && e.status !== -1) logErr('sincronizar', e.status ? e.status + ' ' + String(e.text).slice(0, 300) : e);
     sync.err = e.status === -3 ? 'Os dados da conta foram gravados por uma versão mais nova do app. Atualize o app neste aparelho.'
@@ -987,12 +993,13 @@ function askName(daConfig){
   settingsOpen = false; F = null;
   const sugestao = db.prefs.name || (window.Android && Android.nome ? Android.nome() : '');
   nameGreet = db.prefs.greet || 'e';
-  const opcoes = () => [['o', 'Bem-vindo'], ['a', 'Bem-vinda'], ['e', 'Boas-vindas']].map(([k, t]) => `<button type="button" class="btn ${nameGreet === k ? 'primary' : ''}" style="padding:11px 4px" onclick="nameGreet='${k}';this.parentNode.querySelectorAll('.btn').forEach(b=>b.classList.toggle('primary',b===this))">${t}</button>`).join('');
+  // A saudação do topo sai do sexo informado: "Bem-vindo", "Bem-vinda" ou, sem informar, "Boas-vindas".
+  const opcoes = () => [['o', 'Masculino'], ['a', 'Feminino'], ['e', 'Prefiro não dizer']].map(([k, t]) => `<button type="button" class="btn ${nameGreet === k ? 'primary' : ''}" style="padding:11px 4px" onclick="nameGreet='${k}';this.parentNode.querySelectorAll('.btn').forEach(b=>b.classList.toggle('primary',b===this))">${t}</button>`).join('');
   showSheet(`<h3>Como você quer ser chamado?</h3>
     <div class="hint" style="margin-top:0">O nome aparece no topo do Resumo e nas mensagens do app. Fica só neste app: numa conta compartilhada, cada pessoa vê o próprio nome no seu celular.</div>
     <label for="nmIn">Seu nome</label>
     <input id="nmIn" type="text" maxlength="30" autocomplete="given-name" value="${esc(sugestao)}" onkeydown="if(event.key==='Enter')nameSave(${!!daConfig})">
-    <label>Saudação no topo</label>
+    <label>Sexo</label>
     <div class="btns" style="margin-top:0">${opcoes()}</div>
     <div class="err" id="nmErr"></div>
     <div class="btns foot">${daConfig ? `<button class="btn" onclick="openSettings('perfil')">Cancelar</button>` : ''}<button class="btn primary" onclick="nameSave(${!!daConfig})">${daConfig ? 'Salvar' : 'Continuar'}</button></div>`);
@@ -1032,12 +1039,26 @@ function tourDone(daConfig){
 // Novidades: mostradas uma vez quando o app abre numa versão diferente da última usada neste aparelho.
 const VER_KEY = 'financas-versao';
 const NOVIDADES = [
+  ['Planilha do Google ligada ao app', 'Em Gastos ou em Configurações › Dados e ajustes: o app cria uma planilha na sua conta Google. O que você lançar no app aparece nela, e o que escrever nela aparece no app.'],
+  ['Atualização automática', 'O app procura versões novas sozinho ao abrir e mostra esta tela a cada atualização.'],
+  ['Valor mais fácil de digitar', 'Digite só os números: a vírgula dos centavos entra sozinha. O valor fica vermelho no gasto e verde no ganho.'],
   ['Conta compartilhada', 'Casal ou família: duas contas Google vendo e lançando nos mesmos dados, cada um no seu celular e com o seu nome. Cada lançamento mostra quem fez.'],
   ['Gastos separados', 'Na aba Gastos, os lançamentos ficam em Assinaturas, Fixos e anuais, Parceladas e Ocasionais, cada grupo com o seu total. Toque no título para fechar e em "Ordenar grupos" para mudar a ordem. A busca procura em todos.'],
   ['Assinaturas', 'Netflix, Spotify, academia e parecidos entram sozinhos em Assinaturas. Num gasto fixo, "Mais opções" deixa marcar ou desmarcar.'],
   ['Mais de 100 conquistas', 'No modo divertido, as conquistas agora têm níveis: do primeiro gasto ao milésimo.'],
   ['Configurações por categoria', 'Perfil, Aparência, Lembretes, Conta e as outras opções ficam cada uma no seu botão.'],
   ['Avisos do banco', 'Quando o Android esconde o texto de uma notificação do banco, o app mostra "Novo aviso do banco" para você lançar o valor.']];
+// Atualização automática (só no APK; ver Updater no lado nativo). tipo: 'web' = telas novas baixadas, entram na próxima
+// abertura; 'apk' = é preciso instalar um APK novo (mudou a parte nativa); 'nada' e 'erro' = resposta à busca manual.
+async function onAtualizacao(tipo, versao, url){
+  if (tipo === 'web') toast(`Atualização ${versao} baixada. Ela entra na próxima vez que você abrir o app.`);
+  else if (tipo === 'nada') toast('O app já está na versão mais recente.');
+  else if (tipo === 'erro') toast('Não consegui procurar atualizações (sem internet?).');
+  else if (tipo === 'apk' && sync.apkAsk !== versao + dayStr(Date.now())){ // no máximo uma vez por dia
+    sync.apkAsk = versao + dayStr(Date.now()); saveSync();
+    if (await ask(`Saiu a versão ${versao} do app. Esta atualização precisa ser instalada: o Android vai baixar o arquivo e pedir sua confirmação.\n\nSeus dados continuam no aparelho e na sua conta.`, 'Baixar')) Android.abrir(url);
+  }
+}
 // sempre = aberta pelas Configurações; sync.forceNews = conta nova neste aparelho (mostra mesmo sem versão nova).
 function maybeNews(sempre){
   let last = null;

@@ -39,5 +39,6 @@ document.addEventListener('visibilitychange', () => {
   refreshQuotes();
   if (!needGate()) syncNow();
 });
+if (window.Android && Android.webOk) Android.webOk(); // APK: as telas abriram sem erro (confirma uma atualização recém-aplicada)
 if (window.webResume) webResume(); // versão web: continua o que estava sendo feito antes de ir ao login do Google
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});

@@ -201,6 +201,10 @@ const T = {
   'Conta Google, cópias e conta compartilhada':['Google account, backups and shared account','Cuenta de Google, copias y cuenta compartida'], 'Lançamento automático':['Automatic entries','Registro automático'], 'Sugestões pelas notificações do banco':['Suggestions from bank notifications','Sugerencias de las notificaciones del banco'],
   'Dados e ajustes':['Data and settings','Datos y ajustes'], 'Categorias, taxas, lixeira, backup e apagar':['Categories, rates, trash, backup and erase','Categorías, tasas, papelera, copia y borrar'],
   'Seu nome':['Your name','Tu nombre'], 'Trocar o nome':['Change name','Cambiar el nombre'], 'Informar o nome':['Add your name','Agregar tu nombre'], 'Ajuda':['Help','Ayuda'], 'Ver o tutorial':['See the tutorial','Ver el tutorial'], 
+  'Planilha do Google':['Google Sheet','Hoja de Google'], 'Abrir a planilha':['Open the sheet','Abrir la hoja'], 'Sincronizar com a planilha':['Sync with the sheet','Sincronizar con la hoja'], 'Desligar a planilha':['Unlink the sheet','Desvincular la hoja'],
+  'Criar a planilha ligada':['Create the linked sheet','Crear la hoja vinculada'], 'Planilha ligada ao app':['Sheet linked to the app','Hoja vinculada a la app'], 'Criar planilha ligada ao app':['Create a sheet linked to the app','Crear una hoja vinculada a la app'],
+  'Planilha do Google (ligada)':['Google Sheet (linked)','Hoja de Google (vinculada)'], 'Exportar para uma planilha do Google ligada ao app':['Export to a Google Sheet linked to the app','Exportar a una hoja de Google vinculada a la app'],
+  'Sexo':['Sex','Sexo'], 'Masculino':['Male','Masculino'], 'Feminino':['Female','Femenino'], 'Prefiro não dizer':['Prefer not to say','Prefiero no decir'], 'Atualizações':['Updates','Actualizaciones'], 'Procurar atualização agora':['Check for updates now','Buscar actualización ahora'],
   'Como você quer ser chamado?':['What should we call you?','¿Cómo quieres que te llamemos?'], 'Saudação no topo':['Greeting at the top','Saludo arriba'], 'Bem-vindo':['Welcome','Bienvenido'], 'Bem-vinda':['Welcome','Bienvenida'], 'Boas-vindas':['Welcome','Bienvenida'],
   'Continuar':['Continue','Continuar'], 'Pular':['Skip','Omitir'], 'Próximo':['Next','Siguiente'], 'Começar':['Start','Empezar'],
   'Lançar é rápido':['Adding is quick','Registrar es rápido'], 'Gastos do mês':["Month's expenses",'Gastos del mes'], 'Investimentos e metas':['Investments and goals','Inversiones y metas'], 'Sua conta e a conta compartilhada':['Your account and the shared account','Tu cuenta y la cuenta compartida'], 'Do seu jeito':['Your way','A tu manera'],
@@ -338,6 +342,6 @@ function setLang(l){
   const voltar = lang() !== 'pt' && l === 'pt'; // as partes fixas já traduzidas só voltam ao português recarregando
   db.prefs.lang = l; db.cfgMod = Date.now(); save(); trCache = null;
   document.documentElement.lang = LOCALES[l];
-  if (voltar) return location.reload();
+  if (voltar) return window.Android && Android.recarregar ? Android.recarregar() : location.reload(); // no APK, o lado nativo recarrega (a página pode ter vindo de uma atualização)
   render(); openSettings(); trAll();
 }
