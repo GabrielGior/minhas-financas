@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<script>
+// Em celulares, o layout é sempre desenhado com 390 px de largura e o sistema o redimensiona
+// para caber exatamente na tela, seja ela mais estreita ou mais larga. Tablets usam a largura real.
+function ajustarLargura(){
+  document.querySelector('meta[name=viewport]').content = screen.width < 520 ? 'width=390, viewport-fit=cover, user-scalable=no' : 'width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no';
+}
+ajustarLargura();
+addEventListener('orientationchange', () => setTimeout(ajustarLargura, 150)); // celular deitado ou tablet: usa a largura real
+</script>
+<meta name="theme-color" content="#0f172a">
+<title>Minhas Finanças</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Finanças">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="topbar"></div>
+<div id="app"></div>
+<button class="fab" id="fab" onclick="addNew()" aria-label="Adicionar">+</button>
+<nav class="tabs"><div id="tabs"></div></nav>
+<div class="overlay" id="overlay" onclick="closeForm()"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
+<div class="overlay" id="pickBg" onclick="closePicker()"></div>
+<div class="sheet" id="picker" role="dialog" aria-modal="true"></div>
+<div id="dlg" hidden><div class="box"><div id="dlgMsg"></div><div class="btns" id="dlgBtns"></div></div></div>
+<div id="snack" hidden></div>
+<div id="saveWarn" hidden>Não consegui salvar as últimas alterações neste aparelho (armazenamento cheio?). Exporte um backup em Configurações antes de fechar o app.</div>
+<div id="lockAsk" hidden><div class="box">
+  <button class="iconbtn x" onclick="answerLock(false)" aria-label="Não habilitar biometria" id="lockX"></button>
+  <div class="big" id="lockIcon"></div>
+  <h3 style="margin:8px 0 6px">Proteja seus dados</h3>
+  <div class="muted">Habilite a biometria para o app pedir sua digital ou seu rosto sempre que for aberto. Se a biometria falhar, vale a senha do celular.</div>
+  <div class="btns"><button class="btn primary" onclick="answerLock(true)">Habilitar biometria</button></div>
+</div></div>
+<div id="gate" hidden>
+  <div class="logo" id="gateLogo"></div>
+  <h1>Minhas Finanças</h1>
+  <p>Entre com sua conta Google para começar. Seus dados ficam guardados no seu próprio Google Drive.</p>
+  <button onclick="loginGoogle()">Entrar com Google</button>
+  <small id="gateMsg"></small>
+</div>
+<input type="file" id="file" accept="application/json,.json" hidden onchange="importData(this)">
+<input type="file" id="stmt" accept=".ofx,.csv,.txt,text/csv" hidden onchange="importStatement(this)">
+<input type="file" id="photoIn" accept="image/*" hidden onchange="photoChosen(this)">
+<div id="lightbox" hidden onclick="this.hidden=true"><img alt="Comprovante"></div>
+<div id="report"></div>
+
+<!-- O código do app fica em js/, dividido por assunto; a ordem abaixo importa. -->
+<script src="js/dados.js"></script>
+<script src="js/telas.js"></script>
+<script src="js/assistente.js"></script>
+<script src="js/formularios.js"></script>
+<script src="js/config.js"></script>
+<script src="js/idioma.js"></script>
+<script src="js/web.js"></script>
+<script src="js/inicio.js"></script>
+</body>
+</html>
