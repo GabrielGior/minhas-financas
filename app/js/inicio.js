@@ -28,8 +28,11 @@ if (needGate()){
   if (canSync() && !sync.account && Android.conta && Android.conta()){ sync.account = Android.conta(); saveSync(); }
   syncNow(); startSheets(); onFoto(); onAtalho(); // o convite do bloqueio vem no fim das telas de início
 }
+let saiuEm = 0;
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) return;
+  if (document.hidden){ saiuEm = Date.now(); return; }
+  // Conversa do assistente: recomeça cada vez que o app é aberto (voltar depois de mais de meio minuto fora conta como abrir).
+  if (saiuEm && Date.now() - saiuEm > 30e3){ chatLog.length = 0; chatEntries.length = 0; }
   now = new Date();
   curYM = ymOf(now.getFullYear(), now.getMonth());
   funVisit();

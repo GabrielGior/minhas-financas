@@ -238,8 +238,10 @@ function answer(q){
 function chatHtml(){
   const ola = db.prefs.fun ? 'Oinc! Sou o porquinho de plantão. Pergunte o que quiser sobre os seus números: eu faço as contas aqui mesmo no aparelho, sem contar nada para a internet.' : 'Olá! Pergunte sobre os dados que você cadastrou no app. As respostas são calculadas aqui no aparelho, sem enviar nada para a internet.';
   return `<div class="msg">${lang() === 'pt' && myName() ? ola.replace(/^(Oinc|Olá)!/, `$1, ${esc(myName()).replace(/\$/g, '$$$$')}!`) : ola} Para lançar um gasto, escreva por exemplo "mercado 45 nubank crédito".</div>` +
-    chatLog.map(m => `<div class="msg ${m.me ? 'me' : ''}">${m.entry != null ? entryHtml(m.entry) : m.html}</div>`).join('') +
-    `<div class="chips">${CHAT_HINTS.map(h => `<button onclick="sendChat(this.textContent)">${h}</button>`).join('')}</div>`;
+    // As sugestões vêm logo depois da saudação: aparecem enquanto nada foi enviado e, depois, ficam no começo da
+    // conversa (é só rolar para cima). A conversa recomeça cada vez que o app é aberto (ver inicio.js).
+    `<div class="chips">${CHAT_HINTS.map(h => `<button onclick="sendChat(this.textContent)">${h}</button>`).join('')}</div>` +
+    chatLog.map(m => `<div class="msg ${m.me ? 'me' : ''}">${m.entry != null ? entryHtml(m.entry) : m.html}</div>`).join('');
 }
 function sendChat(text){
   const el = document.getElementById('chatIn'), q = (text || el.value).trim();
