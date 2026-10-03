@@ -1227,10 +1227,18 @@ function openUpdate(versao, novas, url){
   updUrl = url; updVer = versao;
   showSheet(`<h3>Nova versão ${esc(versao)} disponível</h3>
     <div class="hint" style="margin-top:0">${url ? 'Esta atualização precisa ser instalada: o Android baixa o arquivo e pede sua confirmação. Seus dados continuam no aparelho e na sua conta.' : 'A atualização já foi baixada. Seus dados não mudam.'}</div>
-    ${Array.isArray(novas) && novas.length ? `<label>O que vem nesta versão</label>${newsHtml(novas)}` : ''}
+    ${updNews(novas)}
     <div class="btns foot"><button class="btn" onclick="closeForm()">Depois</button><button class="btn primary" onclick="updateNow()">${url ? 'Baixar e instalar' : 'Atualizar agora'}</button></div>`);
 }
 let updUrl = '', updVer = '';
+// Prévia das novidades: cada item pode trazer a versão ([título, texto, versão]); mostra só as das versões que a
+// pessoa ainda não tem, separadas por versão quando são várias.
+function updNews(novas){
+  if (!Array.isArray(novas)) return '';
+  const faltam = novas.filter(n => !n[2] || verNum(n[2]) > verNum(APP_VERSION)), vs = [...new Set(faltam.map(n => n[2] || ''))];
+  if (!faltam.length) return '';
+  return vs.length < 2 ? `<label>O que vem nesta versão</label>${newsHtml(faltam)}` : vs.map(v => `<label>Versão ${esc(v)}</label>${newsHtml(faltam.filter(n => (n[2] || '') === v))}`).join('');
+}
 function updateNow(){
   closeForm();
   if (updUrl) return Android.abrir(updUrl);
