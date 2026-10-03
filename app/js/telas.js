@@ -131,6 +131,10 @@ function viewResumo(){
       <div class="stat"><small>Falta pagar (${open.length})</small><b class="out">${fmt(sum(open, p => p.total / p.n * (p.n - p.paid)))}</b></div>
       <div class="stat"><small>Parcelas deste mês</small><b>${fmt(sum(expensesOf(curYM).filter(x => x.kind === 'installment'), x => x.value))}</b></div></div>`
     : '<div class="hint" style="margin:0 4px 12px">Nenhuma compra parcelada em aberto.</div>'}`,
+  vales: () => !(temVale('va') || temVale('vr')) ? '' : `<h2>Vales <button onclick="state.gsub='vale';state.month=curYM;go('gastos')">Ver gastos</button></h2>
+    <div class="card">${Object.keys(VALES).filter(temVale).map(k => { const s = valeSaldo(k); return `<div class="item" style="cursor:default">${ico(CAT_GANHO[k])}<div class="mid"><b>${VALES[k]}</b>
+      <small>neste mês: entrou ${fmt(sum(valeIn(curYM, k), x => x.value))}, saiu ${fmt(sum(valeOut(curYM, k), x => x.value))}</small></div><div class="val ${s < 0 ? 'out' : ''}">${fmt(s)}</div></div>`; }).join('')}
+    <div class="hint">Saldo de cada vale. Fica separado dos ganhos, gastos e do saldo do mês.</div></div>`,
   metas: () => `<h2>Metas <button onclick="go('invest')">Ver todas</button></h2>${goals.length ? `<div class="card">${goals.map(g => `
       <div class="catrow"><div class="top"><span>${esc(g.name)}</span><b>${fmt(g.saved)} de ${fmt(g.target)}</b></div>
       <div class="bar"><i style="width:${Math.min(100, g.saved / g.target * 100)}%"></i></div></div>`).join('')}</div>`
@@ -178,10 +182,14 @@ function noteDrop(t){ Android.avisosGuardar(JSON.stringify(bankNotes().filter(n 
 function noteUse(t){
   const n = bankNotes().find(n => n.t === t), p = n && parseBankNote(n);
   if (!p) return render(); // já lançado ou ignorado (toque duplo)
-  noteDrop(t);
   const value = p.hidden ? '' : moneyStr(p.value); // aviso escondido: o valor fica para a pessoa digitar
-  if (p.income) openForm('incomes', null, {vals:{desc:p.desc, value, fixed:'', bank:p.bank, start:p.date.slice(0, 7), day:String(+p.date.slice(8))}, more:true});
-  else openForm('expenses', null, {vals:{desc:p.desc, value, ...(p.desc ? {cat:guessCat(p.desc)} : {}), bank:p.bank, start:p.date.slice(0, 7), day:String(+p.date.slice(8))}, more:true});
+  if (p.income){ noteDrop(t); return openForm('incomes', null, {vals:{desc:p.desc, value, fixed:'', bank:p.bank, start:p.date.slice(0, 7), day:String(+p.date.slice(8))}, more:true}); }
+  // Gasto: antes de abrir, pergunta se saiu do dinheiro normal ou de um vale (os vales ficam separados).
+  pickList('Esse gasto foi pago com…', [['', 'Dinheiro normal (conta, cartão, Pix)'], ['va', VALES.va], ['vr', VALES.vr]], null, pay => {
+    if (!bankNotes().some(n => n.t === t)) return; // já lançado ou ignorado
+    noteDrop(t);
+    openForm('expenses', null, {vals:{desc:p.desc, value, ...(p.desc ? {cat:guessCat(p.desc)} : {}), bank:pay ? '' : p.bank, ...(pay ? {pay} : {}), start:p.date.slice(0, 7), day:String(+p.date.slice(8))}, more:true});
+  });
 }
 async function setAvisos(v){
   Android.avisosLigar(v);
@@ -216,12 +224,38 @@ function layoutSet(tab, i, op){
   db.cfgMod = Date.now(); save(); render(); openLayoutEdit(tab);
 }
 
+// Vale-refeição e vale-alimentação: parte própria nas abas Gastos (o que foi gasto no vale) e Ganhos (os créditos).
+// Para cada vale: o crédito e o gasto do mês e o saldo acumulado. Nada disso entra nos totais do mês.
+function viewVales(lado){
+  const m = state.month, gastos = lado === 'gastos', lista = gastos ? valeOut(m) : valeIn(m);
+  const novo = k => gastos ? `openForm('expenses',null,{vals:{pay:'${k}'},more:true})` : `openForm('incomes',null,{vals:{cat:'${k}'}})`;
+  return `<div class="nav"><button onclick="state.month=addMonths(state.month,-1);renderIn()">‹</button><b onclick="pickMonth()">${monthName(m)} ▾</b><button onclick="state.month=addMonths(state.month,1);renderIn()">›</button></div>
+  ${Object.keys(VALES).map(k => { const c = sum(valeIn(m, k), x => x.value), g = sum(valeOut(m, k), x => x.value), s = valeSaldo(k, m); return `
+    <div class="card"><b>${I(CAT_GANHO[k][0])} ${VALES[k]}</b>
+      <div class="grid3" style="margin-top:10px">
+        <div class="stat"><small>Crédito do mês</small><b class="in" style="font-size:14px">${fmt(c)}</b></div>
+        <div class="stat"><small>Gasto do mês</small><b class="out" style="font-size:14px">${fmt(g)}</b></div>
+        <div class="stat"><small>Saldo do vale</small><b class="${s < 0 ? 'out' : ''}" style="font-size:14px">${fmt(s)}</b></div></div>
+      <div class="btns"><button class="btn" onclick="${novo(k)}">${gastos ? '+ Gasto neste vale' : '+ Crédito deste vale'}</button></div></div>`; }).join('')}
+  <h2>${gastos ? 'Gastos nos vales' : 'Créditos dos vales'}</h2>
+  ${lista.length ? `<div class="card">${lista.map(x => gastos ? expRow(x, m) : incRow(x)).join('')}</div>`
+    : empty(gastos ? 'receipt' : 'wallet', gastos ? 'Nenhum gasto nos vales em ' + monthName(m) + '.' : 'Nenhum crédito de vale em ' + monthName(m) + '.<br>Cadastre o crédito como fixo para ele entrar todo mês.')}
+  <div class="hint" style="text-align:center">Os vales ficam separados: não entram nos ganhos, nos gastos nem no saldo do mês. O saldo do vale é tudo o que entrou menos o que saiu desde o primeiro lançamento. ${gastos ? 'Um gasto vem para cá quando a forma de pagamento é um vale.' : 'Um ganho vem para cá quando a categoria é um vale.'}</div>`;
+}
+const ganhosSeg = () => `<div class="seg">${[['todos','Ganhos'],['vale','Vales']].map(([k,t]) => `<button class="${state.isub === k ? 'on' : ''}" onclick="state.isub='${k}';renderIn()">${t}</button>`).join('')}</div>`;
+// Uma linha da lista de ganhos.
+function incRow(x){ const c = CAT_GANHO[x.cat] || CAT_GANHO.outros; return `
+    <div class="item" onclick="edit('incomes','${x.id}')">${ico(c)}<div class="mid"><b>${esc(x.desc)}</b>
+    <small>${c[1]} · ${x.fixed === 'y' ? 'todo mês de ' + MESES[+x.start.slice(5) - 1] + ', ' : ''}${x.fixed ? 'desde ' + (x.fixed === 'y' ? x.start.slice(0,4) : monthName(x.start)) + (x.end ? ' até ' + monthName(x.end) : '') : monthName(x.start)}${bySmall(x)}</small></div>
+    <div class="val in">${fmt(x.value)}</div></div>`; }
 function viewGanhos(){
+  if (state.isub === 'vale') return `${head('Ganhos', 'ganhos')}${ganhosSeg()}${viewVales('ganhos')}`;
+  const naoVale = db.incomes.filter(x => !valeGanho(x));
   const row = x => { const c = CAT_GANHO[x.cat] || CAT_GANHO.outros; return `
     <div class="item" onclick="edit('incomes','${x.id}')">${ico(c)}<div class="mid"><b>${esc(x.desc)}</b>
     <small>${c[1]} · ${x.fixed === 'y' ? 'todo mês de ' + MESES[+x.start.slice(5) - 1] + ', ' : ''}${x.fixed ? 'desde ' + (x.fixed === 'y' ? x.start.slice(0,4) : monthName(x.start)) + (x.end ? ' até ' + monthName(x.end) : '') : monthName(x.start)}${bySmall(x)}</small></div>
     <div class="val in">${fmt(x.value)}</div></div>`; };
-  const fixed = db.incomes.filter(isMonthly), yearly = db.incomes.filter(x => x.fixed === 'y'), once = db.incomes.filter(x => !x.fixed).sort((a,b) => b.start.localeCompare(a.start));
+  const fixed = naoVale.filter(isMonthly), yearly = naoVale.filter(x => x.fixed === 'y'), once = naoVale.filter(x => !x.fixed).sort((a,b) => b.start.localeCompare(a.start));
   const B = {
   total: () => `<div class="hero"><small>Ganhos em ${monthName(curYM)}</small><div class="big">${fmt(totalIn(curYM))}</div>
     <small>Fixos mensais: ${fmt(sum(fixed.filter(x => activeIn(x,curYM)), x => x.value))}</small></div>`,
@@ -232,7 +266,7 @@ function viewGanhos(){
   avulsos: () => `<h2>Ganhos avulsos</h2>
   ${once.length ? `<div class="card">${once.map(row).join('')}</div>` : empty('wallet','Nenhum ganho avulso cadastrado.')}`
   };
-  return head('Ganhos', 'ganhos') + blocks('ganhos', B);
+  return head('Ganhos', 'ganhos') + ganhosSeg() + blocks('ganhos', B);
 }
 
 // Comparativo: gasto de cada categoria no mês m, no mês anterior e na média dos 6 meses antes de m.
@@ -263,9 +297,10 @@ function settle(id, m){
   showUndo('Marcado como recebido', () => set(false));
 }
 // A aba Gastos tem duas partes: os gastos do mês e as compras parceladas.
-const gastosSeg = () => `<div class="seg">${[['mes','Do mês'],['parc','Parceladas']].map(([k,t]) => `<button class="${state.gsub === k ? 'on' : ''}" onclick="state.gsub='${k}';renderIn()">${t}</button>`).join('')}</div>`;
+const gastosSeg = () => `<div class="seg">${[['mes','Do mês'],['parc','Parceladas'],['vale','Vales']].map(([k,t]) => `<button class="${state.gsub === k ? 'on' : ''}" onclick="state.gsub='${k}';renderIn()">${t}</button>`).join('')}</div>`;
 function viewGastos(){
   if (state.gsub === 'parc') return `${head('Gastos', 'gastos')}${gastosSeg()}${viewParcelas()}`;
+  if (state.gsub === 'vale') return `${head('Gastos', 'gastos')}${gastosSeg()}${viewVales('gastos')}`;
   const m = state.month, list = expensesOf(m), tin = totalIn(m), tout = sum(list, x => x.value);
   const budgets = budgetStatus(m), inv = invoices(m), cmp = compareMonths(m);
   const owed = owedList(); // de qualquer mês

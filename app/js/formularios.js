@@ -261,7 +261,13 @@ const FORMS = {
 let F = null; // formulário aberto: {col, cfg, fields, id, vals, touched, asset}
 let settingsOpen = false;
 
-function addNew(){ const col = {ganhos:'incomes', gastos:state.gsub === 'parc' ? 'installments' : 'expenses', invest:'investments'}[state.tab]; if (col) openForm(col); }
+function addNew(){
+  // Na parte dos vales, o + já abre o lançamento no vale (o que a pessoa usa, ou o de alimentação).
+  const vale = temVale('vr') && !temVale('va') ? 'vr' : 'va';
+  if (state.tab === 'gastos' && state.gsub === 'vale') return openForm('expenses', null, {vals:{pay:vale}, more:true});
+  if (state.tab === 'ganhos' && state.isub === 'vale') return openForm('incomes', null, {vals:{cat:vale}});
+  const col = {ganhos:'incomes', gastos:state.gsub === 'parc' ? 'installments' : 'expenses', invest:'investments'}[state.tab]; if (col) openForm(col);
+}
 const ARCH_MSG = 'Este lançamento está no arquivo de anos antigos e não pode ser editado. Para editar, traga os anos de volta em Configurações > Dados e ajustes.';
 function edit(col, id){
   event.stopPropagation();

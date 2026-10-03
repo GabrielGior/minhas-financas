@@ -123,28 +123,71 @@ function funCheck(){
   }
   try { localStorage.setItem(FUN_KEY, JSON.stringify(funState)); } catch(e){}
 }
-// Mascote de cada tema especial: [claro, médio, forte, fenda, bochecha, olhos, boca] e o acessório desenhado por cima.
-// Sem tema especial, o porquinho rosa clássico (não segue a cor do app, para continuar parecendo um porco).
+// Mascote de cada tema especial. Cada um é um personagem: [claro, médio, forte, fenda, bochecha, olhos, boca, partes].
+// partes (todas opcionais): orelhas (atrás da cabeça), cabeca (no lugar do rosto redondo), focinho (no lugar do
+// focinho de porco), sob (por cima da cabeça, por baixo dos olhos), sobre (por cima de tudo), semFenda (sem a
+// fenda de cofrinho). Sem tema especial, o porquinho rosa clássico (não segue a cor do app).
 const MASCOTES = {
-  '':['#ffc6d9', '#f58fb3', '#ec7aa3', '#c2527c', '#ff5f95', '#4a2338', '#b8456f', ''],
-  hacker:['#4ade80', '#16a34a', '#15803d', '#052e16', '#bbf7d0', '#03120a', '#052e16', // óculos escuros
-    '<rect x="33" y="48" width="23" height="13" rx="3.5" fill="#03120a"/><rect x="64" y="48" width="23" height="13" rx="3.5" fill="#03120a"/><path d="M56 53h8" stroke="#03120a" stroke-width="3"/><path d="M37 52h6M68 52h6" stroke="#4ade80" stroke-width="1.6" stroke-linecap="round"/>'],
-  boneca:['#ffd1e8', '#f472b6', '#ec4899', '#be185d', '#ff5f95', '#500724', '#be185d', // laço e cílios
-    '<path d="M60 27 43 17v20zM60 27l17-10v20z" fill="#c026d3"/><circle cx="60" cy="27" r="5" fill="#a21caf"/><path d="M36 50l-4-3M40 48l-2-4M84 50l4-3M80 48l2-4" stroke="#500724" stroke-width="2" stroke-linecap="round"/>'],
-  corrida:['#fca5a5', '#ef4444', '#dc2626', '#7f1d1d', '#fecaca', '#1f2937', '#7f1d1d', // capacete com faixa
-    '<path d="M23 47a38 30 0 0 1 74 0z" fill="#1f2937"/><path d="M56 17.500h8V47h-8z" fill="#fff"/><path d="M23 47h74" stroke="#f59e0b" stroke-width="3"/>'],
-  neon:['#c4b5fd', '#8b5cf6', '#7c3aed', '#4c1d95', '#22d3ee', '#1e1b4b', '#f472b6', // fones de ouvido
-    '<path d="M24 60a36 38 0 0 1 72 0" stroke="#22d3ee" stroke-width="4" fill="none"/><rect x="17" y="55" width="11" height="20" rx="5.500" fill="#22d3ee"/><rect x="92" y="55" width="11" height="20" rx="5.500" fill="#22d3ee"/>'],
-  papel:['#f5deb3', '#d6a77a', '#b98a5e', '#7c4a2d', '#e9a68a', '#3b2a1a', '#7c4a2d', // óculos redondos
-    '<circle cx="43" cy="55" r="9.500" fill="none" stroke="#3b2a1a" stroke-width="2.400"/><circle cx="77" cy="55" r="9.500" fill="none" stroke="#3b2a1a" stroke-width="2.400"/><path d="M52.500 55h15" stroke="#3b2a1a" stroke-width="2.400"/>'],
-  praia:['#ffd9a8', '#fb923c', '#f97316', '#c2410c', '#fdba74', '#431407', '#c2410c', // óculos de sol
-    '<rect x="33" y="48" width="23" height="13" rx="6" fill="#0e7490"/><rect x="64" y="48" width="23" height="13" rx="6" fill="#0e7490"/><path d="M56 53h8" stroke="#0e7490" stroke-width="3"/>'],
-  noite:['#93c5fd', '#3b82f6', '#1d4ed8', '#1e3a8a', '#facc15', '#0a1230', '#1e3a8a', // estrela na testa e redemoinho
-    '<path d="M60 36l2.600 5.300 5.900.900-4.300 4.100 1 5.800L60 49.300l-5.200 2.800 1-5.800-4.300-4.100 5.900-.900z" fill="#facc15"/><path d="M22 30c4-6 12-6 14-1s-4 8-7 5" stroke="#facc15" stroke-width="2.200" fill="none" stroke-linecap="round"/>']
+  '':['#ffc6d9', '#f58fb3', '#ec7aa3', '#c2527c', '#ff5f95', '#4a2338', '#b8456f', {}],
+  // Robô: cabeça quadrada, antena, parafusos, grade no lugar do focinho e visor verde.
+  hacker:['#4ade80', '#16a34a', '#15803d', '#052e16', '#bbf7d0', '#03120a', '#052e16', {semFenda:true,
+    orelhas:'<path d="M60 30V15" stroke="#16a34a" stroke-width="3.500"/><circle cx="60" cy="11" r="5" fill="#bbf7d0"/><rect x="15" y="52" width="10" height="20" rx="4" fill="#15803d"/><rect x="95" y="52" width="10" height="20" rx="4" fill="#15803d"/>',
+    cabeca:'<rect x="23" y="29" width="74" height="66" rx="17" fill="url(#pigG)"/>',
+    focinho:'<rect x="45" y="63" width="30" height="13" rx="5" fill="#15803d"/><path d="M52 66v7M60 66v7M68 66v7" stroke="#052e16" stroke-width="2.200" stroke-linecap="round"/>',
+    sobre:'<rect x="32" y="47" width="56" height="15" rx="7.500" fill="#03120a"/><path d="M38 54.500h8M50 54.500h3M68 54.500h8M80 54.500h3" stroke="#4ade80" stroke-width="2.400" stroke-linecap="round"/>'}],
+  // Unicórnio: chifre dourado, crina colorida, cílios e estrelinha.
+  boneca:['#fff0f8', '#f9a8d4', '#f472b6', '#be185d', '#ff5f95', '#500724', '#be185d', {semFenda:true,
+    orelhas:'<path d="M60 2l8 28H52z" fill="#fde68a"/><path d="M56 13l8 2.500M54.500 21l11 3" stroke="#f59e0b" stroke-width="1.800" stroke-linecap="round"/><path d="M27 40c-10 10-12 28-5 44" stroke="#c026d3" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M34 31c-12 4-18 16-18 30" stroke="#a855f7" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M44 26c-10-2-20 4-25 14" stroke="#38bdf8" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M84 36c5-10 3-18-3-20-6 3-9 9-10 16z" fill="#f9a8d4"/>',
+    sobre:'<path d="M36 50l-4-3M40 48l-2-4M84 50l4-3M80 48l2-4" stroke="#500724" stroke-width="2" stroke-linecap="round"/><path d="M90 74l1.600 3.300 3.600.500-2.600 2.500.600 3.600-3.200-1.700-3.200 1.700.600-3.600-2.600-2.500 3.600-.500z" fill="#facc15"/>'}],
+  // Piloto: capacete com número, viseira e cachecol.
+  corrida:['#fecaca', '#f87171', '#dc2626', '#7f1d1d', '#fecaca', '#1f2937', '#7f1d1d', {semFenda:true,
+    sobre:'<path d="M21 52a39 34 0 0 1 78 0z" fill="#dc2626"/><path d="M21 52h78" stroke="#111827" stroke-width="4"/><path d="M52 18.500h16V50H52z" fill="#fff"/><text x="60" y="41" text-anchor="middle" font-size="17" font-weight="800" font-family="sans-serif" fill="#dc2626">7</text><rect x="27" y="46" width="66" height="19" rx="9.500" fill="#38bdf8" opacity=".3" stroke="#111827" stroke-width="2.400"/><path d="M30 92c14 8 46 8 60 0l3 8c-16 8-50 8-66 0z" fill="#facc15"/><path d="M84 95l14 10-6-13z" fill="#eab308"/>'}],
+  // Gato DJ: orelhas pontudas, bigodes, focinho pequeno e fones.
+  neon:['#c4b5fd', '#8b5cf6', '#7c3aed', '#4c1d95', '#22d3ee', '#1e1b4b', '#f472b6', {semFenda:true,
+    orelhas:'<path d="M31 46 25 8l28 20zM89 46l6-38-28 20z" fill="#8b5cf6"/><path d="M34 37 31 17l15 11zM86 37l3-20-15 11z" fill="#f472b6"/>',
+    focinho:'<path d="M55.500 65h9l-4.500 5.500z" fill="#f472b6"/><path d="M41 67H23M41 72l-17 5M79 67h18M79 72l17 5" stroke="#1e1b4b" stroke-width="1.700" stroke-linecap="round"/>',
+    sobre:'<path d="M23 60a37 40 0 0 1 74 0" stroke="#22d3ee" stroke-width="4.500" fill="none"/><rect x="15" y="54" width="12" height="22" rx="6" fill="#22d3ee"/><rect x="93" y="54" width="12" height="22" rx="6" fill="#22d3ee"/><path d="M18 60v10M102 60v10" stroke="#f472b6" stroke-width="2" stroke-linecap="round"/>'}],
+  // Coruja estudiosa: tufos, olhões com óculos e bico.
+  papel:['#f5deb3', '#d6a77a', '#b98a5e', '#7c4a2d', '#e9a68a', '#3b2a1a', '#7c4a2d', {semFenda:true,
+    orelhas:'<path d="M33 42 27 11l25 17zM87 42l6-31-25 17z" fill="#b98a5e"/>',
+    sob:'<circle cx="43" cy="55" r="14" fill="#fff7e6"/><circle cx="77" cy="55" r="14" fill="#fff7e6"/><path d="M40 86q20 12 40 0" stroke="#b98a5e" stroke-width="2" fill="none" stroke-dasharray="3 4" stroke-linecap="round"/>',
+    focinho:'<path d="M53 63h14l-7 13z" fill="#e0a02b"/>',
+    sobre:'<circle cx="43" cy="55" r="14" fill="none" stroke="#3b2a1a" stroke-width="2.600"/><circle cx="77" cy="55" r="14" fill="none" stroke="#3b2a1a" stroke-width="2.600"/><path d="M57 55h6" stroke="#3b2a1a" stroke-width="2.600"/>'}],
+  // Porquinho de férias: chapéu de palha com fita, óculos de sol e flor.
+  praia:['#ffd9a8', '#fb923c', '#f97316', '#c2410c', '#fdba74', '#431407', '#c2410c', {semFenda:true,
+    sobre:'<ellipse cx="60" cy="33" rx="43" ry="8.500" fill="#eab308"/><path d="M37 33c0-17 10-24 23-24s23 7 23 24z" fill="#facc15"/><path d="M37.500 29h45" stroke="#dc2626" stroke-width="5"/><rect x="33" y="48" width="23" height="13" rx="6" fill="#0e7490"/><rect x="64" y="48" width="23" height="13" rx="6" fill="#0e7490"/><path d="M56 53h8" stroke="#0e7490" stroke-width="3"/><g fill="#f472b6"><circle cx="86" cy="24" r="3.500"/><circle cx="92" cy="28" r="3.500"/><circle cx="90" cy="35" r="3.500"/><circle cx="83" cy="34" r="3.500"/><circle cx="81" cy="28" r="3.500"/></g><circle cx="86.500" cy="30" r="3" fill="#fde047"/>'}],
+  // O pintor: chapéu de palha, barba ruiva e uma estrela do quadro.
+  noite:['#ffe6cc', '#f2c097', '#e3a070', '#a85d2f', '#f59e0b', '#1b2a6b', '#8a3d12', {semFenda:true,
+    sob:'<path d="M27 70c2 34 64 34 66 0-6 12-18 15-33 15s-27-3-33-15z" fill="#d9772b"/><path d="M36 84l-2 6M48 90l-1 7M60 91v8M72 90l1 7M84 84l2 6" stroke="#b85c1c" stroke-width="2.200" stroke-linecap="round"/>',
+    sobre:'<ellipse cx="60" cy="34" rx="44" ry="8" fill="#c9a227"/><path d="M36 34c0-16 10-23 24-23s24 7 24 23z" fill="#e3c04a"/><path d="M36.500 30h47" stroke="#1b2a6b" stroke-width="4.500"/><path d="M40 24l8-6M52 20l6-6M66 20l6-5" stroke="#c9a227" stroke-width="1.800" stroke-linecap="round"/><path d="M98 20l2.200 4.500 5 .700-3.600 3.500.900 5-4.500-2.400-4.500 2.400.900-5-3.600-3.500 5-.700z" fill="#f4d35e"/>'}],
+  // Aprendiz de magia: chapéu pontudo com estrelas, óculos redondos e cachecol listrado.
+  bruxo:['#ffd9c7', '#f4a98a', '#e08a68', '#9a4b2d', '#f59e0b', '#2a1216', '#9a4b2d', {semFenda:true,
+    sobre:'<ellipse cx="60" cy="34" rx="40" ry="7" fill="#2e1657"/><path d="M64 2 37 33h48z" fill="#3b1d6e"/><path d="M41 29h40" stroke="#eab308" stroke-width="3.500"/><circle cx="58" cy="19" r="1.800" fill="#fde047"/><circle cx="68" cy="24" r="1.300" fill="#fde047"/><circle cx="52" cy="26" r="1.300" fill="#fde047"/><circle cx="43" cy="55" r="9.500" fill="none" stroke="#2a1216" stroke-width="2.400"/><circle cx="77" cy="55" r="9.500" fill="none" stroke="#2a1216" stroke-width="2.400"/><path d="M52.500 55h15" stroke="#2a1216" stroke-width="2.400"/><path d="M30 91c14 9 46 9 60 0l2 8c-16 9-48 9-64 0z" fill="#7f1d1d"/><path d="M42 96l2 8M56 99v8M70 98l-1 8M82 95l-3 8" stroke="#eab308" stroke-width="4"/>'}],
+  // Astronauta: capacete de vidro, antena e reflexo.
+  espaco:['#ffc6d9', '#f58fb3', '#ec7aa3', '#c2527c', '#ff5f95', '#4a2338', '#b8456f', {semFenda:true,
+    orelhas:'<path d="M30 40c-6-12-3-22 4-24 8 2 14 8 16 16zM90 40c6-12 3-22-4-24-8 2-14 8-16 16z" fill="#f58fb3"/><rect x="34" y="86" width="52" height="18" rx="8" fill="#e2e8f0"/><circle cx="60" cy="96" r="4" fill="#38bdf8"/>',
+    sobre:'<circle cx="60" cy="57" r="45" fill="#bae6fd" opacity=".16"/><circle cx="60" cy="57" r="45" fill="none" stroke="#e2e8f0" stroke-width="4.500"/><path d="M28 38c6-10 14-16 24-19" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/><path d="M96 22l8-10" stroke="#e2e8f0" stroke-width="3"/><circle cx="105" cy="10" r="4" fill="#f87171"/>'}],
+  // Raposa: orelhas pontudas, cara branca e nariz preto, com uma folha.
+  floresta:['#fdba74', '#f97316', '#ea580c', '#9a3412', '#fed7aa', '#3b1d0a', '#7c2d12', {semFenda:true,
+    orelhas:'<path d="M30 46 22 8l30 20zM90 46l8-38-30 20z" fill="#ea580c"/><path d="M33 37 29 18l15 10zM87 37l4-19-15 10z" fill="#fff7ed"/>',
+    sob:'<path d="M23 64c5 22 24 32 37 32s32-10 37-32c-9 9-21 12-37 12s-28-3-37-12z" fill="#fff7ed"/>',
+    focinho:'<ellipse cx="60" cy="71" rx="5.500" ry="4" fill="#3b1d0a"/>',
+    sobre:'<path d="M60 30c-2-12 6-20 18-20-1 12-8 19-18 20z" fill="#4d7c0f"/><path d="M61 29c4-7 9-12 16-18" stroke="#a3e635" stroke-width="1.600" fill="none"/>'}],
+  // Porquinho de videogame antigo: tudo em quadradinhos.
+  retro:['#ffb3cf', '#ff7fae', '#e85a90', '#a83263', '#ff5f95', '#2b1020', '#a83263', {semFenda:true,
+    orelhas:'<rect x="26" y="18" width="18" height="18" fill="#ff7fae"/><rect x="76" y="18" width="18" height="18" fill="#ff7fae"/><rect x="32" y="24" width="8" height="12" fill="#e85a90"/><rect x="80" y="24" width="8" height="12" fill="#e85a90"/>',
+    cabeca:'<path d="M30 30h60v6h6v52h-6v6H30v-6h-6V36h6z" fill="url(#pigG)"/>',
+    focinho:'<rect x="46" y="62" width="28" height="16" fill="#e85a90"/><rect x="52" y="66" width="5" height="8" fill="#a83263"/><rect x="63" y="66" width="5" height="8" fill="#a83263"/>',
+    sobre:'<rect x="90" y="8" width="8" height="8" fill="#facc15"/><rect x="98" y="16" width="6" height="6" fill="#fb7185"/><rect x="14" y="12" width="6" height="6" fill="#38bdf8"/>'}],
+  // Dragãozinho da noite: escuro, olhos verdes, chifres e asas.
+  dragao:['#4b5563', '#1f2937', '#111827', '#030712', '#4ade80', '#a3e635', '#9ca3af', {semFenda:true,
+    orelhas:'<path d="M24 62C6 52 2 30 7 20c8 9 18 14 27 24zM96 62c18-10 22-32 17-42-8 9-18 14-27 24z" fill="#1f2937"/><path d="M34 42 20 12l26 16zM86 42l14-30-26 16z" fill="#111827"/><path d="M50 30l-4-14 10 9zM70 30l4-14-10 9z" fill="#111827"/>',
+    focinho:'<circle cx="55" cy="70" r="2" fill="#030712"/><circle cx="65" cy="70" r="2" fill="#030712"/>',
+    sob:'<ellipse cx="43" cy="55" rx="9" ry="8" fill="#030712"/><ellipse cx="77" cy="55" rx="9" ry="8" fill="#030712"/>'}]
 };
 // Mascote visto de frente; mood: 'feliz', 'ok' ou 'triste'.
 function pigSvg(mood){
-  const [claro, medio, forte, fenda, bochecha, escuro, boca, acessorio] = MASCOTES[db.prefs.skin] || MASCOTES[''];
+  const [claro, medio, forte, fenda, bochecha, escuro, boca, p] = MASCOTES[db.prefs.skin] || MASCOTES[''];
   const triste = mood === 'triste', feliz = mood === 'feliz';
   const olho = x => `<circle cx="${x}" cy="55" r="5" fill="${escuro}"/><circle cx="${x + 1.8}" cy="53.2" r="1.7" fill="#fff"/>`;
   const olhos = feliz ? `<path d="M38 57q5-7 10 0M72 57q5-7 10 0" stroke="${escuro}" stroke-width="3" fill="none" stroke-linecap="round"/>` : olho(43) + olho(77);
@@ -156,22 +199,80 @@ function pigSvg(mood){
     <g class="corpo">
     <path d="M95 70c8-2 10 5 5 7s-2 7 3 6" stroke="${medio}" stroke-width="3.5" fill="none" stroke-linecap="round"/>
     <rect x="38" y="88" width="14" height="14" rx="6" fill="${forte}"/><rect x="68" y="88" width="14" height="14" rx="6" fill="${forte}"/>
-    <path d="M30 40c-6-12-3-22 4-24 8 2 14 8 16 16zM90 40c6-12 3-22-4-24-8 2-14 8-16 16z" fill="${medio}"/>
-    <path d="M34 36c-3-8-2-14 2-16 5 2 8 6 10 11zM86 36c3-8 2-14-2-16-5 2-8 6-10 11z" fill="${forte}"/>
-    <ellipse cx="60" cy="62" rx="38" ry="34" fill="url(#pigG)"/>
-    <rect x="50" y="30.5" width="20" height="4" rx="2" fill="${fenda}"/>
+    ${p.orelhas || `<path d="M30 40c-6-12-3-22 4-24 8 2 14 8 16 16zM90 40c6-12 3-22-4-24-8 2-14 8-16 16z" fill="${medio}"/>
+    <path d="M34 36c-3-8-2-14 2-16 5 2 8 6 10 11zM86 36c3-8 2-14-2-16-5 2-8 6-10 11z" fill="${forte}"/>`}
+    ${p.cabeca || '<ellipse cx="60" cy="62" rx="38" ry="34" fill="url(#pigG)"/>'}
+    ${p.semFenda ? '' : `<rect x="50" y="30.5" width="20" height="4" rx="2" fill="${fenda}"/>`}
     <ellipse cx="41" cy="43" rx="9" ry="4.5" fill="#fff" opacity=".4" transform="rotate(-28 41 43)"/>
-    ${olhos}${extra}
+    ${p.sob || ''}${olhos}${extra}
     <circle cx="32" cy="69" r="6" fill="${bochecha}" opacity=".4"/><circle cx="88" cy="69" r="6" fill="${bochecha}" opacity=".4"/>
-    <ellipse cx="60" cy="69" rx="15" ry="11" fill="${forte}"/>
-    <ellipse cx="54.5" cy="69" rx="2.6" ry="3.6" fill="${boca}"/><ellipse cx="65.5" cy="69" rx="2.6" ry="3.6" fill="${boca}"/>
+    ${p.focinho || `<ellipse cx="60" cy="69" rx="15" ry="11" fill="${forte}"/>
+    <ellipse cx="54.5" cy="69" rx="2.6" ry="3.6" fill="${boca}"/><ellipse cx="65.5" cy="69" rx="2.6" ry="3.6" fill="${boca}"/>`}
     <path d="${feliz ? 'M52 84q8 7 16 0' : triste ? 'M54 88q6-5 12 0' : 'M54 85q6 3 12 0'}" stroke="${boca}" stroke-width="2.6" fill="none" stroke-linecap="round"/>
-    ${acessorio}</g></svg>`;
+    ${p.sobre || ''}</g></svg>`;
 }
+// Falas do mascote, por tema (a de cada dia muda, e tocar nele troca). {v} = valor do saldo do mês; {nome} = nome da pessoa.
+const FUN_TEMA = {
+  '':{
+    feliz:['Sobrando {v} este mês, {nome}. Tô até mais gordinho!', 'Mês no azul! Já posso sonhar com milho premium?', 'Olha esse saldo de {v}, {nome}. Orgulho define.', 'Assim eu encho rapidinho. Continua, {nome}!',
+      '{v} de folga. Guarda um pouquinho pra mim?', 'Hoje eu durmo tranquilo: sobrou {v}.', 'Se continuar assim, vou precisar de um cofrinho maior.', 'Oinc de alegria: as contas fecharam com {v} sobrando!'],
+    ok:['Tudo sob controle por aqui, {nome}. Bora registrar os gastos?', 'Equilibrado, como todo porquinho deveria ser.', 'Nem aperto, nem folga. Seguimos de olho.', 'Me conta, {nome}: o que você gastou hoje?',
+      'Mês no fio da navalha. Um cafezinho a menos e a gente respira.', 'Anotou tudo? Gasto esquecido é moedinha que foge.', 'Tá empatado. Eu torço pelo time do "sobrou".', 'Sem sustos por enquanto. Gosto assim.'],
+    triste:['Faltam {v} para fechar o mês, {nome}. Respira, a gente ajeita.', 'Tô sentindo um vento aqui dentro… saiu mais do que entrou.', 'Mês no vermelho em {v}. Bora rever os gastos, {nome}?', 'Ai, minhas moedinhas! Segura o cartão um pouquinho.',
+      'Faltando {v}. Que tal olhar as assinaturas?', 'Não é o fim do mundo, {nome}: é só {v}. Mas vamos cuidar.', 'Eu emagreci {v} este mês. Me ajuda?', 'Cartão, senta lá um pouco. Faltam {v}.']},
+  hacker:{
+    feliz:['> saldo: +{v}. Sistema estável.', 'Acesso concedido: {v} sobrando, {nome}.', 'Nenhum bug no orçamento. Bip bop.', 'Compilou sem erros: mês no azul.', 'Firewall do cofrinho ativo. {v} protegidos.', 'sudo guardar {v}. Feito.'],
+    ok:['> status: OK. Aguardando novos lançamentos.', 'Rodando em modo econômico, {nome}.', 'Ping no orçamento: resposta em 0 ms.', 'Log do dia vazio. Lançou tudo?', 'Sem alertas. Monitorando…', 'Entrada e saída empatadas. Zero a zero binário.'],
+    triste:['ALERTA: déficit de {v} detectado.', 'Erro 402: faltam {v}, {nome}.', 'Vazamento de moedas em andamento. Faltam {v}.', 'Orçamento invadido por boletos. Contra-atacar?', 'Memória cheia de parcelas. Faltam {v}.', '> encerrando gastos supérfluos…']},
+  boneca:{
+    feliz:['Sobrou {v}! Hoje o dia é rosa, {nome}.', 'Um arraso: mês no azul e brilho no olhar.', 'Com {v} de sobra, dá até pra sonhar com o castelo.', 'Linda, organizada e com {v} guardados.', 'Glitter e saldo positivo: combinação perfeita.', 'Hoje eu desfilo: fechamos com {v}!'],
+    ok:['Tudo no lugar, {nome}. Como um bom closet.', 'Nem sobra, nem falta: equilíbrio é chique.', 'Conta pra mim, {nome}: teve comprinha hoje?', 'Anotar os gastos também é autocuidado.', 'Mês comportado. Continuamos brilhando.', 'De olho na carteira e no brilho.'],
+    triste:['Faltam {v}… respira, {nome}, a gente dá um jeito.', 'O saldo ficou menos rosa: {v} no vermelho.', 'Hora de guardar o cartão na bolsinha. Faltam {v}.', 'Nem todo dia é de festa. Faltam {v}.', 'Vamos rever as comprinhas? Faltam {v}.', 'Sem drama: {v} a gente recupera.']},
+  corrida:{
+    feliz:['Bandeirada! Mês fechando com {v} de vantagem.', 'Pole position: {v} sobrando, {nome}.', 'Volta mais rápida do orçamento!', 'Tanque cheio: {v} na reserva.', 'Ultrapassamos os boletos pela direita.', 'No pódio com {v}. Champanhe? Só de água.'],
+    ok:['Ritmo de corrida, {nome}. Sem forçar o motor.', 'Parada no box: lançou os gastos de hoje?', 'Pneus bons, estratégia mantida.', 'Lado a lado com os gastos. Segura a curva!', 'Sem bandeira amarela por enquanto.', 'Meio da prova: concentração total.'],
+    triste:['Bandeira vermelha: faltam {v}.', 'Motor no limite, {nome}. Faltam {v}.', 'Pneu furado no orçamento: {v} atrás.', 'Hora de tirar o pé. Faltam {v}.', 'Derrapamos na curva dos gastos. Faltam {v}.', 'Pit stop urgente: rever as despesas.']},
+  neon:{
+    feliz:['A pista tá cheia: {v} sobrando, {nome}!', 'Batida boa e saldo positivo.', 'Solta o grave: fechamos com {v}!', 'Hoje o set é de vitória. Miau.', 'Luzes acesas, bolso tranquilo.', 'Remix perfeito: ganhar mais, gastar menos.'],
+    ok:['No ritmo, {nome}. Nem acelera, nem para.', 'Mixando ganhos e gastos sem desafinar.', 'Qual foi o gasto de hoje? Conta no microfone.', 'Volume no médio. Tudo sob controle.', 'Passando o som do orçamento.', 'Sem ruído na pista.'],
+    triste:['Desafinou: faltam {v}.', 'A música parou, {nome}. Faltam {v}.', 'Queimou um fusível no orçamento: {v}.', 'Baixa o volume dos gastos. Faltam {v}.', 'Set difícil hoje. Faltam {v}.', 'Hora de trocar o disco das despesas.']},
+  papel:{
+    feliz:['Conforme os registros, sobram {v}. Excelente, {nome}.', 'A prudência rende: {v} de saldo.', 'Capítulo feliz no livro-caixa.', 'Quem anota, não se espanta. Sobram {v}.', 'Economia exemplar. Uh-uh!', 'Nota dez em finanças este mês.'],
+    ok:['Tudo devidamente anotado, {nome}?', 'O livro-caixa está em ordem.', 'Mês equilibrado, como recomenda a boa doutrina.', 'Uma coruja atenta não perde um centavo.', 'Sem novidades no balancete.', 'Estudando os seus gastos com calma.'],
+    triste:['Segundo meus cálculos, faltam {v}.', 'Página difícil, {nome}: {v} negativos.', 'Recomendo revisar as despesas. Faltam {v}.', 'A lição do mês: gastou-se {v} além.', 'Hora de consultar o orçamento.', 'Nem os sábios escapam de um mês apertado.']},
+  praia:{
+    feliz:['Sombra, água fresca e {v} sobrando.', 'Maré boa, {nome}: fechamos no azul.', 'Dá até pra um picolé: sobram {v}.', 'Sol brilhando no orçamento.', 'Pé na areia e conta em dia.', 'Onda perfeita: {v} de saldo.'],
+    ok:['Mar calmo por aqui, {nome}.', 'Nem ressaca, nem maré alta.', 'Passou protetor no bolso hoje?', 'Brisa leve nas finanças.', 'De boa na rede, de olho nos gastos.', 'Anota aí antes do mergulho.'],
+    triste:['Maré baixa: faltam {v}.', 'Vem onda forte, {nome}. Faltam {v}.', 'O sol torrou {v} do orçamento.', 'Hora de recolher a canga dos gastos.', 'Areia no cofrinho. Faltam {v}.', 'Ressaca de boletos. Vamos com calma.']},
+  noite:{
+    feliz:['O céu gira em festa: sobram {v}, {nome}.', 'Pintei o mês de azul. E sobrou {v}.', 'As estrelas brilham mais com a conta em dia.', 'Uma obra-prima de orçamento.', 'Pinceladas certeiras: {v} de saldo.', 'Hoje até o cipreste dança.'],
+    ok:['Noite tranquila na vila, {nome}.', 'Cada gasto é uma pincelada. Anotou?', 'O quadro do mês está tomando forma.', 'Nem tempestade, nem calmaria.', 'Olhando as estrelas e as contas.', 'Tons equilibrados na paleta.'],
+    triste:['Faltou tinta: {v} a menos.', 'Noite turbulenta, {nome}. Faltam {v}.', 'O redemoinho levou {v}.', 'Até os gênios tiveram meses difíceis.', 'Vamos repintar esse orçamento.', 'Céu fechado. Faltam {v}.']},
+  bruxo:{
+    feliz:['Feitiço de multiplicar moedas: sobram {v}!', 'Dez pontos para {nome}: mês no azul.', 'O cofre encantado guardou {v}.', 'Poção da economia funcionando.', 'Nem precisei de varinha: sobrou {v}.', 'Mágica mesmo é fechar o mês com folga.'],
+    ok:['Nada de travessuras no orçamento, {nome}.', 'Caldeirão em fogo baixo. Tudo sob controle.', 'Anotou os gastos no pergaminho?', 'Equilíbrio digno de um bom feiticeiro.', 'A coruja ainda não trouxe más notícias.', 'Sem feitiços estranhos por aqui.'],
+    triste:['Alguém lançou um feitiço de sumiço: faltam {v}.', 'Faltam {v}, {nome}. Hora de um contrafeitiço.', 'O dragão do cofre está com fome: {v}.', 'Poção errada este mês. Faltam {v}.', 'Nem toda mágica dá certo. Vamos rever.', 'Menos dez pontos para os gastos.']},
+  espaco:{
+    feliz:['Órbita estável: {v} sobrando, {nome}.', 'Missão cumprida, mês no azul!', 'Combustível de sobra: {v}.', 'Pousamos com {v} no tanque.', 'Rumo às estrelas, sem dívidas.', 'Central, aqui é o cofrinho: tudo certo.'],
+    ok:['Navegando em velocidade de cruzeiro, {nome}.', 'Sem turbulência no orçamento.', 'Registrou os gastos no diário de bordo?', 'Gravidade normal por aqui.', 'Radar limpo. Seguimos.', 'Trajetória mantida.'],
+    triste:['Houston, faltam {v}.', 'Alerta de combustível: {v} a menos.', 'Entramos num buraco negro de gastos, {nome}.', 'Chuva de meteoros no orçamento: {v}.', 'Corrigindo a rota. Faltam {v}.', 'Oxigênio baixo no cofrinho.']},
+  floresta:{
+    feliz:['Colheita boa: sobram {v}, {nome}.', 'A toca está cheia para o inverno.', 'Guardei {v} debaixo da árvore.', 'Dia de sol na floresta e na conta.', 'Raposa esperta guarda antes de gastar.', 'Folhas verdes, saldo verde.'],
+    ok:['Tudo calmo na trilha, {nome}.', 'Nem seca, nem enchente.', 'Farejou algum gasto hoje? Anota.', 'Passo a passo, sem pressa.', 'A floresta está em equilíbrio.', 'De orelha em pé nos gastos.'],
+    triste:['A toca ficou vazia: faltam {v}.', 'Inverno chegando, {nome}. Faltam {v}.', 'Alguém comeu as provisões: {v}.', 'Trilha difícil este mês.', 'Hora de guardar mais nozes.', 'Faltam {v}. Vamos farejar onde cortar.']},
+  retro:{
+    feliz:['+{v} PONTOS! FASE CONCLUÍDA.', 'NOVO RECORDE, {nome}!', 'VIDA EXTRA: sobram {v}.', 'CHEFÃO DOS BOLETOS DERROTADO.', 'COMBO DE ECONOMIA x3!', 'Moedas coletadas: {v}.'],
+    ok:['FASE EM ANDAMENTO…', 'PRESS START para lançar um gasto.', 'Sem inimigos à vista, {nome}.', 'Energia no meio da barra.', 'Jogo salvo.', 'Modo normal ativado.'],
+    triste:['GAME OVER? Ainda não: faltam {v}.', 'Você perdeu {v} moedas, {nome}.', 'Chefão dos boletos na tela!', 'Energia baixa. Faltam {v}.', 'CONTINUE? 9… 8… 7…', 'Insira mais moedas no cofrinho.']},
+  dragao:{
+    feliz:['Voo tranquilo: sobram {v}, {nome}.', 'Tesouro protegido: {v} guardados.', 'Nenhum invasor no ninho de moedas.', 'Rugido de alegria: mês no azul!', 'Planando com {v} de folga.', 'Dragão bem alimentado, bolso também.'],
+    ok:['Céu limpo sobre a ilha, {nome}.', 'De olho no tesouro.', 'Pousou algum gasto hoje? Anota.', 'Asas abertas, vento a favor.', 'Tudo calmo na caverna.', 'Patrulha sem novidades.'],
+    triste:['Fogo no orçamento: faltam {v}.', 'O tesouro encolheu {v}, {nome}.', 'Tempestade à frente. Faltam {v}.', 'Queimamos {v} a mais.', 'Hora de voar baixo nos gastos.', 'O ninho precisa de mais moedas.']}
+};
 // Bloco do Resumo: o porquinho reage ao saldo do mês atual. Tocar nele troca a fala.
 function funMascot(){
   const net = totalIn(curYM) - totalOut(curYM), mood = funMood();
-  const falas = FUN_LINES[mood], ganhas = funBadgeList().filter(b => b[3]).length, nivel = [...FUN_LEVELS].reverse().find(l => ganhas >= l[0])[1];
+  const falas = (FUN_TEMA[db.prefs.skin] || FUN_TEMA[''])[mood], ganhas = funBadgeList().filter(b => b[3]).length, nivel = [...FUN_LEVELS].reverse().find(l => ganhas >= l[0])[1];
   return `<div class="card fun" onclick="funPoke()"><div class="pigBox">${pigSvg(mood)}</div>
     <div class="mid"><div class="bubble">${esc(comNome(falas[(now.getDate() + funState.tap) % falas.length])).replace('{v}', fmt(Math.abs(net)))}</div>
     <small>${I('trophy', 13)} ${nivel}${funState.streak > 1 ? ` · ${I('flame', 13)} ${funState.streak} dias seguidos` : ''}</small></div></div>`;
@@ -298,7 +399,7 @@ function openSettings(sec){
     <label>Cor do ícone do app</label>
     <div class="swatches">${Object.entries(ICONES).map(([k,c]) => `<button class="sw ${N.icone() === k ? 'on' : ''}" style="background:linear-gradient(135deg,${c[1]},${c[2]});border-radius:14px" onclick="nativeOpts().setIcone('${k}');openSettings()" aria-label="${c[0]}" title="${c[0]}"></button>`).join('')}</div>
     ${window.Android && Android.setIconeApp ? `<label>Desenho do ícone</label>
-    <div class="btns" style="margin-top:0">${[['b', 'Gráfico'], ['p', 'Porquinho']].map(([k, t]) => `<button class="btn ${Android.iconeDesenho() === k ? 'primary' : ''}" onclick="Android.setIconeApp(Android.icone(),'${k}',Android.iconeNome());openSettings()">${t}</button>`).join('')}</div>
+    <div class="btns" style="margin-top:0">${[['b', 'Gráfico'], ['p', 'Porquinho'], ...(SKINS[Android.icone()] ? [['t', 'Do tema']] : [])].map(([k, t]) => `<button class="btn ${Android.iconeDesenho() === k ? 'primary' : ''}" onclick="Android.setIconeApp(Android.icone(),'${k}',Android.iconeNome());openSettings()">${t}</button>`).join('')}</div>
     <label>Nome do app na tela inicial</label>
     <div class="btns" style="margin-top:0;flex-wrap:wrap">${APP_NOMES.map((t, i) => `<button class="btn ${Number(Android.iconeNome()) === i ? 'primary' : ''}" style="padding:11px 6px;flex:1 0 40%" onclick="Android.setIconeApp(Android.icone(),Android.iconeDesenho(),${i});openSettings()">${t}</button>`).join('')}</div>` : ''}
     <div class="hint">Ao trocar a cor, o desenho ou o nome, o Android fecha o app: é só abrir de novo pelo ícone novo. Se o ícone sumir da tela inicial, adicione de novo pela lista de apps. O Android só deixa escolher entre os nomes desta lista.</div>
@@ -371,7 +472,7 @@ function openSettings(sec){
 async function setSkin(k){
   setPref('skin', k);
   if (k && window.Android && Android.setIconeApp && Android.icone() !== k
-    && await ask(`Trocar também o ícone do app para combinar com o tema ${SKINS[k][0]}?\n\nO Android fecha o app ao trocar o ícone: é só abrir de novo pelo ícone novo.`, 'Trocar o ícone')) Android.setIconeApp(k, Android.iconeDesenho(), Android.iconeNome());
+    && await ask(`Trocar também o ícone do app para combinar com o tema ${SKINS[k][0]}?\n\nO Android fecha o app ao trocar o ícone: é só abrir de novo pelo ícone novo.`, 'Trocar o ícone')) Android.setIconeApp(k, 't', Android.iconeNome()); // o ícone do tema: as barras e o símbolo dele
 }
 // Guia do app (Configurações): todas as funções (GUIA, em js/guia.js), por assunto, com busca.
 function guideHtml(){

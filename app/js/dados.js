@@ -17,7 +17,7 @@ function logErr(onde, e){
 }
 addEventListener('error', e => logErr('erro na tela', (e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0)));
 addEventListener('unhandledrejection', e => logErr('promessa', e.reason));
-const APP_VERSION = '1.40'; // manter igual ao versionName do build.gradle
+const APP_VERSION = '1.41'; // manter igual ao versionName do build.gradle
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 // Ícones do app: desenhos em dois tons (traço + preenchimento translúcido nas partes com class="d"),
 // todos numa grade de 24×24. I('nome', tamanho) devolve o <svg>; a cor vem do texto ao redor (currentColor).
@@ -331,7 +331,12 @@ const SKINS = {
   neon:['Neon', true, '#f472b6', '#22d3ee', '#7c3aed', '#db2777', '#0d0221', '#1a0b3b', '#3b1d7a', '#c4b5fd', '#f5f3ff', 290, 80],
   papel:['Papel antigo', false, '#7c2d12', '#92400e', '#78350f', '#92400e', '#f5efe0', '#fffaf0', '#e7dcc3', '#6b5a3e', '#2b2118', 35, 45],
   praia:['Praia', false, '#0e7490', '#0369a1', '#0e7490', '#155e75', '#fdf6e3', '#ffffff', '#f0e2bd', '#5b6b73', '#0c2a33', 190, 70],
-  noite:['Noite estrelada', true, '#facc15', '#93c5fd', '#1e3a8a', '#1d4ed8', '#0a1230', '#111c44', '#24337a', '#a5b4fc', '#f1f5ff', 225, 75] // inspirado no quadro de Van Gogh
+  noite:['Noite estrelada', true, '#f4d35e', '#9cc0e7', '#1e3a8a', '#274690', '#0b1437', '#13205a', '#2b3f8f', '#b4c6f0', '#f4f7ff', 225, 75], // inspirado no quadro de Van Gogh
+  bruxo:['Bruxo', true, '#eab308', '#fbbf24', '#7f1d1d', '#991b1b', '#1a0b0e', '#2a1216', '#4a1f26', '#d6b3a0', '#fdf4e3', 0, 60],
+  espaco:['Espaço', true, '#a78bfa', '#38bdf8', '#312e81', '#4338ca', '#05060f', '#0e1024', '#1f2347', '#a5b4d4', '#eef2ff', 240, 60],
+  floresta:['Floresta', false, '#166534', '#3f6212', '#166534', '#3f6212', '#eef5e6', '#fbfdf7', '#cfe3bf', '#4b5d3f', '#1a2e12', 110, 45],
+  retro:['Retrô 8-bit', true, '#facc15', '#fb7185', '#7c3aed', '#be185d', '#12121c', '#1e1e2e', '#3a3a55', '#b8b8d0', '#f8f8f2', 250, 30],
+  dragao:['Dragão', true, '#a3e635', '#4ade80', '#111827', '#064e3b', '#07090c', '#11151b', '#232a33', '#9ca3af', '#f3f4f6', 150, 20]
 };
 // Cores do ícone do app: as do tema e as dos temas especiais (cada uma tem um ícone pronto no APK).
 const ICONES = {...COLORS, ...Object.fromEntries(Object.entries(SKINS).map(([k, s]) => [k, [s[0], s[4], s[2]]]))};
@@ -349,7 +354,7 @@ const MODES = {auto:'Automático', light:'Claro', dark:'Escuro'};
 const RESUMO = {mascote:['Porquinho (modo divertido)', 1, 1], atalhos:['Atalhos para adicionar', 1, 1], alertas:['Contas a vencer e avisos de orçamento', 1], saldo:['Saldo do ano', 1], grafico:['Gráfico de ganhos e gastos', 1],
   numeros:['Média de gastos e total investido', 1], previsao:['Previsão dos próximos meses', 1], contas:['Contas bancárias', 1], planejar:['Planejamento (reserva, assinaturas, dívidas)', 1], categorias:['Gastos por categoria', 1], bancos:['Gastos por banco', 1],
   pagamentos:['Gastos por forma de pagamento', 1], mes:['Resumo do mês atual', 0], faturas:['Faturas do cartão do mês', 0], parcelas:['Compras parceladas', 0],
-  metas:['Metas', 0], invest:['Investimentos', 0], conquistas:['Conquistas (modo divertido)', 1]};
+  metas:['Metas', 0], invest:['Investimentos', 0], vales:['Vale-refeição e alimentação', 1], conquistas:['Conquistas (modo divertido)', 1]};
 const FUN_BLOCKS = ['mascote', 'conquistas']; // só existem com o modo divertido ligado
 // Blocos das outras abas, no mesmo formato. A ordem e o que aparece ficam em db.prefs.layout[aba]
 // (o Resumo usa db.prefs.resumo, que já existia). O conteúdo de cada bloco está na função view da aba.
@@ -360,7 +365,7 @@ const LAYOUT = {
     faturas:['Faturas do cartão', 1], lancamentos:['Lançamentos', 1], acoes:['Importar extrato, relatório e planilha', 1]},
   // Linhas do widget Resumo da tela inicial (não é uma aba: ver updateWidget e Configurações > Widgets).
   widget:{saldo:['Saldo do mês', 1], ganhos:['Ganhos do mês', 1], gastos:['Gastos do mês', 1], conta:['Próxima conta a vencer', 1], contas:['Saldo nas contas', 0], invest:['Total investido', 0],
-    fatura:['Faturas do cartão do mês', 0], orcamento:['Orçamento usado', 0], parcelas:['Parcelas do mês', 0], previsao:['Previsão do mês que vem', 0]},
+    vales:['Saldo dos vales (refeição e alimentação)', 0], fatura:['Faturas do cartão do mês', 0], orcamento:['Orçamento usado', 0], parcelas:['Parcelas do mês', 0], previsao:['Previsão do mês que vem', 0]},
   invest:{total:['Total investido e projeção', 1], evolucao:['Evolução do total investido', 1], metas:['Metas', 1], carteira:['Meus investimentos', 1], taxas:['Taxas usadas na projeção', 1]}
 };
 // Grupos da lista de lançamentos da aba Gastos: [nome, quais lançamentos entram].
@@ -429,7 +434,7 @@ applyTheme();
 let now = new Date();
 let curYM = ymOf(now.getFullYear(), now.getMonth());
 const todayLabel = () => now.toLocaleDateString(LOCALES[lang()], {weekday:'long', day:'numeric', month:'long', year:'numeric'});
-const state = {tab:visTabs()[0], year:now.getFullYear(), month:curYM, sel:'', q:'', fcat:'', fbank:'', fpay:'', ftag:'', limit:60, gsub:'mes'}; // gsub: parte da aba Gastos (do mês / parceladas)
+const state = {tab:visTabs()[0], year:now.getFullYear(), month:curYM, sel:'', q:'', fcat:'', fbank:'', fpay:'', ftag:'', limit:60, gsub:'mes', isub:'todos'}; // gsub: parte da aba Gastos (do mês / parceladas / vales); isub: parte da aba Ganhos (todos / vales)
 
 // ---------- Utilidades ----------
 function ymOf(y, m0){ return y + '-' + String(m0+1).padStart(2,'0'); }
@@ -491,8 +496,25 @@ function ensureArchive(){
 const archBanner = y => !db.archUntil || String(y) > db.archUntil ? '' : `<div class="offline">${I('box', 14)}${arch
   ? 'Período arquivado: estes lançamentos vêm do arquivo e não podem ser editados.'
   : canSync() && sync.on ? 'Período arquivado: carregando o arquivo da sua conta…' : 'Período arquivado: entre com a conta Google para ver os lançamentos.'}</div>`;
-const incomesOf = ym => cached('i' + ym, () => [...db.incomes, ...archRecs('incomes', ym)].filter(x => activeIn(x, ym)));
-const expensesOf = ym => cached('e' + ym, () => expensesRaw(ym));
+// Vale-alimentação e vale-refeição ficam separados do resto: não entram nos ganhos, nos gastos nem no saldo do mês.
+// Crédito de vale = ganho com a categoria va ou vr; gasto no vale = gasto (ou parcela) com a forma de pagamento va ou vr.
+// incomesOf/expensesOf devolvem o mês SEM os vales; incomesAll/expensesAll, com eles; valeIn/valeOut, só eles.
+const VALES = {va:'Vale-alimentação', vr:'Vale-refeição'};
+const valeGanho = x => !!VALES[x.cat], valeGasto = x => !!VALES[x.pay];
+const incomesAll = ym => cached('I' + ym, () => [...db.incomes, ...archRecs('incomes', ym)].filter(x => activeIn(x, ym)));
+const incomesOf = ym => cached('i' + ym, () => incomesAll(ym).filter(x => !valeGanho(x)));
+const expensesAll = ym => cached('E' + ym, () => expensesRaw(ym));
+const expensesOf = ym => cached('e' + ym, () => expensesAll(ym).filter(x => !valeGasto(x)));
+const valeIn = (ym, k) => incomesAll(ym).filter(x => k ? x.cat === k : valeGanho(x));
+const valeOut = (ym, k) => expensesAll(ym).filter(x => k ? x.pay === k : valeGasto(x));
+const temVale = k => db.incomes.some(x => x.cat === k) || db.expenses.some(x => x.pay === k) || db.installments.some(x => x.pay === k);
+// Saldo de um vale no fim do mês ym: tudo o que entrou menos tudo o que saiu, desde o primeiro lançamento dele.
+const valeSaldo = (k, ym = curYM) => cached('vs' + k + ym, () => {
+  const ini = [...db.incomes.filter(x => x.cat === k), ...db.expenses.filter(x => x.pay === k), ...db.installments.filter(x => x.pay === k)].reduce((a, x) => x.start < a ? x.start : a, ym);
+  let s = 0;
+  for (let m = ini, i = 0; m <= ym && i < 240; m = addMonths(m, 1), i++) s += sum(valeIn(m, k), x => x.value) - sum(valeOut(m, k), x => x.value);
+  return round2(s);
+});
 function expensesRaw(ym){
   // Gasto dividido: value passa a ser só a sua parte; full guarda o total que saiu da sua conta;
   // got diz se a parte da outra pessoa já foi recebida (nos gastos fixos, mês a mês, em x.sm).
@@ -887,6 +909,7 @@ function widgetLines(){
     invest:() => db.investments.length && ['Investido', fmt(sum(db.investments, x => x.value)), ''],
     fatura:() => { const v = sum(invoices(curYM), i => i[1]); return v > 0 && ['Faturas do cartão', fmt(v), 'out']; },
     orcamento:() => { const b = budgetStatus(curYM), lim = sum(b, x => x.lim); return lim > 0 && ['Orçamento usado', Math.round(sum(b, x => x.used) / lim * 100) + '%', '']; },
+    vales:() => (temVale('va') || temVale('vr')) && ['Saldo dos vales', fmt(valeSaldo('va') + valeSaldo('vr')), ''],
     parcelas:() => { const v = sum(expensesOf(curYM).filter(x => x.kind === 'installment'), x => x.value); return v > 0 && ['Parcelas do mês', fmt(v), 'out']; },
     previsao:() => { const n = addMonths(curYM, 1), s = totalIn(n) - totalOut(n); return [(s < 0 ? 'Falta em ' : 'Sobra em ') + monthName(n).split(' ')[0], fmt(Math.abs(s)), s < 0 ? 'out' : 'in']; }};
   return db.prefs.layout.widget.filter(b => b.on).map(b => itens[b.k]()).filter(Boolean).slice(0, 5).map(([t, v, c]) => ({t, v, c}));

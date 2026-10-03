@@ -383,8 +383,8 @@ function exportCsv(){
   const y = state.month.slice(0, 4), rows = [['Mês', 'Tipo', 'Descrição', 'Categoria', 'Banco', 'Forma de pagamento', 'Detalhe', 'Valor']];
   for (let i = 0; i < 12; i++){
     const m = ymOf(+y, i);
-    for (const x of incomesOf(m)) rows.push([m, 'Ganho', x.desc, (CAT_GANHO[x.cat] || CAT_GANHO.outros)[1], '', '', x.fixed === 'y' ? 'anual' : x.fixed ? 'fixo' : 'avulso', x.value]);
-    for (const x of expensesOf(m)) rows.push([m, 'Gasto', x.desc, (CAT_GASTO[x.cat] || CAT_GASTO.outros)[1], x.bank || '', PAY[x.pay] || '',
+    for (const x of incomesAll(m)) rows.push([m, 'Ganho', x.desc, (CAT_GANHO[x.cat] || CAT_GANHO.outros)[1], '', '', x.fixed === 'y' ? 'anual' : x.fixed ? 'fixo' : 'avulso', x.value]);
+    for (const x of expensesAll(m)) rows.push([m, 'Gasto', x.desc, (CAT_GASTO[x.cat] || CAT_GASTO.outros)[1], x.bank || '', PAY[x.pay] || '',
       x.kind === 'installment' ? `parcela ${x.num}/${x.n}` : x.fixed === 'y' ? 'anual' : x.fixed ? 'fixo' : 'avulso', x.value]);
   }
   const cell = v => typeof v === 'number' ? v.toFixed(2).replace('.', ',') : '"' + String(v).replace(/"/g, '""') + '"';
