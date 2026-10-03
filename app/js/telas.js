@@ -4,7 +4,7 @@
 // Bloco com o ícone, na cor do tema; c = [ícone, nome, cor própria (não usada na tela: tudo segue o tema)].
 const tile = (icon, color) => `<div class="ico" style="background:linear-gradient(135deg,${color ? color + ',' + color + 'cc' : 'var(--hero1),var(--hero2)'})">${I(icon, 22)}</div>`;
 // Ícone de uma categoria: na cor do tema ou, com a opção "Por categoria" ligada, na cor própria dela (c[2]).
-const ico = (c) => tile(c[0], db.prefs.catColor && c[2]);
+const ico = (c) => tile(c[0], (db.prefs.catColor || db.prefs.skin) && c[2]); // num tema especial, as categorias ficam com a cor própria
 // Valor curto para as escalas dos gráficos ("R$ 5,2 mil").
 const kfmt = v => hideVals || !isFinite(v) ? '' : 'R$ ' + v.toLocaleString('pt-BR', {notation:'compact', maximumFractionDigits:1});
 const chartGrid = max => `<div class="grid"><i style="top:0"><em>${kfmt(max)}</em></i><i style="top:50%"><em>${kfmt(max / 2)}</em></i></div>`;
@@ -197,7 +197,7 @@ function openLayoutEdit(tab = state.tab){
   const defs = LAYOUT[tab], shown = b => db.prefs.fun || !FUN_BLOCKS.includes(b.k);
   const r = layoutOf(tab).map((b, i) => ({b, i})).filter(x => shown(x.b)); // i = posição na lista completa
   settingsOpen = false; F = null;
-  showSheet(`<h3>Personalizar: ${TABS[tab][1]}</h3>
+  showSheet(`<h3>Personalizar: ${tab === 'widget' ? 'widget Resumo' : TABS[tab][1]}</h3>
     <div class="hint" style="margin-top:0">Toque no círculo para mostrar ou esconder um bloco e use as setas para mudar a ordem.</div>
     ${r.map(({b, i}, n) => `<div class="item" style="cursor:default;padding:6px 0">
       <button class="iconbtn ${b.on ? 'in' : 'muted'}" onclick="layoutSet('${tab}',${i},'toggle')" aria-label="${b.on ? 'Esconder' : 'Mostrar'}">${I(b.on ? 'checked' : 'unchecked', 24)}</button>

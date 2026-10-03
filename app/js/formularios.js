@@ -457,7 +457,7 @@ function sugBind(el, box, list){
   };
   el.addEventListener('focus', draw);
   el.addEventListener('input', draw);
-  el.addEventListener('blur', () => setTimeout(() => box.hidden = true, 200)); // dá tempo de o toque no botão chegar
+  draw(); // as sugestões já aparecem ao abrir o formulário, sem precisar tocar no campo
 }
 function syncForm(skip){
   for (const f of F.fields){
@@ -516,7 +516,21 @@ function closeForm(){
 function submitForm(){
   if (!F) return; // segundo toque em "Salvar" depois que o formulário já fechou
   // Erro num campo recolhido abre as "Mais opções", para o campo aparecer.
-  const out = {}, err = (m, f) => { if (f && f.more && !F.more){ F.more = true; syncForm(); } document.getElementById('ferr').textContent = m; };
+  // O motivo aparece numa mensagem na tela; depois do OK, o campo que falta fica destacado e à vista.
+  const out = {}, err = (m, f) => {
+    if (f && f.more && !F.more){ F.more = true; syncForm(); }
+    document.getElementById('ferr').textContent = m;
+    document.querySelectorAll('#sheet .bad').forEach(w => w.classList.remove('bad'));
+    tell('Não foi possível salvar.\n\n' + m).then(() => {
+      const w = f && F && document.getElementById('w_' + f.k), campo = w && w.querySelector('input:not([type=hidden]),.pickBtn,.catPick button');
+      if (!w) return;
+      w.classList.add('bad');
+      w.scrollIntoView({block:'center', behavior:'smooth'});
+      if (campo && campo.tagName === 'INPUT') campo.focus({preventScroll:true});
+      w.addEventListener('input', () => w.classList.remove('bad'), {once:true});
+      w.addEventListener('click', () => w.classList.remove('bad'), {once:true});
+    });
+  };
   for (const f of F.fields){
     const raw = String(F.vals[f.k] ?? '').trim(), name = typeof f.label === 'function' ? f.label(F.vals) : f.label;
     if (f.showIf && !f.showIf(F.vals)){ out[f.k] = ''; continue; }

@@ -17,7 +17,7 @@ function logErr(onde, e){
 }
 addEventListener('error', e => logErr('erro na tela', (e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0)));
 addEventListener('unhandledrejection', e => logErr('promessa', e.reason));
-const APP_VERSION = '1.39'; // manter igual ao versionName do build.gradle
+const APP_VERSION = '1.40'; // manter igual ao versionName do build.gradle
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 // Ícones do app: desenhos em dois tons (traço + preenchimento translúcido nas partes com class="d"),
 // todos numa grade de 24×24. I('nome', tamanho) devolve o <svg>; a cor vem do texto ao redor (currentColor).
@@ -316,8 +316,26 @@ const TABS = {resumo:['chart','Resumo'], ganhos:['income','Ganhos'], gastos:['re
 const COLORS = {
   indigo:['Índigo','#4f46e5','#7c3aed','#818cf8','#a78bfa', 245, 80], esmeralda:['Esmeralda','#047857','#0f766e','#34d399','#2dd4bf', 165, 75],
   oceano:['Oceano','#0369a1','#1d4ed8','#38bdf8','#60a5fa', 212, 85], rosa:['Rosa','#be185d','#a21caf','#f472b6','#e879f9', 322, 75],
-  laranja:['Laranja','#c2410c','#b45309','#fb923c','#fbbf24', 26, 88], grafite:['Grafite','#475569','#1e293b','#cbd5e1','#94a3b8', 215, 14]
+  laranja:['Laranja','#c2410c','#b45309','#fb923c','#fbbf24', 26, 88], grafite:['Grafite','#475569','#1e293b','#cbd5e1','#94a3b8', 215, 14],
+  vermelho:['Vermelho','#b91c1c','#be123c','#f87171','#fb7185', 0, 75], roxo:['Roxo','#7e22ce','#6d28d9','#c084fc','#a78bfa', 272, 75],
+  turquesa:['Turquesa','#0f766e','#0e7490','#2dd4bf','#22d3ee', 182, 70], dourado:['Dourado','#854d0e','#a16207','#facc15','#fbbf24', 42, 85],
+  limao:['Verde-limão','#3f6212','#4d7c0f','#a3e635','#bef264', 85, 70], cafe:['Café','#7c2d12','#78350f','#fdba74','#fcd34d', 20, 45]
 };
+// Temas especiais: trocam as cores do app inteiro (menos os ícones das categorias, que ficam com a cor própria de cada
+// uma), o mascote do modo divertido (MASCOTES) e, se a pessoa quiser, o ícone do app.
+// [nome, escuro?, destaque, destaque 2, cartão de destaque 1 e 2, fundo, cartões, linhas, texto secundário, texto, matiz, saturação]
+const SKINS = {
+  hacker:['Hacker', true, '#22c55e', '#4ade80', '#052e16', '#166534', '#020a04', '#07140b', '#14532d', '#86efac', '#d1fae5', 140, 70],
+  boneca:['Boneca', false, '#be185d', '#db2777', '#db2777', '#c026d3', '#fff0f7', '#ffffff', '#fbcfe8', '#9d174d', '#500724', 328, 80],
+  corrida:['Corrida', true, '#ef4444', '#f59e0b', '#991b1b', '#1f2937', '#0c0c0f', '#17171c', '#2a2a33', '#a1a1aa', '#fafafa', 0, 70],
+  neon:['Neon', true, '#f472b6', '#22d3ee', '#7c3aed', '#db2777', '#0d0221', '#1a0b3b', '#3b1d7a', '#c4b5fd', '#f5f3ff', 290, 80],
+  papel:['Papel antigo', false, '#7c2d12', '#92400e', '#78350f', '#92400e', '#f5efe0', '#fffaf0', '#e7dcc3', '#6b5a3e', '#2b2118', 35, 45],
+  praia:['Praia', false, '#0e7490', '#0369a1', '#0e7490', '#155e75', '#fdf6e3', '#ffffff', '#f0e2bd', '#5b6b73', '#0c2a33', 190, 70],
+  noite:['Noite estrelada', true, '#facc15', '#93c5fd', '#1e3a8a', '#1d4ed8', '#0a1230', '#111c44', '#24337a', '#a5b4fc', '#f1f5ff', 225, 75] // inspirado no quadro de Van Gogh
+};
+// Cores do ícone do app: as do tema e as dos temas especiais (cada uma tem um ícone pronto no APK).
+const ICONES = {...COLORS, ...Object.fromEntries(Object.entries(SKINS).map(([k, s]) => [k, [s[0], s[4], s[2]]]))};
+const APP_NOMES = ['Minhas Finanças', 'Finanças', 'Carteira', 'Meu Dinheiro']; // nomes que o app pode ter na tela inicial (lista fixa no APK)
 function hslHex(h, s, l){
   s /= 100; l /= 100;
   const a = s * Math.min(l, 1 - l), f = n => { const k = (n + h / 30) % 12; return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))).toString(16).padStart(2, '0'); };
@@ -340,6 +358,9 @@ const LAYOUT = {
   ganhos:{total:['Total de ganhos do mês', 1], fixos:['Fixos (todo mês)', 1], anuais:['Anuais (uma vez por ano)', 1], avulsos:['Ganhos avulsos', 1]},
   gastos:{mes:['Ganhos, gastos e saldo do mês', 1], orcamento:['Orçamento do mês', 1], comparativo:['Comparativo por categoria', 1], receber:['A receber de gastos divididos', 1],
     faturas:['Faturas do cartão', 1], lancamentos:['Lançamentos', 1], acoes:['Importar extrato, relatório e planilha', 1]},
+  // Linhas do widget Resumo da tela inicial (não é uma aba: ver updateWidget e Configurações > Widgets).
+  widget:{saldo:['Saldo do mês', 1], ganhos:['Ganhos do mês', 1], gastos:['Gastos do mês', 1], conta:['Próxima conta a vencer', 1], contas:['Saldo nas contas', 0], invest:['Total investido', 0],
+    fatura:['Faturas do cartão do mês', 0], orcamento:['Orçamento usado', 0], parcelas:['Parcelas do mês', 0], previsao:['Previsão do mês que vem', 0]},
   invest:{total:['Total investido e projeção', 1], evolucao:['Evolução do total investido', 1], metas:['Metas', 1], carteira:['Meus investimentos', 1], taxas:['Taxas usadas na projeção', 1]}
 };
 // Grupos da lista de lançamentos da aba Gastos: [nome, quais lançamentos entram].
@@ -350,7 +371,8 @@ const GRUPOS = {
   avu:['Ocasionais', x => !x.fixed && x.kind !== 'installment']};
 const darkQuery = matchMedia('(prefers-color-scheme: dark)');
 function ensurePrefs(){
-  const p = db.prefs = Object.assign({mode:'auto', color:'indigo', tabs:[], remind:0, anim:true, notifyCats:{}, font:1, fun:false, rollBudget:false, catColor:false}, db.prefs);
+  const p = db.prefs = Object.assign({mode:'auto', color:'indigo', tabs:[], remind:0, anim:true, notifyCats:{}, font:1, fun:false, rollBudget:false, catColor:false, skin:''}, db.prefs);
+  if (!SKINS[p.skin]) p.skin = '';
   // Notificações: notify liga/desliga tudo; remind = dias de antecedência; notifyCats[categoria] === false silencia a categoria.
   // resumo = blocos da aba Resumo, na ordem escolhida, cada um ligado ou desligado.
   // Bloco que ainda não está na lista salva (criado numa versão mais nova) entra no fim, ou no começo se d[2].
@@ -362,7 +384,7 @@ function ensurePrefs(){
   // grpOrder = ordem dos grupos da lista de gastos (assinaturas, fixos, parceladas, ocasionais).
   p.grpOrder = [...(p.grpOrder || []).filter(k => GRUPOS[k]), ...Object.keys(GRUPOS).filter(k => !(p.grpOrder || []).includes(k))];
   p.layout = p.layout || {};
-  for (const t of ['ganhos', 'gastos', 'invest']) p.layout[t] = fill(p.layout[t], LAYOUT[t]);
+  for (const t of ['ganhos', 'gastos', 'invest', 'widget']) p.layout[t] = fill(p.layout[t], LAYOUT[t]);
   // tabsOff = abas escondidas do menu de baixo (o Resumo fica sempre: é por ele que se chega às configurações).
   p.tabsOff = (p.tabsOff || []).filter(t => TABS[t] && t !== 'resumo');
   // reminds = lista de antecedências escolhidas (ex.: [1, 3, 5] avisa três vezes, além do aviso no dia).
@@ -376,21 +398,24 @@ const layoutOf = tab => tab === 'resumo' ? db.prefs.resumo : db.prefs.layout[tab
 // Monta a tela: os blocos ligados da aba, na ordem escolhida. B = {chave: () => html}.
 const blocks = (tab, B) => layoutOf(tab).filter(b => b.on && B[b.k]).map(b => B[b.k]()).join('');
 function applyTheme(){
-  const p = db.prefs, dark = p.mode === 'dark' || (p.mode === 'auto' && darkQuery.matches), c = COLORS[p.color] || COLORS.indigo;
+  const p = db.prefs, sk = SKINS[p.skin]; // tema especial: define tudo, inclusive claro ou escuro
+  const dark = sk ? sk[1] : p.mode === 'dark' || (p.mode === 'auto' && darkQuery.matches), c = sk ? [sk[0], sk[2], sk[3], sk[2], sk[3], sk[11], sk[12]] : COLORS[p.color] || COLORS.indigo;
   const st = document.documentElement.style;
   document.documentElement.dataset.mode = dark ? 'dark' : 'light';
   document.documentElement.dataset.anim = p.anim ? 'on' : 'off';
   document.documentElement.dataset.fun = p.fun ? 'on' : 'off';
+  document.documentElement.dataset.skin = sk ? p.skin : '';
   document.body.style.zoom = p.font; // tamanho do texto: amplia ou reduz a tela inteira por igual
   st.setProperty('--brand', c[dark ? 3 : 1]); st.setProperty('--brand2', c[dark ? 4 : 2]);
-  st.setProperty('--hero1', c[1]); st.setProperty('--hero2', c[2]);
+  st.setProperty('--hero1', sk ? sk[4] : c[1]); st.setProperty('--hero2', sk ? sk[5] : c[2]);
   // Fundo, cartões, linhas e texto secundário levam um toque da cor do tema.
   const h = c[5], s = c[6];
   theme = {h, s, dark};
-  const bg = dark ? hslHex(h, s * .5, 7) : hslHex(h, s * .6, 96), card = dark ? hslHex(h, s * .42, 12) : '#ffffff';
+  const bg = sk ? sk[6] : dark ? hslHex(h, s * .5, 7) : hslHex(h, s * .6, 96), card = sk ? sk[7] : dark ? hslHex(h, s * .42, 12) : '#ffffff';
   st.setProperty('--bg', bg); st.setProperty('--card', card);
-  st.setProperty('--line', dark ? hslHex(h, s * .38, 19) : hslHex(h, s * .5, 90));
-  st.setProperty('--muted', dark ? hslHex(h, s * .22, 68) : hslHex(h, s * .2, 37));
+  st.setProperty('--line', sk ? sk[8] : dark ? hslHex(h, s * .38, 19) : hslHex(h, s * .5, 90));
+  st.setProperty('--muted', sk ? sk[9] : dark ? hslHex(h, s * .22, 68) : hslHex(h, s * .2, 37));
+  if (sk) st.setProperty('--text', sk[10]); else st.removeProperty('--text');
   // barras do sistema no APK
   if (window.Android && Android.cores) Android.cores(bg, card, dark);
   else if (window.Android && Android.tema) Android.tema(dark);
@@ -845,8 +870,26 @@ function scheduleReminders(){
 function updateWidget(){
   if (!(window.Android && Android.widget)) return;
   const tin = totalIn(curYM), tout = totalOut(curYM), m = monthName(curYM), humor = funMood();
+  const frase = {feliz:'Oinc! Mês no azul', ok:'Tudo sob controle', triste:'Segura o cartão…'}[humor];
   Android.widget(JSON.stringify({mes:m[0].toUpperCase() + m.slice(1), saldo:fmt(tin - tout), negativo:tin - tout < 0, ganhos:fmt(tin), gastos:fmt(tout),
-    fun:!!db.prefs.fun, frase:{feliz:'Oinc! Mês no azul', ok:'Tudo sob controle', triste:'Segura o cartão…'}[humor]}));
+    fun:!!db.prefs.fun, frase, linhas:widgetLines(), pig:db.prefs.widgetPig ?? !!db.prefs.fun, humor, skin:db.prefs.skin || '',
+    contas:upcomingBills().slice(0, 5).map(b => ({t:` · ${b.diff < 0 ? 'atrasada' : b.diff === 0 ? 'hoje' : 'dia ' + dueDay(b.x, curYM)}`, v:fmt(b.x.value), c:b.diff <= 0 ? 'out' : ''})), porco:{humor, frase, gastos:fmt(tout), sub:tin > 0 ? `gastos: ${Math.round(tout / tin * 100)}% dos ganhos` : 'gastos do mês'}}));
+}
+// Linhas do widget Resumo: as escolhidas em Configurações > Widgets, na ordem; as que não têm dado são puladas. [{t, v, c}]
+function widgetLines(){
+  const tin = totalIn(curYM), tout = totalOut(curYM);
+  const itens = {
+    saldo:() => ['Saldo do mês', fmt(tin - tout), tin - tout < 0 ? 'out' : 'in'],
+    ganhos:() => ['Ganhos', fmt(tin), 'in'],
+    gastos:() => ['Gastos', fmt(tout), 'out'],
+    conta:() => { const b = upcomingBills()[0]; return b && [`${b.x.desc} · ${b.diff < 0 ? 'atrasada' : b.diff === 0 ? 'vence hoje' : 'em ' + b.diff + (b.diff > 1 ? ' dias' : ' dia')}`, fmt(b.x.value), b.diff <= 0 ? 'out' : '']; },
+    contas:() => db.accounts.length && ['Saldo nas contas', fmt(sum(db.accounts, a => accountBalance(a))), ''],
+    invest:() => db.investments.length && ['Investido', fmt(sum(db.investments, x => x.value)), ''],
+    fatura:() => { const v = sum(invoices(curYM), i => i[1]); return v > 0 && ['Faturas do cartão', fmt(v), 'out']; },
+    orcamento:() => { const b = budgetStatus(curYM), lim = sum(b, x => x.lim); return lim > 0 && ['Orçamento usado', Math.round(sum(b, x => x.used) / lim * 100) + '%', '']; },
+    parcelas:() => { const v = sum(expensesOf(curYM).filter(x => x.kind === 'installment'), x => x.value); return v > 0 && ['Parcelas do mês', fmt(v), 'out']; },
+    previsao:() => { const n = addMonths(curYM, 1), s = totalIn(n) - totalOut(n); return [(s < 0 ? 'Falta em ' : 'Sobra em ') + monthName(n).split(' ')[0], fmt(Math.abs(s)), s < 0 ? 'out' : 'in']; }};
+  return db.prefs.layout.widget.filter(b => b.on).map(b => itens[b.k]()).filter(Boolean).slice(0, 5).map(([t, v, c]) => ({t, v, c}));
 }
 
 // ---------- Contas bancárias ----------

@@ -123,29 +123,50 @@ function funCheck(){
   }
   try { localStorage.setItem(FUN_KEY, JSON.stringify(funState)); } catch(e){}
 }
-// Porquinho visto de frente, no rosa clássico de cofrinho (não segue a cor do tema, para continuar parecendo um porco).
+// Mascote de cada tema especial: [claro, médio, forte, fenda, bochecha, olhos, boca] e o acessório desenhado por cima.
+// Sem tema especial, o porquinho rosa clássico (não segue a cor do app, para continuar parecendo um porco).
+const MASCOTES = {
+  '':['#ffc6d9', '#f58fb3', '#ec7aa3', '#c2527c', '#ff5f95', '#4a2338', '#b8456f', ''],
+  hacker:['#4ade80', '#16a34a', '#15803d', '#052e16', '#bbf7d0', '#03120a', '#052e16', // óculos escuros
+    '<rect x="33" y="48" width="23" height="13" rx="3.5" fill="#03120a"/><rect x="64" y="48" width="23" height="13" rx="3.5" fill="#03120a"/><path d="M56 53h8" stroke="#03120a" stroke-width="3"/><path d="M37 52h6M68 52h6" stroke="#4ade80" stroke-width="1.6" stroke-linecap="round"/>'],
+  boneca:['#ffd1e8', '#f472b6', '#ec4899', '#be185d', '#ff5f95', '#500724', '#be185d', // laço e cílios
+    '<path d="M60 27 43 17v20zM60 27l17-10v20z" fill="#c026d3"/><circle cx="60" cy="27" r="5" fill="#a21caf"/><path d="M36 50l-4-3M40 48l-2-4M84 50l4-3M80 48l2-4" stroke="#500724" stroke-width="2" stroke-linecap="round"/>'],
+  corrida:['#fca5a5', '#ef4444', '#dc2626', '#7f1d1d', '#fecaca', '#1f2937', '#7f1d1d', // capacete com faixa
+    '<path d="M23 47a38 30 0 0 1 74 0z" fill="#1f2937"/><path d="M56 17.500h8V47h-8z" fill="#fff"/><path d="M23 47h74" stroke="#f59e0b" stroke-width="3"/>'],
+  neon:['#c4b5fd', '#8b5cf6', '#7c3aed', '#4c1d95', '#22d3ee', '#1e1b4b', '#f472b6', // fones de ouvido
+    '<path d="M24 60a36 38 0 0 1 72 0" stroke="#22d3ee" stroke-width="4" fill="none"/><rect x="17" y="55" width="11" height="20" rx="5.500" fill="#22d3ee"/><rect x="92" y="55" width="11" height="20" rx="5.500" fill="#22d3ee"/>'],
+  papel:['#f5deb3', '#d6a77a', '#b98a5e', '#7c4a2d', '#e9a68a', '#3b2a1a', '#7c4a2d', // óculos redondos
+    '<circle cx="43" cy="55" r="9.500" fill="none" stroke="#3b2a1a" stroke-width="2.400"/><circle cx="77" cy="55" r="9.500" fill="none" stroke="#3b2a1a" stroke-width="2.400"/><path d="M52.500 55h15" stroke="#3b2a1a" stroke-width="2.400"/>'],
+  praia:['#ffd9a8', '#fb923c', '#f97316', '#c2410c', '#fdba74', '#431407', '#c2410c', // óculos de sol
+    '<rect x="33" y="48" width="23" height="13" rx="6" fill="#0e7490"/><rect x="64" y="48" width="23" height="13" rx="6" fill="#0e7490"/><path d="M56 53h8" stroke="#0e7490" stroke-width="3"/>'],
+  noite:['#93c5fd', '#3b82f6', '#1d4ed8', '#1e3a8a', '#facc15', '#0a1230', '#1e3a8a', // estrela na testa e redemoinho
+    '<path d="M60 36l2.600 5.300 5.900.900-4.300 4.100 1 5.800L60 49.300l-5.200 2.800 1-5.800-4.300-4.100 5.900-.900z" fill="#facc15"/><path d="M22 30c4-6 12-6 14-1s-4 8-7 5" stroke="#facc15" stroke-width="2.200" fill="none" stroke-linecap="round"/>']
+};
+// Mascote visto de frente; mood: 'feliz', 'ok' ou 'triste'.
 function pigSvg(mood){
-  const triste = mood === 'triste', feliz = mood === 'feliz', escuro = '#4a2338', boca = '#b8456f';
+  const [claro, medio, forte, fenda, bochecha, escuro, boca, acessorio] = MASCOTES[db.prefs.skin] || MASCOTES[''];
+  const triste = mood === 'triste', feliz = mood === 'feliz';
   const olho = x => `<circle cx="${x}" cy="55" r="5" fill="${escuro}"/><circle cx="${x + 1.8}" cy="53.2" r="1.7" fill="#fff"/>`;
   const olhos = feliz ? `<path d="M38 57q5-7 10 0M72 57q5-7 10 0" stroke="${escuro}" stroke-width="3" fill="none" stroke-linecap="round"/>` : olho(43) + olho(77);
   const extra = triste ? `<path d="M36 48l10-4M84 48l-10-4" stroke="${escuro}" stroke-width="2.6" stroke-linecap="round"/><path d="M89 58c2.2 3.2 3.2 5.2 3.2 6.8a3.2 3.2 0 0 1-6.400 0c0-1.600 1-3.600 3.200-6.800z" fill="#7dd3fc"/>` : '';
   return `<svg class="pig ${mood}" viewBox="0 0 120 110" width="104" height="95" aria-hidden="true">
-    <defs><linearGradient id="pigG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc6d9"/><stop offset="1" stop-color="#f58fb3"/></linearGradient></defs>
+    <defs><linearGradient id="pigG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${claro}"/><stop offset="1" stop-color="${medio}"/></linearGradient></defs>
     <ellipse cx="60" cy="104" rx="30" ry="4" fill="#000" opacity=".16"/>
     <g class="moeda"><circle cx="60" cy="10" r="7.5" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"/><path d="M60 6.5v7" stroke="#b45309" stroke-width="2" stroke-linecap="round"/></g>
     <g class="corpo">
-    <path d="M95 70c8-2 10 5 5 7s-2 7 3 6" stroke="#f58fb3" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-    <rect x="38" y="88" width="14" height="14" rx="6" fill="#ec7aa3"/><rect x="68" y="88" width="14" height="14" rx="6" fill="#ec7aa3"/>
-    <path d="M30 40c-6-12-3-22 4-24 8 2 14 8 16 16zM90 40c6-12 3-22-4-24-8 2-14 8-16 16z" fill="#f58fb3"/>
-    <path d="M34 36c-3-8-2-14 2-16 5 2 8 6 10 11zM86 36c3-8 2-14-2-16-5 2-8 6-10 11z" fill="#ec7aa3"/>
+    <path d="M95 70c8-2 10 5 5 7s-2 7 3 6" stroke="${medio}" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <rect x="38" y="88" width="14" height="14" rx="6" fill="${forte}"/><rect x="68" y="88" width="14" height="14" rx="6" fill="${forte}"/>
+    <path d="M30 40c-6-12-3-22 4-24 8 2 14 8 16 16zM90 40c6-12 3-22-4-24-8 2-14 8-16 16z" fill="${medio}"/>
+    <path d="M34 36c-3-8-2-14 2-16 5 2 8 6 10 11zM86 36c3-8 2-14-2-16-5 2-8 6-10 11z" fill="${forte}"/>
     <ellipse cx="60" cy="62" rx="38" ry="34" fill="url(#pigG)"/>
-    <rect x="50" y="30.5" width="20" height="4" rx="2" fill="#c2527c"/>
+    <rect x="50" y="30.5" width="20" height="4" rx="2" fill="${fenda}"/>
     <ellipse cx="41" cy="43" rx="9" ry="4.5" fill="#fff" opacity=".4" transform="rotate(-28 41 43)"/>
     ${olhos}${extra}
-    <circle cx="32" cy="69" r="6" fill="#ff5f95" opacity=".4"/><circle cx="88" cy="69" r="6" fill="#ff5f95" opacity=".4"/>
-    <ellipse cx="60" cy="69" rx="15" ry="11" fill="#ec7aa3"/>
+    <circle cx="32" cy="69" r="6" fill="${bochecha}" opacity=".4"/><circle cx="88" cy="69" r="6" fill="${bochecha}" opacity=".4"/>
+    <ellipse cx="60" cy="69" rx="15" ry="11" fill="${forte}"/>
     <ellipse cx="54.5" cy="69" rx="2.6" ry="3.6" fill="${boca}"/><ellipse cx="65.5" cy="69" rx="2.6" ry="3.6" fill="${boca}"/>
-    <path d="${feliz ? 'M52 84q8 7 16 0' : triste ? 'M54 88q6-5 12 0' : 'M54 85q6 3 12 0'}" stroke="${boca}" stroke-width="2.6" fill="none" stroke-linecap="round"/></g></svg>`;
+    <path d="${feliz ? 'M52 84q8 7 16 0' : triste ? 'M54 88q6-5 12 0' : 'M54 85q6 3 12 0'}" stroke="${boca}" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+    ${acessorio}</g></svg>`;
 }
 // Bloco do Resumo: o porquinho reage ao saldo do mês atual. Tocar nele troca a fala.
 function funMascot(){
@@ -262,7 +283,10 @@ function openSettings(sec){
     <div class="btns" style="margin-top:0">${[[false,'Do tema'],[true,'Uma cor por categoria']].map(([v,t]) => `<button class="btn ${!!p.catColor === v ? 'primary' : ''}" onclick="setPref('catColor',${v})">${t}</button>`).join('')}</div>
     <label>Modo divertido</label>
     <div class="btns" style="margin-top:0">${[[true, I('sparkle') + 'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${p.fun === v ? 'primary' : ''}" onclick="setPref('fun',${v})">${t}</button>`).join('')}</div>
-    <div class="hint">Um porquinho no Resumo que reage ao seu mês, mais de 100 conquistas para desbloquear, confete e recados bem-humorados.</div>`],
+    <div class="hint">Um porquinho no Resumo que reage ao seu mês, mais de 100 conquistas para desbloquear, confete e recados bem-humorados.</div>
+    <label>Tema especial</label>
+    <div class="btns" style="margin-top:0;flex-wrap:wrap">${[['', 'Nenhum'], ...Object.entries(SKINS).map(([k, s]) => [k, s[0]])].map(([k, t]) => `<button class="btn ${(p.skin || '') === k ? 'primary' : ''}" style="padding:11px 6px;flex:1 0 30%" onclick="setSkin('${k}')">${k ? `<i class="dot" style="background:linear-gradient(135deg,${SKINS[k][4]},${SKINS[k][2]})"></i>` : ''}${t}</button>`).join('')}</div>
+    <div class="hint">Um tema especial muda as cores do app inteiro e o mascote do modo divertido; os ícones das categorias ficam com a cor de cada uma. Com um tema especial ligado, "Tema" e "Cor" acima ficam sem efeito.</div>`],
   ['menu', 'sliders', 'Menu de baixo', 'Esconder e reordenar as abas', `
     <div class="hint" style="margin-top:0">Toque no círculo para esconder ou mostrar uma aba e use as setas para mudar a ordem. O Resumo fica sempre no menu.</div>
     <div>${p.tabs.map((t,i) => { if (WEB_APP && t === 'noticias') return ''; const off = p.tabsOff.includes(t); return `<div class="item" style="cursor:default;padding:6px 0">
@@ -272,8 +296,12 @@ function openSettings(sec){
       <button class="iconbtn" onclick="moveTab(${i},1)" ${i < n-1 ? '' : 'disabled style="opacity:.25"'} aria-label="Descer">▼</button></div>`; }).join('')}</div>`],
   ['seguranca', 'lock', 'Ícone e bloqueio', 'Cor do ícone, senha ou biometria', !isApp ? '' : `${demo}
     <label>Cor do ícone do app</label>
-    <div class="swatches">${Object.entries(COLORS).map(([k,c]) => `<button class="sw ${N.icone() === k ? 'on' : ''}" style="background:linear-gradient(135deg,${c[1]},${c[2]});border-radius:14px" onclick="nativeOpts().setIcone('${k}');openSettings()" aria-label="${c[0]}" title="${c[0]}"></button>`).join('')}</div>
-    <div class="hint">Ao trocar, o Android fecha o app: é só abrir de novo pelo ícone novo. Se o ícone sumir da tela inicial, adicione de novo pela lista de apps.</div>
+    <div class="swatches">${Object.entries(ICONES).map(([k,c]) => `<button class="sw ${N.icone() === k ? 'on' : ''}" style="background:linear-gradient(135deg,${c[1]},${c[2]});border-radius:14px" onclick="nativeOpts().setIcone('${k}');openSettings()" aria-label="${c[0]}" title="${c[0]}"></button>`).join('')}</div>
+    ${window.Android && Android.setIconeApp ? `<label>Desenho do ícone</label>
+    <div class="btns" style="margin-top:0">${[['b', 'Gráfico'], ['p', 'Porquinho']].map(([k, t]) => `<button class="btn ${Android.iconeDesenho() === k ? 'primary' : ''}" onclick="Android.setIconeApp(Android.icone(),'${k}',Android.iconeNome());openSettings()">${t}</button>`).join('')}</div>
+    <label>Nome do app na tela inicial</label>
+    <div class="btns" style="margin-top:0;flex-wrap:wrap">${APP_NOMES.map((t, i) => `<button class="btn ${Number(Android.iconeNome()) === i ? 'primary' : ''}" style="padding:11px 6px;flex:1 0 40%" onclick="Android.setIconeApp(Android.icone(),Android.iconeDesenho(),${i});openSettings()">${t}</button>`).join('')}</div>` : ''}
+    <div class="hint">Ao trocar a cor, o desenho ou o nome, o Android fecha o app: é só abrir de novo pelo ícone novo. Se o ícone sumir da tela inicial, adicione de novo pela lista de apps. O Android só deixa escolher entre os nomes desta lista.</div>
     <label>Pedir senha ou biometria ao abrir</label>
     <div class="btns" style="margin-top:0">${[[true, I('lock') + 'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${lockOn === v ? 'primary' : ''}" onclick="nativeOpts().setBloqueio(${v});openSettings()">${t}</button>`).join('')}</div>
     ${lockOn ? '<div class="hint">Para desligar, o app pede a senha ou a biometria. Ao sair da conta Google, o bloqueio desliga sozinho.</div>' : ''}
@@ -292,6 +320,16 @@ function openSettings(sec){
     </div>
     <div class="hint">Vale para gastos fixos com dia de vencimento. O app avisa em cada antecedência marcada e de novo no dia do vencimento, por volta das 9h. Sem nenhuma marcada, avisa só no dia.</div>${window.Android && Android.bateria ? `${batLivre ? '' : `<div class="btns"><button class="btn" onclick="Android.bateria()">Tirar o app da economia de bateria</button></div>`}
     <div class="hint">Em alguns celulares (Samsung, Xiaomi, Motorola) a economia de bateria atrasa ou corta os lembretes. Na tela que abre, procure "Minhas Finanças" e escolha "Não otimizar". O app também reagenda os lembretes quando o celular reinicia e quando é atualizado.</div>` : ''}`],
+  ['widgets', 'chart', 'Widgets', 'Tela inicial do celular: resumo, saldo e porquinho', !(window.Android && Android.widget) ? '' : `
+    <div class="hint" style="margin-top:0">Widgets são quadros do app na tela inicial do celular. Há quatro: <b>Resumo</b> (você escolhe as linhas), <b>Saldo do mês</b>, <b>Contas a vencer</b> e <b>Porquinho</b> (a cara do mês e os gastos).</div>
+    <label>Porquinho nos widgets Resumo, Saldo e Contas</label>
+    <div class="btns" style="margin-top:0">${[[true, 'Com porquinho'], [false, 'Sem porquinho']].map(([v, t]) => `<button class="btn ${(p.widgetPig ?? !!p.fun) === v ? 'primary' : ''}" onclick="setPref('widgetPig',${v})">${t}</button>`).join('')}</div>
+    <label>Widget Resumo</label>
+    <div class="btns" style="margin-top:0"><button class="btn" onclick="openLayoutEdit('widget')">${I('sliders')}Escolher o que aparece</button></div>
+    <div class="hint">Aparecem até 5 linhas, na ordem escolhida. Linhas sem dado (por exemplo, sem conta a vencer) são puladas.</div>
+    ${Android.fixarWidget ? `<label>Pôr na tela inicial</label>
+    <div class="btns" style="margin-top:0;flex-wrap:wrap">${[['resumo', 'Resumo'], ['saldo', 'Saldo do mês'], ['contas', 'Contas a vencer'], ['porco', 'Porquinho']].map(([k, t]) => `<button class="btn" style="padding:11px 6px" onclick="if(!Android.fixarWidget('${k}'))tell('Esta tela inicial não aceita o pedido. Segure o dedo num espaço vazio da tela inicial, toque em Widgets e procure Minhas Finanças.')">${t}</button>`).join('')}</div>
+    <div class="hint">O Android pede sua confirmação. Também dá para adicionar segurando o dedo num espaço vazio da tela inicial › Widgets › Minhas Finanças.</div>` : ''}`],
   ['conta', 'cloud', 'Conta e sincronização', 'Conta Google, sincronização e cópias', syncHtml],
   ['compart', 'people', 'Conta compartilhada', sync.shared ? 'Ligada: vocês veem os mesmos dados' : 'Casal ou família: os mesmos dados em dois celulares', syncHtml ? shareHtml() : ''],
   ['auto', 'sparkle', 'Lançamento automático', 'Sugestões pelas notificações do banco', !(window.Android && Android.avisosLigar) ? '' : `
@@ -299,6 +337,7 @@ function openSettings(sec){
     <div class="btns" style="margin-top:0">${[[true,'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${!!Android.avisosLigado() === v ? 'primary' : ''}" onclick="setAvisos(${v})">${t}</button>`).join('')}</div>
     ${Android.avisosLigado() && !Android.avisosAcesso() ? `<div class="hint warn">${I('alert', 13)} Falta autorizar no Android. <a href="#" onclick="Android.avisosConfigurar();return false" style="color:var(--brand)">Abrir a tela de autorização</a></div>` : ''}
     <div class="hint">Quando o banco avisa uma compra ou um Pix, o app mostra no Resumo uma sugestão já preenchida; você confere e lança. Para isso o Android pede acesso às notificações: o app guarda só as de compras, Pix e pagamentos, e nada sai do aparelho. Depende do texto que cada banco usa, então pode não reconhecer todos. A partir do Android 15, avisos com números longos (como um código de 4 dígitos ou o final do cartão) chegam escondidos: aí o app mostra só "Novo aviso do banco" para você lançar o valor.</div>`],
+  ['guia', 'book', 'Guia do app', 'Todas as funções, onde ficam e como usar', guideHtml()],
   ['dados', 'box', 'Dados e ajustes', 'Categorias, taxas, lixeira, backup e apagar', `
     <label>Investimentos</label>
     <div class="btns" style="margin-top:0"><button class="btn" onclick="openRates()">${I('trend')}Taxas de referência (CDI, Selic, IPCA)</button></div>
@@ -323,9 +362,34 @@ function openSettings(sec){
     <div class="btns foot"><button class="btn" onclick="openSettings('')">Voltar</button><button class="btn primary" onclick="closeForm()">Fechar</button></div>`
   : `<h3>Configurações</h3>
     <div class="setGrid">${S.map(([k, ic, t, d]) => `<button class="setTile" onclick="openSettings('${k}')"><span>${I(ic, 22)}</span><b>${t}</b><small>${d}</small></button>`).join('')}</div>
+    ${window.Android && Android.atualizar ? `<div class="btns"><button class="btn" onclick="toast('Procurando atualização…');Android.atualizar()">${I('refresh')}Procurar atualizações</button></div>` : WEB_APP ? `<div class="btns"><button class="btn" onclick="location.reload()">${I('refresh')}Procurar atualizações</button></div>` : ''}
     <div class="btns foot"><button class="btn primary" onclick="closeForm()">Fechar</button></div>
     <div class="hint" style="text-align:center" onclick="diagTap()">Minhas Finanças · versão ${APP_VERSION}</div>`);
   settingsOpen = true;
+}
+// Tema especial: aplica e, no APK, oferece trocar também o ícone do app para combinar.
+async function setSkin(k){
+  setPref('skin', k);
+  if (k && window.Android && Android.setIconeApp && Android.icone() !== k
+    && await ask(`Trocar também o ícone do app para combinar com o tema ${SKINS[k][0]}?\n\nO Android fecha o app ao trocar o ícone: é só abrir de novo pelo ícone novo.`, 'Trocar o ícone')) Android.setIconeApp(k, Android.iconeDesenho(), Android.iconeNome());
+}
+// Guia do app (Configurações): todas as funções (GUIA, em js/guia.js), por assunto, com busca.
+function guideHtml(){
+  return `<div class="search" style="margin-bottom:10px">${I('search')}<input id="gq" type="text" placeholder="Buscar uma função" autocomplete="off" oninput="guideFilter(this.value)"></div>
+    ${GUIA.map(([sec, itens]) => `<details class="grp gSec"><summary>${sec}<small>${itens.length}</small>${I('chev')}</summary>${itens.map(([nome, onde, como]) => `
+      <div class="gItem" data-t="${esc(plain(nome + ' ' + onde + ' ' + como))}"><b>${esc(nome)}</b><small><i>Onde:</i> ${esc(onde)}</small><small><i>Como usar:</i> ${esc(como)}</small></div>`).join('')}</details>`).join('')}
+    <div class="hint" id="gVazio" hidden>Nenhuma função encontrada com esse texto.</div>`;
+}
+function guideFilter(q){
+  q = plain(q.trim());
+  let algum = false;
+  document.querySelectorAll('#sheet .gSec').forEach(sec => {
+    let n = 0;
+    sec.querySelectorAll('.gItem').forEach(it => { const ok = !q || it.dataset.t.includes(q); it.hidden = !ok; if (ok) n++; });
+    sec.hidden = !n; sec.open = !!q && n > 0;
+    if (n) algum = true;
+  });
+  document.getElementById('gVazio').hidden = algum;
 }
 // Ao voltar de uma tela do Android (economia de bateria, notificações), as configurações abertas se atualizam.
 document.addEventListener('visibilitychange', () => { if (!document.hidden && settingsShown()) openSettings(); });
@@ -1038,27 +1102,42 @@ function tourDone(daConfig){
 }
 // Novidades: mostradas uma vez quando o app abre numa versão diferente da última usada neste aparelho.
 const VER_KEY = 'financas-versao';
-const NOVIDADES = [
-  ['Planilha do Google ligada ao app', 'Em Gastos ou em Configurações › Dados e ajustes: o app cria uma planilha na sua conta Google. O que você lançar no app aparece nela, e o que escrever nela aparece no app.'],
-  ['Atualização automática', 'O app procura versões novas sozinho ao abrir e mostra esta tela a cada atualização.'],
-  ['Valor mais fácil de digitar', 'Digite só os números: a vírgula dos centavos entra sozinha. O valor fica vermelho no gasto e verde no ganho.'],
-  ['Conta compartilhada', 'Casal ou família: duas contas Google vendo e lançando nos mesmos dados, cada um no seu celular e com o seu nome. Cada lançamento mostra quem fez.'],
-  ['Gastos separados', 'Na aba Gastos, os lançamentos ficam em Assinaturas, Fixos e anuais, Parceladas e Ocasionais, cada grupo com o seu total. Toque no título para fechar e em "Ordenar grupos" para mudar a ordem. A busca procura em todos.'],
-  ['Assinaturas', 'Netflix, Spotify, academia e parecidos entram sozinhos em Assinaturas. Num gasto fixo, "Mais opções" deixa marcar ou desmarcar.'],
-  ['Mais de 100 conquistas', 'No modo divertido, as conquistas agora têm níveis: do primeiro gasto ao milésimo.'],
-  ['Configurações por categoria', 'Perfil, Aparência, Lembretes, Conta e as outras opções ficam cada uma no seu botão.'],
-  ['Avisos do banco', 'Quando o Android esconde o texto de uma notificação do banco, o app mostra "Novo aviso do banco" para você lançar o valor.']];
 // Atualização automática (só no APK; ver Updater no lado nativo). tipo: 'web' = telas novas baixadas, entram na próxima
 // abertura; 'apk' = é preciso instalar um APK novo (mudou a parte nativa); 'nada' e 'erro' = resposta à busca manual.
-async function onAtualizacao(tipo, versao, url){
-  if (tipo === 'web') toast(`Atualização ${versao} baixada. Ela entra na próxima vez que você abrir o app.`);
+async function onAtualizacao(tipo, versao, url, novas){
+  if (tipo === 'web'){
+    // Com algo aberto (formulário, outra tela), só avisa; a versão nova entra na próxima abertura.
+    if (sheetOpen() || !document.getElementById('gate').hidden) toast(`Versão ${versao} baixada. Ela entra na próxima vez que você abrir o app.`);
+    else openUpdate(versao, novas, '');
+  }
   else if (tipo === 'nada') toast('O app já está na versão mais recente.');
   else if (tipo === 'erro') toast('Não consegui procurar atualizações (sem internet?).');
   else if (tipo === 'apk' && sync.apkAsk !== versao + dayStr(Date.now())){ // no máximo uma vez por dia
     sync.apkAsk = versao + dayStr(Date.now()); saveSync();
+    if (!sheetOpen() && document.getElementById('gate').hidden) return openUpdate(versao, novas, url);
     if (await ask(`Saiu a versão ${versao} do app. Esta atualização precisa ser instalada: o Android vai baixar o arquivo e pedir sua confirmação.\n\nSeus dados continuam no aparelho e na sua conta.`, 'Baixar')) Android.abrir(url);
   }
 }
+const newsHtml = lista => lista.map(([t, s]) => `<div class="item" style="cursor:default"><span class="in">${I('sparkle', 22)}</span><div class="mid"><b style="white-space:normal">${esc(t)}</b><small>${esc(s)}</small></div></div>`).join('');
+// Aviso de versão nova, com a prévia do que vem nela. url vazio: as telas já foram baixadas e basta recarregar;
+// com url: é preciso baixar e instalar o APK.
+function openUpdate(versao, novas, url){
+  settingsOpen = false; F = null;
+  updUrl = url; updVer = versao;
+  showSheet(`<h3>Nova versão ${esc(versao)} disponível</h3>
+    <div class="hint" style="margin-top:0">${url ? 'Esta atualização precisa ser instalada: o Android baixa o arquivo e pede sua confirmação. Seus dados continuam no aparelho e na sua conta.' : 'A atualização já foi baixada. Seus dados não mudam.'}</div>
+    ${Array.isArray(novas) && novas.length ? `<label>O que vem nesta versão</label>${newsHtml(novas)}` : ''}
+    <div class="btns foot"><button class="btn" onclick="closeForm()">Depois</button><button class="btn primary" onclick="updateNow()">${url ? 'Baixar e instalar' : 'Atualizar agora'}</button></div>`);
+}
+let updUrl = '', updVer = '';
+function updateNow(){
+  closeForm();
+  if (updUrl) return Android.abrir(updUrl);
+  try { localStorage.setItem(VER_KEY, updVer); } catch(e){} // a prévia já mostrou as novidades: não repete ao recarregar
+  Android.recarregar();
+}
+// Número de uma versão, para comparar ("1.9" < "1.40").
+const verNum = v => String(v).split('.').reduce((a, n) => a * 1000 + (+n || 0), 0);
 // sempre = aberta pelas Configurações; sync.forceNews = conta nova neste aparelho (mostra mesmo sem versão nova).
 function maybeNews(sempre){
   let last = null;
@@ -1066,8 +1145,12 @@ function maybeNews(sempre){
   if (!sempre && !sync.forceNews && (last === APP_VERSION || (!last && !db.expenses.length && !db.incomes.length))) return false;
   if (sync.forceNews){ sync.forceNews = false; saveSync(); }
   settingsOpen = false; F = null;
+  // Só o que é novo para esta pessoa: as versões depois da última que ela usou (numa conta nova ou pelas
+  // Configurações, só a versão atual).
+  const desde = !sempre && last && verNum(last) < verNum(APP_VERSION) ? verNum(last) : verNum(APP_VERSION) - 1;
+  const novas = Object.entries(NOVIDADES).filter(([v]) => verNum(v) > desde && verNum(v) <= verNum(APP_VERSION)).sort((a, b) => verNum(b[0]) - verNum(a[0]));
   showSheet(`<h3>Novidades da versão ${APP_VERSION}</h3>
-    ${NOVIDADES.map(([t, s]) => `<div class="item" style="cursor:default"><span class="in">${I('sparkle', 22)}</span><div class="mid"><b style="white-space:normal">${t}</b><small>${s}</small></div></div>`).join('')}
+    ${novas.length ? novas.map(([v, lista]) => (novas.length > 1 ? `<label>Versão ${v}</label>` : '') + newsHtml(lista)).join('') : '<div class="hint" style="margin-top:0">Correções e pequenas melhorias.</div>'}
     <div class="btns foot"><button class="btn primary" onclick="${sempre ? "openSettings('perfil')" : 'closeForm();askLock()'}">Entendi</button></div>`);
   return true;
 }
