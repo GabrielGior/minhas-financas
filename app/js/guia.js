@@ -61,6 +61,7 @@ const GUIA = [
     ['Atualizações', 'Configurações › Procurar atualizações', 'O app procura versão nova ao abrir e mostra o que vem nela, um aviso de cada vez. O botão avisa também quando você já está na versão mais recente.']]],
   ['Aparência', [
     ['Tema, cor e tamanho do texto', 'Configurações › Aparência', 'Claro, escuro ou automático; cor do app; texto de pequeno a maior.'],
+    ['Temas especiais', 'Configurações › Temas especiais', 'Mais de 70 temas separados por categoria (estilos, corridas, filmes e jogos, desenhos, super-heróis, contos e animações, animes). Cada um muda as cores do app inteiro, o mascote, as falas, a abertura, os widgets e, se você quiser, o ícone do app. No iPhone, o ícone acompanha o tema na hora de adicionar o app à Tela de Início.'],
     ['Idioma', 'Configurações › Aparência › Idioma', 'Português, inglês ou espanhol. O assistente entende só português.'],
     ['Modo divertido', 'Configurações › Aparência › Modo divertido', 'Porquinho no Resumo que reage ao seu mês, mais de 100 conquistas, desafio do mês e confete.'],
     ['Abas do menu', 'Configurações › Menu de baixo', 'Esconda abas que não usa e mude a ordem.'],

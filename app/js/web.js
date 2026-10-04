@@ -111,3 +111,24 @@ if (WEB_APP) (() => {
 })();
 // iPhone e iPad no Safari, fora do app instalado: como instalar na tela de início.
 const iosNoBrowser = () => WEB_APP && /iPhone|iPad|iPod/.test(navigator.userAgent) && !navigator.standalone;
+
+// Ícone da versão web conforme o tema: o iPhone (e o navegador) usam o ícone que a página indica na hora em que a
+// pessoa adiciona o app à tela de início; depois disso o sistema não deixa trocar. Então a página mantém o ícone
+// indicado igual ao tema em uso: com tema especial, o ícone dele; sem tema, as barras na cor escolhida.
+function webIcone(){
+  if (!WEB_APP || window.TESTE || typeof iconeMiolo !== 'function') return;
+  const p = db.prefs, cor = p.skin || p.color, c = ICONES[cor] || ICONES.indigo;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 72 72"><defs><linearGradient id="wi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c[1]}"/><stop offset="1" stop-color="${c[2]}"/></linearGradient></defs><rect x="18" y="18" width="72" height="72" fill="url(#wi)"/>${iconeMiolo(cor, p.skin ? 't' : 'b')}</svg>`;
+  const img = new Image();
+  img.onload = () => {
+    try {
+      const cv = document.createElement('canvas'); cv.width = cv.height = 180;
+      cv.getContext('2d').drawImage(img, 0, 0, 180, 180);
+      const url = cv.toDataURL('image/png');
+      document.querySelector('link[rel="apple-touch-icon"]').href = url;
+      document.querySelector('link[rel="icon"]').href = url;
+    } catch(e){}
+  };
+  img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+}
+webIcone();

@@ -17,7 +17,7 @@ function logErr(onde, e){
 }
 addEventListener('error', e => logErr('erro na tela', (e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0)));
 addEventListener('unhandledrejection', e => logErr('promessa', e.reason));
-const APP_VERSION = '1.45'; // manter igual ao versionName do build.gradle
+const APP_VERSION = '1.46'; // manter igual ao versionName do build.gradle
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 // Ícones do app: desenhos em dois tons (traço + preenchimento translúcido nas partes com class="d"),
 // todos numa grade de 24×24. I('nome', tamanho) devolve o <svg>; a cor vem do texto ao redor (currentColor).
@@ -326,24 +326,29 @@ const COLORS = {
 // [nome, escuro?, destaque, destaque 2, cartão de destaque 1 e 2, fundo, cartões, linhas, texto secundário, texto, matiz, saturação]
 const SKINS = {
   hacker:['Hacker', true, '#22c55e', '#4ade80', '#052e16', '#166534', '#020a04', '#07140b', '#14532d', '#86efac', '#d1fae5', 140, 70],
-  boneca:['Boneca', false, '#be185d', '#db2777', '#db2777', '#c026d3', '#fff0f7', '#ffffff', '#fbcfe8', '#9d174d', '#500724', 328, 80],
-  corrida:['Corrida', true, '#ef4444', '#f59e0b', '#991b1b', '#1f2937', '#0c0c0f', '#17171c', '#2a2a33', '#a1a1aa', '#fafafa', 0, 70],
+  boneca:['Bárbi', false, '#be185d', '#db2777', '#db2777', '#c026d3', '#fff0f7', '#ffffff', '#fbcfe8', '#9d174d', '#500724', 328, 80],
+  corrida:['Carrinhos', true, '#ef4444', '#f59e0b', '#991b1b', '#1f2937', '#0c0c0f', '#17171c', '#2a2a33', '#a1a1aa', '#fafafa', 0, 70],
   neon:['Neon', true, '#f472b6', '#22d3ee', '#7c3aed', '#db2777', '#0d0221', '#1a0b3b', '#3b1d7a', '#c4b5fd', '#f5f3ff', 290, 80],
   papel:['Papel antigo', false, '#7c2d12', '#92400e', '#78350f', '#92400e', '#f5efe0', '#fffaf0', '#e7dcc3', '#6b5a3e', '#2b2118', 35, 45],
   praia:['Praia', false, '#0e7490', '#0369a1', '#0e7490', '#155e75', '#fdf6e3', '#ffffff', '#f0e2bd', '#5b6b73', '#0c2a33', 190, 70],
   noite:['Noite estrelada', true, '#f4d35e', '#9cc0e7', '#1e3a8a', '#274690', '#0b1437', '#13205a', '#2b3f8f', '#b4c6f0', '#f4f7ff', 225, 75], // inspirado no quadro de Van Gogh
-  bruxo:['Bruxo', true, '#eab308', '#fbbf24', '#7f1d1d', '#991b1b', '#1a0b0e', '#2a1216', '#4a1f26', '#d6b3a0', '#fdf4e3', 0, 60],
+  bruxo:['Réri Póter', true, '#eab308', '#fbbf24', '#7f1d1d', '#991b1b', '#1a0b0e', '#2a1216', '#4a1f26', '#d6b3a0', '#fdf4e3', 0, 60],
   espaco:['Espaço', true, '#a78bfa', '#38bdf8', '#312e81', '#4338ca', '#05060f', '#0e1024', '#1f2347', '#a5b4d4', '#eef2ff', 240, 60],
   floresta:['Floresta', false, '#166534', '#3f6212', '#166534', '#3f6212', '#eef5e6', '#fbfdf7', '#cfe3bf', '#4b5d3f', '#1a2e12', 110, 45],
   retro:['Retrô 8-bit', true, '#facc15', '#fb7185', '#7c3aed', '#be185d', '#12121c', '#1e1e2e', '#3a3a55', '#b8b8d0', '#f8f8f2', 250, 30],
-  dragao:['Dragão', true, '#a3e635', '#4ade80', '#111827', '#064e3b', '#07090c', '#11151b', '#232a33', '#9ca3af', '#f3f4f6', 150, 20],
-  grandprix:['Grand Prix', false, '#b91c1c', '#1d4ed8', '#b91c1c', '#1e3a8a', '#f4f6fb', '#ffffff', '#d9e0ee', '#475569', '#0f172a', 0, 70],
-  rua:['Corrida de rua', true, '#fb923c', '#a3e635', '#7c2d12', '#1c1917', '#0c0a09', '#1c1917', '#33302c', '#a8a29e', '#fafaf9', 25, 70],
-  drift:['Drift', true, '#fb7185', '#fde68a', '#b91c1c', '#1e293b', '#0b0f1a', '#151b2b', '#27304a', '#a8b3cf', '#f8fafc', 350, 70],
-  fusca:['Fusca de corrida', false, '#1d4ed8', '#b91c1c', '#1e40af', '#b91c1c', '#f7f3e8', '#fffdf6', '#e5dcc5', '#5c5546', '#1f1b12', 45, 50],
-  vikings:['Vikings', true, '#7dd3fc', '#fbbf24', '#1e3a5f', '#334155', '#0b1220', '#141d2e', '#26334d', '#9fb0c8', '#f1f5f9', 210, 45],
-  espartano:['Espartano', true, '#f87171', '#e5e7eb', '#7f1d1d', '#374151', '#0f0f10', '#1a1a1c', '#2e2e33', '#a3a3a3', '#f5f5f5', 0, 30]
+  dragao:['Como Domar seu Dragão', true, '#a3e635', '#4ade80', '#111827', '#064e3b', '#07090c', '#11151b', '#232a33', '#9ca3af', '#f3f4f6', 150, 20],
+  grandprix:['Espide Reicer', false, '#b91c1c', '#1d4ed8', '#b91c1c', '#1e3a8a', '#f4f6fb', '#ffffff', '#d9e0ee', '#475569', '#0f172a', 0, 70],
+  rua:['Velozes e Furiosinhos', true, '#fb923c', '#a3e635', '#7c2d12', '#1c1917', '#0c0a09', '#1c1917', '#33302c', '#a8a29e', '#fafaf9', 25, 70],
+  drift:['Derrapada em Tóquio', true, '#fb7185', '#fde68a', '#b91c1c', '#1e293b', '#0b0f1a', '#151b2b', '#27304a', '#a8b3cf', '#f8fafc', 350, 70],
+  fusca:['Rérbi, o Fusca', false, '#1d4ed8', '#b91c1c', '#1e40af', '#b91c1c', '#f7f3e8', '#fffdf6', '#e5dcc5', '#5c5546', '#1f1b12', 45, 50],
+  vikings:['Vaiquingues', true, '#7dd3fc', '#fbbf24', '#1e3a5f', '#334155', '#0b1220', '#141d2e', '#26334d', '#9fb0c8', '#f1f5f9', 210, 45],
+  espartano:['Deus da Guerrinha', true, '#f87171', '#e5e7eb', '#7f1d1d', '#374151', '#0f0f10', '#1a1a1c', '#2e2e33', '#a3a3a3', '#f5f5f5', 0, 30]
 };
+// Temas por categoria (js/temas.js): só trazem os destaques, o matiz e a saturação; o resto sai daí, como nas cores comuns.
+const SKIN_ANTIGOS = Object.keys(SKINS); // os primeiros temas: têm ícone do app também com os desenhos de barras e porquinho
+for (const [k, [nome, escuro, c1, c2, h1, h2, h, s]] of Object.entries(TEMAS_NOVOS))
+  SKINS[k] = [nome, escuro, c1, c2, h1, h2, escuro ? hslHex(h, s * .5, 7) : hslHex(h, s * .6, 96), escuro ? hslHex(h, s * .42, 12) : '#ffffff',
+    escuro ? hslHex(h, s * .38, 19) : hslHex(h, s * .5, 90), escuro ? hslHex(h, s * .22, 68) : hslHex(h, s * .2, 37), escuro ? hslHex(h, s * .3, 96) : hslHex(h, s * .5, 12), h, s];
 // Cores do ícone do app: as do tema e as dos temas especiais (cada uma tem um ícone pronto no APK).
 const ICONES = {...COLORS, ...Object.fromEntries(Object.entries(SKINS).map(([k, s]) => [k, [s[0], s[4], s[2]]]))};
 const APP_NOMES = ['Minhas Finanças', 'Finanças', 'Carteira', 'Meu Dinheiro']; // nomes que o app pode ter na tela inicial (lista fixa no APK)
@@ -429,6 +434,7 @@ function applyTheme(){
   if (sk) st.setProperty('--text', sk[10]); else st.removeProperty('--text');
   // Cores da tela de abertura da próxima vez (lidas pelo index.html antes de tudo).
   try { localStorage.setItem('financas-abre', JSON.stringify([sk ? sk[4] : c[1], sk ? sk[5] : c[2]])); } catch(e){}
+  if (window.webIcone) webIcone(); // versão web: o ícone indicado pela página acompanha o tema
   // barras do sistema no APK
   if (window.Android && Android.cores) Android.cores(bg, card, dark);
   else if (window.Android && Android.tema) Android.tema(dark);

@@ -240,6 +240,7 @@ const MASCOTES = {
     focinho:'<ellipse cx="60" cy="74" rx="16" ry="12" fill="#fef3c7"/><path d="M54 67h12l-6 6.500z" fill="#451a03"/><path d="M60 73.500v5" stroke="#451a03" stroke-width="2"/>',
     sobre:'<path d="M53 0h14l3 24H50z" fill="#dc2626"/><path d="M50.500 7h19M50 14h20" stroke="#991b1b" stroke-width="1.600"/><path d="M27 42q33-15 66 0v6q-33-13-66 0z" fill="#b45309"/><path d="M27 45q33-14 66 0" stroke="#fbbf24" stroke-width="2" fill="none"/>'}]
 };
+Object.assign(MASCOTES, MASCOTES_NOVOS); // os dos temas por categoria (js/temas.js)
 // Mascote visto de frente; mood: 'feliz', 'ok' ou 'triste'. tema: de qual tema (padrão: o que está em uso).
 function pigSvg(mood, tema = db.prefs.skin){
   const [claro, medio, forte, fenda, bochecha, escuro, boca, p] = MASCOTES[tema] || MASCOTES[''];
@@ -349,6 +350,11 @@ const FUN_TEMA = {
     ok:['Formação mantida, {nome}.', 'Guardando a passagem do orçamento.', 'Algum gasto em combate? Anota.', 'Sem baixas por enquanto.', 'Vigília tranquila.', 'Treino diário: anotar tudo.'],
     triste:['Perdemos terreno: faltam {v}.', 'Batalha dura, {nome}. Faltam {v}.', 'O inimigo levou {v}.', 'Recuar para reagrupar os gastos.', 'Um guerreiro não desiste: vamos rever.', 'A muralha cedeu. Faltam {v}.']}
 };
+// Temas por categoria (js/temas.js): as falas da categoria e mais uma própria do tema, por humor.
+for (const [k, [feliz, ok, triste]] of Object.entries(FALAS_TEMA)){
+  const c = FALAS_CAT[temaCat(k)] || FALAS_CAT.contos;
+  FUN_TEMA[k] = {feliz:[feliz, ...c.feliz], ok:[ok, ...c.ok], triste:[triste, ...c.triste]};
+}
 // Bloco do Resumo: o porquinho reage ao saldo do mês atual. Tocar nele troca a fala.
 function funMascot(){
   const net = totalIn(curYM) - totalOut(curYM), mood = funMood();
@@ -466,8 +472,14 @@ function openSettings(sec){
     <div class="btns" style="margin-top:0">${[[true, I('sparkle') + 'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${p.fun === v ? 'primary' : ''}" onclick="setPref('fun',${v})">${t}</button>`).join('')}</div>
     <div class="hint">Um porquinho no Resumo que reage ao seu mês, mais de 100 conquistas para desbloquear, confete e recados bem-humorados.</div>
     <label>Tema especial</label>
-    <div class="btns" style="margin-top:0;flex-wrap:wrap">${[['', 'Nenhum'], ...Object.entries(SKINS).map(([k, s]) => [k, s[0]])].map(([k, t]) => `<button class="btn ${(p.skin || '') === k ? 'primary' : ''}" style="padding:11px 6px;flex:1 0 30%" onclick="setSkin('${k}')">${k ? `<i class="dot" style="background:linear-gradient(135deg,${SKINS[k][4]},${SKINS[k][2]})"></i>` : ''}${t}</button>`).join('')}</div>
-    <div class="hint">Um tema especial muda as cores do app inteiro e o mascote do modo divertido; os ícones das categorias ficam com a cor de cada uma. Com um tema especial ligado, "Tema" e "Cor" acima ficam sem efeito.</div>`],
+    <div class="btns" style="margin-top:0"><button class="btn" onclick="openSettings('temas')">${I('sparkle')}${p.skin ? 'Em uso: ' + SKINS[p.skin][0] : 'Escolher um tema especial'}</button></div>
+    <div class="hint">Os temas especiais têm uma área própria nas Configurações, separados por categoria. Com um deles ligado, "Tema" e "Cor" acima ficam sem efeito.</div>`],
+  ['temas', 'sparkle', 'Temas especiais', `${Object.keys(SKINS).length} temas por categoria, com mascote próprio`, `
+    <div class="hint" style="margin-top:0">Um tema especial muda as cores do app inteiro, o mascote do modo divertido, a abertura e os widgets; os ícones das categorias ficam com a cor de cada uma. ${p.skin ? `Em uso: <b>${SKINS[p.skin][0]}</b>.` : 'Nenhum em uso.'}</div>
+    <div class="btns" style="margin-top:0"><button class="btn ${p.skin ? '' : 'primary'}" onclick="setSkin('')">Sem tema especial</button></div>
+    ${WEB_APP ? '<div class="hint">No iPhone, o ícone do app é fixado na hora de adicionar à Tela de Início. Para ele ficar com o tema: abra o app no Safari com o tema já escolhido, toque em Compartilhar › Adicionar à Tela de Início e apague o ícone antigo.</div>' : ''}
+    ${TEMA_CATS.map(([c, nome, ks]) => `<details class="grp" ${ks.includes(p.skin) || (!p.skin && c === 'estilos') ? 'open' : ''}><summary>${nome}<small>${ks.length}</small>${I('chev')}</summary>
+      <div class="icoGrid t3">${ks.map(k => `<button class="${p.skin === k ? 'on' : ''}" onclick="setSkin('${k}')"><span class="temaM" style="background:linear-gradient(135deg,${SKINS[k][4]},${SKINS[k][5]})">${mascoteEm(k, 'ok', 0, 0, 46)}</span><small>${SKINS[k][0]}</small></button>`).join('')}</div></details>`).join('')}`],
   ['menu', 'sliders', 'Menu de baixo', 'Esconder e reordenar as abas', `
     <div class="hint" style="margin-top:0">Toque no círculo para esconder ou mostrar uma aba e use as setas para mudar a ordem. O Resumo fica sempre no menu.</div>
     <div>${p.tabs.map((t,i) => { if (WEB_APP && t === 'noticias') return ''; const off = p.tabsOff.includes(t); return `<div class="item" style="cursor:default;padding:6px 0">
@@ -477,7 +489,7 @@ function openSettings(sec){
       <button class="iconbtn" onclick="moveTab(${i},1)" ${i < n-1 ? '' : 'disabled style="opacity:.25"'} aria-label="Descer">▼</button></div>`; }).join('')}</div>`],
   ['seguranca', 'lock', 'Ícone e bloqueio', 'Cor do ícone, senha ou biometria', !isApp ? '' : `${demo}
     <label>Cor do ícone do app</label>
-    <div class="swatches">${Object.entries(ICONES).map(([k,c]) => `<button class="sw ${N.icone() === k ? 'on' : ''}" style="background:linear-gradient(135deg,${c[1]},${c[2]});border-radius:14px" onclick="nativeOpts().setIcone('${k}');openSettings()" aria-label="${c[0]}" title="${c[0]}"></button>`).join('')}</div>
+    <div class="swatches">${Object.entries(ICONES).filter(([k]) => !SKINS[k] || SKIN_ANTIGOS.includes(k) || (k === p.skin || k === N.icone()) && iconeTem(k)).map(([k,c]) => `<button class="sw ${N.icone() === k ? 'on' : ''}" style="background:linear-gradient(135deg,${c[1]},${c[2]});border-radius:14px" onclick="nativeOpts().setIcone('${k}');openSettings()" aria-label="${c[0]}" title="${c[0]}"></button>`).join('')}</div>
     ${window.Android && Android.setIconeApp ? `<label>Desenho do ícone</label>
     <div class="icoGrid">${iconeDesenhos(Android.icone()).map(k => `<button class="${Android.iconeDesenho() === k ? 'on' : ''}" onclick="Android.setIconeApp(Android.icone(),'${k}',Android.iconeNome());openSettings()">${iconeSvg(Android.icone(), k)}<small>${ICON_DESENHOS[k][0]}</small></button>`).join('')}</div>
     ${SKINS[Android.icone()] ? '<div class="hint">Os outros desenhos (moeda, carteira, cofre…) existem para as doze cores comuns: escolha uma delas acima para vê-los.</div>' : Android.criarAtalho ? '' : '<div class="hint">Há mais desenhos (moeda, carteira, cofre…) na versão nova do app: toque em Procurar atualizações.</div>'}
@@ -559,10 +571,12 @@ function openSettings(sec){
     <div class="hint" style="text-align:center" onclick="diagTap()">Minhas Finanças · versão ${APP_VERSION}</div>`);
   settingsOpen = true;
 }
+// O APK instalado tem ícone para esta cor ou tema? (Os temas por categoria chegaram ao ícone no APK 1.46.)
+const iconeTem = k => !SKINS[k] || SKIN_ANTIGOS.includes(k) || !!(window.Android && Android.iconeTem && Android.iconeTem(k));
 // Tema especial: aplica e, no APK, oferece trocar também o ícone do app para combinar.
 async function setSkin(k){
   setPref('skin', k);
-  if (k && window.Android && Android.setIconeApp && Android.icone() !== k
+  if (k && window.Android && Android.setIconeApp && Android.icone() !== k && iconeTem(k)
     && await ask(`Trocar também o ícone do app para combinar com o tema ${SKINS[k][0]}?\n\nO Android fecha o app ao trocar o ícone: é só abrir de novo pelo ícone novo.`, 'Trocar o ícone')) Android.setIconeApp(k, 't', Android.iconeNome()); // o ícone do tema: o mascote dele e as barras do app
 }
 // Nome livre para o app: o Android só troca o nome do app entre os que estão no APK; então o app pede à tela inicial

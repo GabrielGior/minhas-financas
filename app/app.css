@@ -539,3 +539,7 @@ html[data-fun=on] .ico:active,html[data-fun=on] .item:active .ico{animation:pigP
 .icoGrid button{display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 2px;border:2px solid transparent;border-radius:16px;background:var(--bg);color:var(--text);font:inherit;cursor:pointer}
 .icoGrid button.on{border-color:var(--brand)}
 .icoGrid small{font-size:11.5px;color:var(--muted)}
+/* Temas especiais (Configurações): três por linha, cada um com o mascote sobre as cores do tema. */
+.icoGrid.t3{grid-template-columns:repeat(3,1fr);margin-bottom:10px}
+.temaM{display:flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:20px}
+.icoGrid.t3 small{text-align:center;line-height:1.2}

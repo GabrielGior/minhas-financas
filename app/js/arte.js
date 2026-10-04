@@ -18,7 +18,6 @@ const ICON_DESENHOS = {
 };
 // Desenhos novos (precisam do APK 1.45 ou mais novo): existem para as doze cores; os temas especiais têm b, p e t.
 const ICON_NOVOS = ['m', 'c', 'l', 'f', 'd'];
-const estrela = (x, y, s = 1, cor = '#fff', o = .6) => `<path transform="translate(${x} ${y}) scale(${s})" d="M0-5l1.500 3.400 3.700.400-2.800 2.500.800 3.700L0 3.200-3.200 5l.800-3.700-2.800-2.500 3.700-.400z" fill="${cor}" opacity="${o}"/>`;
 // Fundo do ícone de cada tema especial (atrás do mascote): o cenário do tema.
 const TEMA_FUNDO = {
   hacker:'<g stroke="#4ade80" stroke-width="2.200" stroke-linecap="round" opacity=".4" stroke-dasharray="3 5"><path d="M22 10v90M32 4v96M86 8v92M95 14v80M76 2v30M42 2v18M64 0v14"/></g>',
@@ -45,11 +44,19 @@ function mascoteEm(tema, humor, x, y, w, moeda){
   let s = pigSvg(humor, tema).replace(/class="pig \w+" /, '').replace('width="104" height="95"', `x="${x}" y="${y}" width="${w}" height="${Math.round(w * 110 / 120 * 10) / 10}"`);
   return moeda ? s : s.replace(/<g class="moeda">.*?<\/g>/, '');
 }
-// Miolo do ícone (sem o fundo). O do tema: o cenário, o mascote do tema e, no canto, as barras do app de finanças.
+// Miolo do ícone (sem o fundo).
 function iconeMiolo(cor, desenho){
   if (desenho === 'p') return mascoteEm('', 'ok', 24, 25, 60);
-  if (desenho === 't' && SKINS[cor]) return (TEMA_FUNDO[cor] || '') + mascoteEm(cor, 'feliz', 22, 19, 62, true)
-    + `<circle cx="72" cy="72" r="13.500" fill="#fff"/><g fill="${SKINS[cor][1] ? SKINS[cor][5] : SKINS[cor][2]}"><rect x="64" y="73" width="4.600" height="6" rx="1.200" opacity=".55"/><rect x="69.700" y="69" width="4.600" height="10" rx="1.200" opacity=".78"/><rect x="75.400" y="64.500" width="4.600" height="14.500" rx="1.200"/></g>`;
+  // Do tema: um desenho só, grande e centrado. O cenário fica bem de leve atrás, um halo destaca o personagem (sem
+  // moeda nem sombra de chão) e, no canto, a marca do app: as três barras numa plaquinha com contorno da cor do fundo.
+  if (desenho === 't' && SKINS[cor]){
+    const escuro = SKINS[cor][1] ? SKINS[cor][5] : SKINS[cor][2];
+    return `<g opacity=".3">${TEMA_FUNDO[cor] || ''}</g><circle cx="54" cy="54" r="31" fill="#fff" opacity=".13"/>`
+      + `<defs><filter id="is${cor}" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="2.500" stdDeviation="2.200" flood-color="#000" flood-opacity=".28"/></filter></defs>`
+      + `<g filter="url(#is${cor})">${mascoteEm(cor, 'feliz', 19.500, 20, 69).replace(/<ellipse cx="60" cy="104" rx="30" ry="4"[^>]*>/, '')}</g>`
+      + `<rect x="62.500" y="62.500" width="17" height="17" rx="5.500" fill="${escuro}" stroke="${ICONES[cor][2]}" stroke-width="2.600"/>`
+      + '<g fill="#fff"><rect x="66.200" y="72" width="2.800" height="4" rx=".8" opacity=".7"/><rect x="69.600" y="69.500" width="2.800" height="6.500" rx=".8" opacity=".85"/><rect x="73" y="66.500" width="2.800" height="9.500" rx=".8"/></g>';
+  }
   return (ICON_DESENHOS[desenho] || ICON_DESENHOS.b)[1];
 }
 // Ícone pronto para mostrar na tela (fundo + miolo), do jeito que aparece na tela inicial.
@@ -59,7 +66,8 @@ function iconeSvg(cor, desenho, px = 56){
 }
 // Desenhos que existem para uma cor de ícone neste aparelho.
 function iconeDesenhos(cor){
-  return ['b', 'p', ...(SKINS[cor] ? ['t'] : window.Android && Android.criarAtalho ? ICON_NOVOS : [])];
+  if (SKINS[cor]) return SKIN_ANTIGOS.includes(cor) ? ['b', 'p', 't'] : ['t']; // os temas por categoria só têm o ícone próprio
+  return ['b', 'p', ...(window.Android && Android.criarAtalho ? ICON_NOVOS : [])];
 }
 
 // ---------- Abertura ----------
@@ -76,7 +84,7 @@ function abertura(){
   if (!el) return;
   if (window.TESTE || !db.prefs.anim || matchMedia('(prefers-reduced-motion: reduce)').matches) return el.remove();
   const sk = db.prefs.skin || '', comMascote = sk || db.prefs.fun;
-  el.dataset.g = ABRE_JEITO[sk] || '';
+  el.dataset.g = ABRE_JEITO[sk] || {herois:'forca', animes:'vel', contos:'magia', desenhos:'calma'}[sk && temaCat(sk)] || '';
   document.getElementById('abreIn').innerHTML = (comMascote
     ? `<div class="abreM">${mascoteEm(sk, 'feliz', 0, 0, 150, true)}</div>`
     : `<svg viewBox="28 28 52 52" width="132" height="132" aria-hidden="true">${[[33, 58, 16, .7], [47.5, 47, 27, .85], [62, 34, 40, 1]].map(([x, y, h, o], i) => `<rect class="abreBar" style="animation-delay:${i * 90}ms" x="${x}" y="${y}" width="13" height="${h}" rx="2" fill="#fff" opacity="${o}"/>`).join('')}</svg>`)
