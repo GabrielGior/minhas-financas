@@ -17,7 +17,7 @@ function logErr(onde, e){
 }
 addEventListener('error', e => logErr('erro na tela', (e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0)));
 addEventListener('unhandledrejection', e => logErr('promessa', e.reason));
-const APP_VERSION = '1.50'; // manter igual ao versionName do build.gradle
+const APP_VERSION = '1.51'; // manter igual ao versionName do build.gradle
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 // Ícones do app: desenhos em dois tons (traço + preenchimento translúcido nas partes com class="d"),
 // todos numa grade de 24×24. I('nome', tamanho) devolve o <svg>; a cor vem do texto ao redor (currentColor).

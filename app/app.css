@@ -584,3 +584,8 @@ html[data-fun=on] .ico:active,html[data-fun=on] .item:active .ico{animation:pigP
 h1 .volta{display:flex;align-items:center;gap:4px}
 html[data-fun=on] .fab.chat{animation:none}
 @media (min-width:700px){.fab.chat{right:max(21px,calc(50% - 479px))}}
+/* Puxar para atualizar: o círculo fica escondido acima da tela e desce com o dedo. */
+#ptr{position:fixed;left:50%;top:calc(8px + env(safe-area-inset-top));width:42px;height:42px;border-radius:50%;background:var(--card);color:var(--muted);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.28);transform:translate(-50%,-60px);opacity:0;z-index:60;pointer-events:none}
+#ptr.pronto{color:var(--brand)}
+#ptr.gira svg{animation:ptrGira .8s linear infinite}
+@keyframes ptrGira{to{transform:rotate(360deg)}}

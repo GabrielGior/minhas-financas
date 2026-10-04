@@ -4,6 +4,7 @@
 document.getElementById('gateLogo').innerHTML = I('chart', 52);
 document.getElementById('lockIcon').innerHTML = I('lock', 48);
 document.getElementById('fabChat').innerHTML = I('chat', 26);
+document.getElementById('ptr').innerHTML = I('refresh', 22);
 document.getElementById('lockX').innerHTML = I('close', 20);
 rollover();
 // Botão "+ Gasto" do widget: abre direto o formulário de novo gasto.

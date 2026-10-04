@@ -61,6 +61,7 @@ const GUIA = [
     ['Widgets (só no Android)', 'Configurações › Widgets', 'Quadros do app na tela inicial: Resumo (você escolhe as linhas), Gastos (a lista dos gastos do mês; você escolhe o grupo e a ordem), Saldo do mês, Contas a vencer e Mascote. O fundo acompanha a cor do app ou o tema especial (ou fica escuro), as listas rolam dentro do widget e o mascote é o mesmo do app.'],
     ['Abertura animada', 'Ao abrir o app', 'Uma animação rápida nas cores escolhidas ou no jeito do tema especial; um toque pula. Some com as animações desligadas (Configurações › Aparência).'],
     ['Atalho com nome livre (só no Android)', 'Configurações › Ícone e bloqueio › Criar atalho com o meu nome', 'Cria na tela inicial um atalho do app com o nome que você escrever e o ícone escolhido. Na lista de apps continua o nome da lista.'],
+    ['Puxar para atualizar', 'Em qualquer aba, com a tela no topo', 'Puxe a tela para baixo e solte: o app sincroniza com a conta, atualiza taxas e cotações e redesenha a tela.'],
     ['Atualizações', 'Configurações › Procurar atualizações', 'O app procura versão nova ao abrir e mostra o que vem nela, um aviso de cada vez. O botão avisa também quando você já está na versão mais recente.']]],
   ['Aparência', [
     ['Tema, cor e tamanho do texto', 'Configurações › Aparência', 'Claro, escuro ou automático; cor do app; texto de pequeno a maior.'],

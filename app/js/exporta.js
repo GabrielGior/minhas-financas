@@ -174,3 +174,37 @@ function openSugestoes(){
     : '<div class="card empty" style="box-shadow:none">Nenhuma sugestão por enquanto.<br>Elas aparecem quando o banco avisa uma compra ou um Pix.</div>'}
     <div class="btns foot">${sugLog().length ? '<button class="btn" onclick="localStorage.removeItem(SUG_KEY);openSugestoes()">Limpar histórico</button>' : ''}<button class="btn primary" onclick="closeForm()">Fechar</button></div>`);
 }
+
+// ---------- Puxar para atualizar ----------
+// Com a tela no topo, puxar para baixo e soltar recarrega os dados: sincroniza com a conta, atualiza taxas e cotações e
+// redesenha a tela. O círculo desce junto com o dedo e gira enquanto atualiza.
+let ptr = null; // puxada em andamento: {x, y, d}
+const ptrLivre = () => scrollY <= 0 && !sheetOpen() && !pickerOpen() && !document.getElementById('abre')
+  && ['gate', 'dlg', 'lockAsk'].every(id => document.getElementById(id).hidden) && document.getElementById('lightbox').hidden;
+function ptrDraw(d, girando){
+  const el = document.getElementById('ptr');
+  el.style.transform = `translate(-50%, ${d - 60}px) rotate(${girando ? 0 : d * 3}deg)`;
+  el.style.opacity = girando ? 1 : Math.min(1, d / 50);
+  el.classList.toggle('pronto', d >= 64); el.classList.toggle('gira', !!girando);
+}
+document.addEventListener('touchstart', e => { ptr = e.touches.length === 1 && ptrLivre() ? {x:e.touches[0].clientX, y:e.touches[0].clientY, d:0} : null; }, {passive:true});
+document.addEventListener('touchmove', e => {
+  if (!ptr) return;
+  const dy = e.touches[0].clientY - ptr.y, dx = Math.abs(e.touches[0].clientX - ptr.x);
+  if (dy <= 0 || scrollY > 0 || (!ptr.d && dx > dy)){ if (ptr.d) ptrDraw(0); ptr = null; return; } // rolando ou deslizando de lado
+  ptr.d = Math.min(110, dy * .5); ptrDraw(ptr.d);
+}, {passive:true});
+document.addEventListener('touchend', () => { if (!ptr) return; const d = ptr.d; ptr = null; if (d >= 64) atualizarTudo(); else if (d) ptrDraw(0); }, {passive:true});
+let atualizando = false;
+async function atualizarTudo(){
+  if (atualizando) return;
+  atualizando = true; ptrDraw(64, true);
+  try {
+    now = new Date(); curYM = ymOf(now.getFullYear(), now.getMonth());
+    rollover(); updateRates(); refreshQuotes();
+    if (!needGate()) await syncNow(true);
+  } catch(e){} finally { atualizando = false; }
+  if (!sheetOpen()) render();
+  ptrDraw(0);
+  toast(canSync() && sync.on && sync.err ? 'Não deu para sincronizar: ' + sync.err : 'Atualizado');
+}
