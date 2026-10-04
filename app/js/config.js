@@ -769,7 +769,7 @@ let syncing = false, syncAgain = false, syncTimer = 0, driveSeq = 0;
 const drivePending = {};
 
 function drive(method, url, body, ctype, interactive){
-  return new Promise(res => { const id = ++driveSeq; drivePending[id] = res; Android.drive(id, method, url, body || '', ctype || '', !!interactive); });
+  return espera(new Promise(res => { const id = ++driveSeq; drivePending[id] = res; Android.drive(id, method, url, body || '', ctype || '', !!interactive); }));
 }
 // Chamado pelo lado nativo. status: código HTTP; 0 = sem conexão; -1 = precisa entrar na conta; -2 = outro erro.
 function onDrive(id, status, text){ const res = drivePending[id]; delete drivePending[id]; if (res) res({status, text}); }
@@ -791,7 +791,7 @@ async function driveWrite(id, name, json){
 // comprovantes. sync.shared = {id, owner, with:[e-mails convidados]}.
 const SHEETS = 'https://sheets.googleapis.com/v4/spreadsheets';
 let PEDACO = 40000;
-const fam = (method, url, body, ctype, interactive) => new Promise(res => { const id = ++driveSeq; drivePending[id] = res; Android.driveFamilia(id, method, url, body || '', ctype || '', !!interactive); });
+const fam = (method, url, body, ctype, interactive) => espera(new Promise(res => { const id = ++driveSeq; drivePending[id] = res; Android.driveFamilia(id, method, url, body || '', ctype || '', !!interactive); }));
 const shared = () => sync.shared && sync.shared.id;
 const rng = r => encodeURIComponent(r);
 // Além dos dados (aba "dados"), a aba "leia-me" guarda dois avisos: A4 = "LIMPA" (conta criada do zero: quem entra não
@@ -820,6 +820,73 @@ const codeOf = s => (String(s).match(/\/d\/([\w-]{20,})/) || String(s).trim().ma
 const inviteText = id => `Te convidei para a nossa conta compartilhada no app Minhas Finanças. No app, abra Configurações > Conta compartilhada > Tenho um convite e cole este código:\n${id}`;
 // Quem lançou: registros antigos (sem by) passam a ser desta pessoa ao entrar numa conta compartilhada.
 function claimMine(){ const me = myName(); if (me) for (const c of COLS) for (const r of db[c]) if (!r.by){ r.by = me; r.u = Date.now(); } }
+// ---------- Pessoas e avisos da conta compartilhada ----------
+// db.membros = {chave: {nome, email, desde, t}}: cada aparelho se inscreve ao sincronizar (membroEu), então a lista
+// viaja junto com os dados. A chave é o e-mail da conta Google (ou o nome, se o e-mail não estiver disponível).
+const membroChave = () => String((window.Android && Android.conta && Android.conta()) || myName() || 'eu').toLowerCase();
+function membroEu(){
+  const k = membroChave(), email = k.includes('@') ? k : '', nome = myName() || email.split('@')[0] || 'Sem nome', m = db.membros[k];
+  if (m && m.nome === nome) return false;
+  db.membros[k] = {nome, email, desde:(m && m.desde) || Date.now(), t:Date.now()};
+  return true;
+}
+// O app não tem servidor: cada aparelho descobre o que os outros fizeram quando sincroniza. Ao juntar os dados, atividade()
+// lista quem entrou e o que outra pessoa adicionou ou editou (gastos, ganhos e investimentos); isso vira um aviso na tela
+// e fica guardado neste aparelho (ATIV_KEY). Com o app fechado, quem avisa é o lado nativo (ShareReceiver), de hora em hora.
+const ATIV_KEY = 'financas-ativ', ATIV_COLS = {expenses:'o gasto', installments:'a compra parcelada', incomes:'o ganho', investments:'o investimento'};
+function atividade(a, m){
+  const eu = myName(), out = [];
+  for (const [k, p] of Object.entries(m.membros || {})) if (!a.membros[k] && k !== membroChave()) out.push({t:p.desde || Date.now(), quem:p.nome, txt:'entrou na conta compartilhada'});
+  for (const c in ATIV_COLS){
+    const meus = new Map(a[c].map(r => [r.id, r.u || 0]));
+    for (const r of m[c]){
+      const novo = !meus.has(r.id), quem = (novo ? r.by : r.ed || r.by) || 'Alguém', v = r.value || r.total || 0;
+      if ((novo || (r.u || 0) > meus.get(r.id)) && quem !== eu) out.push({t:r.u || Date.now(), quem, txt:`${novo ? 'adicionou' : 'editou'} ${ATIV_COLS[c]} ${r.desc || r.name || r.ticker || ''}`.trim() + (v ? ` (${fmt(v)})` : '')});
+    }
+  }
+  return out.sort((x, y) => x.t - y.t);
+}
+function ativLista(){ try { return JSON.parse(localStorage.getItem(ATIV_KEY)) || []; } catch(e){ return []; } }
+const ativGuardar = l => { try { localStorage.setItem(ATIV_KEY, JSON.stringify(l.slice(-40))); } catch(e){} };
+const ativNovas = () => ativLista().filter(x => !x.visto).length;
+function ativAvisar(novas){
+  if (!novas.length) return;
+  ativGuardar([...ativLista(), ...novas]);
+  if (db.prefs.avisoComp === false) return;
+  toast(novas.length === 1 ? `${novas[0].quem} ${novas[0].txt}` : `${novas.length} novidades na conta compartilhada. Veja no Resumo.`);
+}
+// Faixa no topo do Resumo enquanto houver novidades não vistas; tocar abre a lista.
+const ativHtml = () => { const n = sync.shared && db.prefs.avisoComp !== false ? ativNovas() : 0, u = n && ativLista().pop();
+  return n ? `<div class="card avisoComp" onclick="openAtividade()"><span>${I('bell', 20)}</span><div><b>${n === 1 ? '1 novidade' : n + ' novidades'} na conta compartilhada</b><small>${esc(u.quem)} ${esc(u.txt)}</small></div>${I('chev', 18)}</div>` : ''; };
+const quando = t => new Date(t).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+function openAtividade(){
+  settingsOpen = false; F = null;
+  const l = ativLista().reverse();
+  showSheet(`<h3>Atividade da conta compartilhada</h3>
+    ${l.length ? l.map(x => `<div class="item" style="cursor:default"><span class="${x.visto ? 'muted' : 'in'}">${I(/entrou/.test(x.txt) ? 'people' : 'bell', 20)}</span><div class="mid"><b style="white-space:normal">${esc(x.quem)} ${esc(x.txt)}</b><small>${quando(x.t)}</small></div></div>`).join('')
+      : '<div class="hint" style="margin-top:0">Nada por aqui ainda. Quando outra pessoa entrar na conta ou lançar algo, aparece nesta lista.</div>'}
+    <div class="hint">O app confere as novidades sempre que sincroniza (ao abrir e a cada alteração) e, com ele fechado, mais ou menos de hora em hora.</div>
+    <div class="btns foot"><button class="btn primary" onclick="closeForm();render()">Pronto</button></div>`);
+  ativGuardar(ativLista().map(x => ({...x, visto:1})));
+}
+// Entrega ao lado nativo o que ele precisa para avisar com o app fechado ('' desliga).
+function compNativo(){
+  if (!(window.Android && Android.compart)) return;
+  const ligado = shared() && db.prefs.avisoComp !== false;
+  Android.compart(ligado ? JSON.stringify({id:shared(), eu:myName(), t:Math.max(0, ...Object.keys(ATIV_COLS).flatMap(c => db[c].map(r => r.u || 0))), membros:Object.keys(db.membros)}) : '');
+}
+// Fim da conta compartilhada neste aparelho: a lista de pessoas e os avisos dela deixam de valer.
+function compFim(){ db.membros = {}; try { localStorage.removeItem(ATIV_KEY); } catch(e){} compNativo(); }
+function setAvisoComp(on){
+  if (on && window.Android && Android.pedirNotificacao) Android.pedirNotificacao();
+  setPref('avisoComp', on); compNativo();
+}
+const membrosHtml = s => { const eu = membroChave(), ms = Object.entries(db.membros).sort((a, b) => a[1].desde - b[1].desde), emails = new Set(ms.map(([, m]) => m.email));
+  const falta = (s.with || []).filter(e => !emails.has(e));
+  return `<label>Pessoas na conta (${ms.length})</label><div class="card" style="box-shadow:none;background:var(--bg);margin:0">
+    ${ms.map(([k, m]) => `<div class="item" style="cursor:default">${tile('user')}<div class="mid"><b>${esc(m.nome)}${k === eu ? ' (você)' : ''}</b><small>${m.email ? esc(m.email) + ' · ' : ''}desde ${new Date(m.desde).toLocaleDateString('pt-BR')}</small></div></div>`).join('')}
+    ${falta.map(e => `<div class="item" style="cursor:default;opacity:.65">${tile('user')}<div class="mid"><b>${esc(e)}</b><small>convite enviado, ainda não entrou</small></div></div>`).join('')}
+    ${ms.length ? '' : '<div class="hint" style="margin:0">A lista aparece depois da próxima sincronização.</div>'}</div>`; };
 // Tudo numa tela só: sem conta, as três formas de começar (cada uma com uma linha explicando); com conta, o estado,
 // o código do convite à vista e as ações.
 // sync.limpaProx = a conta que está sendo criada é "do zero" (fica em sync para sobreviver à ida ao Google na versão web).
@@ -833,6 +900,11 @@ function shareHtml(){
     ${opcao('sparkle', 'Criar uma conta compartilhada do zero', 'Começa vazia, sem os lançamentos de ninguém. Os seus ficam guardados na sua conta.', "openShare('zero')")}
     ${opcao('download', 'Tenho um código de convite', 'Entre na conta que outra pessoa criou.', "openShare('entrar')")}`}`;
   return `<div class="hint in" style="margin-top:0">${I('people', 14)} Conta compartilhada ligada${s.limpa ? ' (criada do zero)' : ''}. ${s.owner ? (s.with && s.with.length ? 'Você criou e convidou ' + s.with.map(esc).join(', ') + '.' : 'Você criou; falta convidar alguém.') : 'Você entrou por convite.'}</div>
+    ${membrosHtml(s)}
+    <label>Avisos</label>
+    <div class="btns" style="margin-top:0">${[[true, 'Avisar'], [false, 'Não avisar']].map(([v, t]) => `<button class="btn ${(db.prefs.avisoComp !== false) === v ? 'primary' : ''}" onclick="setAvisoComp(${v})">${t}</button>`).join('')}</div>
+    <div class="hint">Avisa quando outra pessoa entra na conta ou adiciona/edita um gasto, ganho ou investimento: na tela do app e, com ele fechado, por notificação do celular (pode levar até cerca de uma hora).</div>
+    <div class="btns"><button class="btn" onclick="openAtividade()">${I('bell')}Atividade recente${ativNovas() ? ` (${ativNovas()})` : ''}</button></div>
     <label>Código do convite</label>
     <div class="btns" style="margin-top:0"><input readonly value="${esc(s.id)}" style="flex:3;min-width:0;font-size:12px" onclick="this.select()"><button class="btn" style="flex:1" onclick="shareCopy()">Copiar</button></div>
     ${s.owner ? `<div class="btns"><button class="btn" onclick="openShare('convidar')">${I('people')}Convidar mais alguém</button></div>` : ''}
@@ -895,6 +967,7 @@ const shareStart = umaVez(async function(email, semPerguntar, limpa = !!sync.lim
   if (!semPerguntar && !await ask(limpa ? `Criar uma conta compartilhada do zero com ${email}?\n\nEla começa vazia, numa planilha na sua conta Google que ${email} poderá ver e editar pelo app. Os seus lançamentos de hoje continuam guardados na sua conta e voltam se a conta compartilhada for encerrada.`
     : `Criar a conta compartilhada com ${email}?\n\nOs seus lançamentos vão para uma planilha na sua conta Google, que ${email} poderá ver e editar pelo app.`, 'Criar e convidar')) return;
   if (!semPerguntar && !await famPrepare()) return;
+  const fimCarga = cargaOn('Criando a conta compartilhada…');
   try {
     await syncNow(); // os dados pessoais ficam em dia na sua conta antes de passar a usar a planilha
     if (limpa && sync.err) return shErr('Não consegui guardar os seus dados pessoais na sua conta antes de criar a conta do zero. Confira a internet e tente de novo.');
@@ -920,7 +993,7 @@ const shareStart = umaVez(async function(email, semPerguntar, limpa = !!sync.lim
     sync.shared = null; saveSync();
     if (e.status === -1) return famNegado();
     shErr(sharedMsg(e) || (e.status === 0 ? 'Sem conexão com a internet.' : e.status === -1 ? 'É preciso autorizar o acesso na conta Google.' : 'Não foi possível criar a conta compartilhada agora.'));
-  }
+  } finally { fimCarga(); }
 });
 function shareCopy(){
   const t = inviteText(shared());
@@ -933,6 +1006,7 @@ const shareJoin = umaVez(async function(code, escolha){
   if (!id) return shErr('Código inválido. Cole o código inteiro que a outra pessoa mandou.');
   let remote;
   if (!escolha && !await famPrepare()) return;
+  const fimCarga = cargaOn('Abrindo a conta compartilhada…');
   try {
     await syncNow();
     remote = await sharedRead(id, true);
@@ -946,7 +1020,7 @@ const shareJoin = umaVez(async function(code, escolha){
     if (e.status === -1) return famNegado();
     if (e.status === -4) return shErr('Esta conta compartilhada já foi encerrada. Peça para a outra pessoa criar uma nova e mandar o novo código.');
     return shErr(sharedMsg(e) || (e.status === 0 ? 'Sem conexão com a internet.' : 'Não foi possível abrir a conta compartilhada (' + e.status + ').'));
-  }
+  } finally { fimCarga(); }
   if (!escolha){
     const temMeus = COLS.some(c => db[c].length);
     if (!temMeus || sharedInfo.limpa) escolha = 'so'; // conta criada do zero: ninguém leva os próprios lançamentos
@@ -957,6 +1031,7 @@ const shareJoin = umaVez(async function(code, escolha){
   else loadDb({...remote, prefs});
   rollover(); save(false);
   sync.shared = {id, owner:false, limpa:sharedInfo.limpa}; saveSync();
+  if (window.Android && Android.pedirNotificacao && !window.TESTE) Android.pedirNotificacao(); // para os avisos do que a outra pessoa lançar
   await syncNow();
   closeForm(); render();
   toast(comNome('Pronto, {nome}! Agora vocês veem os mesmos lançamentos.'));
@@ -989,8 +1064,8 @@ const shareLeave = umaVez(async function(escolha){
     if (!await ask('Sair e ENCERRAR a conta compartilhada?\n\nIsto vale para todos: a outra pessoa também é desligada e volta para a conta individual dela, e a planilha compartilhada é apagada. Não dá para desfazer.\n\nNinguém perde os lançamentos: cada pessoa pode ficar com uma cópia na própria conta.', 'Encerrar para todos', true)) return;
     return pickList('O que fazer com os lançamentos compartilhados neste aparelho?', [['copia', 'Ficar com uma cópia, junto com os meus dados'], ['so', 'Não ficar: voltar só aos meus dados de antes']], '', v => shareLeave(v));
   }
+  return comCarga('Encerrando a conta compartilhada…', async () => {
   const id = shared(), dono = sync.shared.owner;
-  toast('Encerrando a conta compartilhada…');
   await syncNow(); // as últimas alterações deste aparelho vão para a planilha antes do aviso
   let pessoal = null;
   try {
@@ -1002,17 +1077,18 @@ const shareLeave = umaVez(async function(escolha){
     if (e.status !== 404 && e.status !== -4){ logErr('sair compartilhada', e.status ? e.status + ' ' + String(e.text).slice(0, 200) : e); return tell('Não consegui encerrar a conta compartilhada agora (sem internet?). Tente de novo.'); }
   }
   if (dono) await apagarPlanilha(id);
-  sync.shared = null; saveSync();
+  sync.shared = null; saveSync(); compFim();
   if (pessoal){ loadDb({...pessoal, prefs:db.prefs}); rollover(); save(false); }
   await syncNow();
   closeForm(); render();
   tell(`Conta compartilhada encerrada. ${escolha === 'so' ? 'Este aparelho voltou aos seus dados pessoais.' : 'Você ficou com uma cópia dos lançamentos na sua conta.'}\n\nA outra pessoa será desligada assim que o app dela sincronizar.`);
+  });
 });
 // A conta compartilhada foi encerrada por outra pessoa (ou a planilha sumiu): este aparelho volta à conta individual,
 // guardando os lançamentos compartilhados como uma cópia junto aos dados pessoais. Quem criou a planilha a apaga.
 async function shareEnded(por){
   const s = sync.shared; if (!s) return;
-  sync.shared = null; sync.err = ''; saveSync();
+  sync.shared = null; sync.err = ''; saveSync(); compFim(); save(false);
   if (s.owner) await apagarPlanilha(s.id);
   if (!sheetOpen()) render(); else if (settingsShown()) openSettings();
   tell(`A conta compartilhada foi encerrada${por ? ' por ' + por : ''}.\n\nVocê voltou para a sua conta individual e ficou com uma cópia dos lançamentos compartilhados.`);
@@ -1035,13 +1111,15 @@ function mergeDb(a, b){
   }
   const cfg = (b.cfgMod || 0) > (a.cfgMod || 0) ? b : a;
   Object.assign(out, {prefs:cfg.prefs, budgets:cfg.budgets, cardClose:cfg.cardClose, cardDue:cfg.cardDue, cardAcc:cfg.cardAcc, cardLimit:cfg.cardLimit, archUntil:cfg.archUntil || '', cats:cfg.cats, cfgMod:cfg.cfgMod});
+  out.membros = {...b.membros};
+  for (const [k, m] of Object.entries(a.membros || {})) if (!out.membros[k] || (m.t || 0) >= (out.membros[k].t || 0)) out.membros[k] = m;
   out.catMemo = {...b.catMemo, ...a.catMemo};
   out.yieldLog = {...b.yieldLog, ...a.yieldLog};
   out.netLog = {...b.netLog, ...a.netLog};
   return out;
 }
 // Texto para comparar dois estados sem depender da ordem das chaves.
-const SYNCED = [...COLS, 'tomb', 'prefs', 'budgets', 'cardClose', 'cardDue', 'cardAcc', 'cardLimit', 'archUntil', 'cats', 'catMemo', 'yieldLog', 'netLog'];
+const SYNCED = [...COLS, 'tomb', 'prefs', 'budgets', 'cardClose', 'cardDue', 'cardAcc', 'cardLimit', 'archUntil', 'cats', 'catMemo', 'yieldLog', 'netLog', 'membros'];
 const canon = d => JSON.stringify(SYNCED.map(k => d[k]), (k, v) => v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([x],[y]) => x < y ? -1 : 1)) : v);
 
 let retryTimer = 0;
@@ -1093,16 +1171,20 @@ async function syncNow(interactive){
     const sid = shared(), file = sid ? null : (await driveList("name='financas.json'", interactive))[0];
     const bruto = sid ? await sharedRead(sid, interactive) : file ? await driveGet(file.id) : null, remote = bruto && fixDb(bruto);
     if (newerDb(remote)) throw {status:-3};
+    if (sid && membroEu()) save(false); // este aparelho entra na lista de pessoas da conta
     if (remote){
       const merged = mergeDb(db, remote);
       if (sid) merged.prefs = db.prefs; // nome e aparência são de cada pessoa
       if (canonS(merged) !== canonS(db)){
-        const veio = incoming(db, merged);
+        const veio = incoming(db, merged), novas = sid ? atividade(db, merged) : [];
         keepBefore(); // cópia deste aparelho antes de juntar, para poder desfazer
-        loadDb(merged); rollover(); save(false); if (!sheetOpen()) render();
-        if (veio) toast(`Sincronizado: ${veio} ${veio > 1 ? 'alterações vieram' : 'alteração veio'} de outro aparelho.`);
+        loadDb(merged); rollover(); save(false);
+        if (novas.length) ativAvisar(novas); // conta compartilhada: diz quem fez o quê
+        else if (veio) toast(`Sincronizado: ${veio} ${veio > 1 ? 'alterações vieram' : 'alteração veio'} de outro aparelho.`);
+        if (!sheetOpen()) render();
       }
     }
+    compNativo();
     if (!remote || canonS(db) !== canonS(remote)) await (sid ? sharedWrite(sid, JSON.stringify(db)) : driveWrite(file && file.id, 'financas.json', JSON.stringify(db)));
     Object.assign(sync, {linked:true, at:Date.now(), err:'', retry:0});
     clearTimeout(retryTimer);
@@ -1145,7 +1227,7 @@ async function openBackups(){
   settingsOpen = false; F = null;
   showSheet('<h3>Versões salvas na conta</h3><div class="hint">Carregando…</div>');
   let files;
-  try { files = await driveList("name contains 'backup-'"); }
+  try { files = await comCarga('Buscando as versões salvas…', () => driveList("name contains 'backup-'")); }
   catch(e){ return showSheet('<h3>Versões salvas na conta</h3><div class="hint">Não foi possível carregar. Verifique a internet.</div><div class="btns"><button class="btn" onclick="openSettings(\'conta\')">Voltar</button></div>'); }
   showSheet(`<h3>Versões salvas na conta</h3>
     <div class="hint" style="margin-top:0">O app guarda uma cópia por dia de uso, por 30 dias. Restaurar troca todos os dados atuais pelos daquele dia, em todos os aparelhos.</div>
@@ -1155,7 +1237,7 @@ async function openBackups(){
 async function restoreBackup(id, name){
   if (!await ask(`Restaurar os dados de ${fmtDate(name.slice(7, 17))}?\nOs dados atuais serão substituídos.`, 'Restaurar', true)) return;
   let snap;
-  try { snap = fixDb(await driveGet(id)); } catch(e){ return tell('Não foi possível baixar essa versão.'); }
+  try { snap = fixDb(await comCarga('Baixando a versão escolhida…', () => driveGet(id))); } catch(e){ return tell('Não foi possível baixar essa versão.'); }
   // Para a restauração valer em todos os aparelhos: tudo o que veio da cópia fica como "alterado agora",
   // e o que existe hoje mas não existia nela é marcado como excluído.
   applySnapshot(snap);
@@ -1414,9 +1496,8 @@ function updFlush(agora){
 }
 // Versão web: confere a versão publicada; se for mais nova, recarrega (o app busca os arquivos novos na rede).
 async function webProcurar(){
-  toast('Procurando atualização…');
   try {
-    const j = await (await fetch('https://raw.githubusercontent.com/GabrielGior/minhas-financas-app/main/atualizacao/versao.json?t=' + Date.now(), {cache:'no-store'})).json();
+    const j = await comCarga('Procurando atualização…', async () => (await fetch('https://raw.githubusercontent.com/GabrielGior/minhas-financas-app/main/atualizacao/versao.json?t=' + Date.now(), {cache:'no-store'})).json());
     if (verNum(j.versao) <= verNum(APP_VERSION)) return tell(`Você já está na versão mais recente (${APP_VERSION}).`);
     if (await ask(`Saiu a versão ${j.versao}. Atualizar agora? Seus dados não mudam.`, 'Atualizar')) location.reload();
   } catch(e){ tell('Não consegui procurar atualizações. Confira a internet e tente de novo.'); }

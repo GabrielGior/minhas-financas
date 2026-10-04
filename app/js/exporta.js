@@ -136,7 +136,7 @@ function openApagar(aba){
     <div class="card" style="box-shadow:none;background:var(--bg);margin:14px 0 0;text-align:center"><b style="font-size:20px" class="${n ? 'out' : ''}">${n} ${n === 1 ? 'lançamento' : 'lançamentos'}</b>
       <div class="hint" style="margin-top:2px">${n ? 'somando ' + fmt(total) : 'Nada para apagar neste período.'}</div></div>
     ${a.aba !== 'invest' && a.modo !== 'tudo' ? '<div class="hint">Um lançamento fixo conta pelo mês em que começou: os que começaram antes do período continuam.</div>' : ''}
-    <div class="btns foot"><button class="btn" onclick="closeForm()">Cancelar</button><button class="btn danger" ${n ? '' : 'disabled style="opacity:.4"'} onclick="apagarAgora()">${I('trash')}Apagar ${n || ''}</button></div>`);
+    <div class="btns foot"><button class="btn" onclick="closeForm()">Cancelar</button><button class="btn danger" style="flex:1" ${n ? '' : 'disabled'} onclick="apagarAgora()">${I('trash')}Apagar ${n || ''}</button></div>`);
 }
 async function apagarAgora(){
   const lista = apagaLista(), n = lista.length, a = apaga;

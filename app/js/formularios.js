@@ -345,10 +345,19 @@ function fieldHtml(f){
   if (f.type === 'month' || f.type === 'date') return `<input id="${id}" type="hidden"><button type="button" class="pickBtn" id="p_${f.k}" onclick="pickField('${f.k}')"></button>`;
   // Valor de um gasto em vermelho e de um ganho em verde, para confirmar o que está sendo lançado.
   const cor = !['value', 'total'].includes(f.k) || !F ? '' : F.col === 'incomes' ? 'in' : ['expenses', 'installments'].includes(F.col) ? 'out' : '';
-  if (f.big) return `<div class="bigVal ${cor}"><span>R$</span><input id="${id}" type="text" inputmode="numeric" placeholder="0,00" autocomplete="off"></div>`;
+  if (f.big) return `<div class="bigVal ${cor}"><span>R$</span><input id="${id}" type="text" inputmode="numeric" placeholder="0,00" autocomplete="off"></div>${somaHtml(f.k)}`;
   return `<input id="${id}" type="text" ${f.type === 'money' ? `inputmode="numeric" class="${cor}"` : f.type === 'num' ? 'inputmode="decimal"' : f.type === 'int' ? 'inputmode="numeric"' : ''} placeholder="${f.type === 'money' ? '0,00' : f.ph || ''}" autocomplete="off">` +
+    (f.type === 'money' ? somaHtml(f.k) : '') +
     (f.type === 'asset' ? '<div id="assetList"></div>' : '') +
     (f.sug ? `<div class="chips sug" id="sug_${f.k}" hidden></div>` : '');
+}
+// Soma rápida: botões abaixo de todo campo de dinheiro; cada toque soma o valor ao que já está no campo.
+const SOMAS = [10, 20, 50, 100];
+const somaHtml = k => `<div class="chips soma">${SOMAS.map(n => `<button type="button" onclick="somaRapida('${k}',${n})">+${n}</button>`).join('')}</div>`;
+function somaRapida(k, n){
+  const el = document.getElementById('f_' + k);
+  el.value = moneyStr((parseNum(el.value) || 0) + n);
+  el.dispatchEvent(new Event('input')); // passa pela máscara e avisa o formulário, como se tivesse sido digitado
 }
 // Cores oferecidas para uma categoria (as mesmas famílias das categorias de fábrica).
 const CAT_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#ef4444', '#f97316', '#f59e0b', '#eab308', '#65a30d', '#16a34a', '#14b8a6', '#0ea5e9', '#2563eb', '#b45309', '#64748b'];
@@ -782,6 +791,26 @@ function showUndo(text, fn){
   snackTimer = setTimeout(hideSnack, 6000);
 }
 // Aviso curto no rodapé, sem botão.
+// ---------- Carregando ----------
+// Animação global de espera. Toda chamada de rede (Google, cotações, notícias, atualização) passa por espera(): enquanto
+// houver alguma em andamento, uma faixa animada corre no topo da tela (só depois de 0,3 s, para não piscar nas rápidas).
+// As ações demoradas pedidas pela pessoa (criar a conta compartilhada, restaurar uma cópia…) usam comCarga(), que mostra
+// também um cartão com o que está sendo feito. Nada disso bloqueia a tela: as perguntas e avisos continuam por cima.
+let esperas = 0, cargaT = 0;
+const cargaTxt = [];
+function cargaDraw(){
+  const b = document.getElementById('carga'), c = document.getElementById('cargaCx');
+  if (!b) return;
+  const on = () => esperas > 0 || cargaTxt.length > 0;
+  clearTimeout(cargaT);
+  if (!on()) b.hidden = true; else if (b.hidden) cargaT = setTimeout(() => { b.hidden = !on(); }, 300);
+  c.hidden = !cargaTxt.length;
+  if (cargaTxt.length) c.lastElementChild.textContent = cargaTxt[cargaTxt.length - 1];
+}
+const espera = p => { esperas++; cargaDraw(); return Promise.resolve(p).finally(() => { esperas--; cargaDraw(); }); };
+// cargaOn devolve a função que encerra o aviso; comCarga cuida disso sozinha em volta de fn.
+function cargaOn(texto){ cargaTxt.push(texto); cargaDraw(); return () => { const i = cargaTxt.lastIndexOf(texto); if (i >= 0) cargaTxt.splice(i, 1); cargaDraw(); }; }
+async function comCarga(texto, fn){ const fim = cargaOn(texto); try { return await fn(); } finally { fim(); } }
 function toast(text){
   const s = document.getElementById('snack');
   undoFn = null;

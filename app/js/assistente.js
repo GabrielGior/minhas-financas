@@ -9,9 +9,7 @@ const INC_WORDS = {salario:['salario'], freelance:['freela','extra'], rendimento
 const PAY_WORDS = {credito:['credito'], debito:['debito'], pix:['pix'], dinheiro:['dinheiro','especie'], boleto:['boleto'], va:['vale alimentacao'], vr:['vale refeicao'], vt:['vale transporte']};
 const CHAT_STOP = new Set(('quanto quantos quais qual gastei gasto gastos gastar ganhei ganho ganhos esse este essa esta nesse neste desse deste mes meses ano com para por que foi meu minha meus minhas tenho total valor ' +
   'passado atual proximo sobre onde mais maior menos como esta estao pagar paguei recebi tive foram reais ultimo ultimos comparado comparando compare media saldo quero saber dizer mostre mostra').split(' '));
-const CHAT_HINTS = ['Quanto gastei este mês?', 'Quanto gastei com alimentação este mês?', 'Onde gastei mais este ano?', 'Qual meu saldo do ano?',
-  'Quanto falta pagar das parcelas?', 'Quanto tenho investido?', 'Quais contas vencem este mês?', 'Como está meu orçamento?',
-  'Quanto vai sobrar no fim do mês?', 'Qual o saldo das minhas contas?', 'Quanto recebi de proventos?'];
+const CHAT_HINTS = ['Quanto gastei este mês?', 'Onde gastei mais este ano?', 'Quanto vai sobrar no fim do mês?', 'Quais contas vencem este mês?'];
 const chatLog = []; // {me, html} ou {me:false, entry:índice em chatEntries}; fica só na memória, some ao fechar o app
 // Lançar pelo assistente: "mercado 45 nubank crédito", "gastei 32,50 no uber", "recebi 200 de freelance".
 // Devolve {col, desc, value, cat, bank, pay, q} ou null se a frase não parece um lançamento (perguntas nunca são).
@@ -236,8 +234,11 @@ function answer(q){
   return 'Não entendi essa pergunta. ' + helpText;
 }
 function chatHtml(){
-  const ola = db.prefs.fun ? 'Oinc! Sou o porquinho de plantão. Pergunte o que quiser sobre os seus números: eu faço as contas aqui mesmo no aparelho, sem contar nada para a internet.' : 'Olá! Pergunte sobre os dados que você cadastrou no app. As respostas são calculadas aqui no aparelho, sem enviar nada para a internet.';
-  return `<div class="msg">${lang() === 'pt' && myName() ? ola.replace(/^(Oinc|Olá)!/, `$1, ${esc(myName()).replace(/\$/g, '$$$$')}!`) : ola} Para lançar um gasto, escreva por exemplo "mercado 45 nubank crédito".</div>` +
+  // A saudação vem em três balões curtos (quem é, o que responde, como lançar), mais fáceis de ler que um texto só.
+  const ola = db.prefs.fun ? ['Oinc! Sou o porquinho de plantão.', 'Pergunte o que quiser sobre os seus números: eu faço as contas aqui mesmo no aparelho, sem contar nada para a internet.']
+    : ['Olá! Sou o assistente do app.', 'Pergunte sobre os dados que você cadastrou. As respostas são calculadas aqui no aparelho, sem enviar nada para a internet.'];
+  if (lang() === 'pt' && myName()) ola[0] = ola[0].replace(/^(Oinc|Olá)!/, `$1, ${esc(myName()).replace(/\$/g, '$$$$')}!`);
+  return [...ola, 'Para lançar um gasto, escreva por exemplo "mercado 45 nubank crédito".'].map(t => `<div class="msg ola">${t}</div>`).join('') +
     // As sugestões vêm logo depois da saudação: aparecem enquanto nada foi enviado e, depois, ficam no começo da
     // conversa (é só rolar para cima). A conversa recomeça cada vez que o app é aberto (ver inicio.js).
     `<div class="chips">${CHAT_HINTS.map(h => `<button onclick="sendChat(this.textContent)">${h}</button>`).join('')}</div>` +
@@ -255,7 +256,7 @@ function sendChat(text){
 }
 function viewChat(){
   return `
-  <h1><span class="volta"><button class="iconbtn" onclick="sairChat()" aria-label="Voltar">‹</button>Assistente</span><span>${eyeBtn()}</span></h1>
+  <h1><span class="volta"><button class="iconbtn" onclick="sairChat()" aria-label="Voltar">‹</button>Assistente</span></h1>
   <div id="chatLog">${chatHtml()}</div>
   <div style="height:70px"></div>
   <form class="chatbar" onsubmit="sendChat();return false">
@@ -297,7 +298,7 @@ function drawTopbar(){
   const mes = state.tab === 'gastos' && state.gsub === 'mes';
   document.getElementById('topbar').innerHTML = `<b>${TABS[state.tab][1]}</b>` + (mes
     ? `<span><button onclick="state.month=addMonths(state.month,-1);renderIn()" aria-label="Mês anterior">‹</button><em onclick="pickMonth()">${cap(monthName(state.month))}</em><button onclick="state.month=addMonths(state.month,1);renderIn()" aria-label="Próximo mês">›</button></span>`
-    : state.tab === 'resumo' ? `<span><em onclick="pickYear()">${state.year}</em></span>` : '');
+    : state.tab === 'resumo' ? `<span><button onclick="resMes(-1)" aria-label="Mês anterior">‹</button><em onclick="pickResumo()">${cap(monthName(resumoMes()))}</em><button onclick="resMes(1)" aria-label="Próximo mês">›</button></span>` : '');
 }
 // Leitor de tela e teclado: o que é clicável e não é botão passa a se anunciar como botão; setas ganham nome.
 function a11y(root){
@@ -339,6 +340,18 @@ function pickYear(){
   showSheet(`<h3>Escolher ano</h3><div class="filters">${[...Array(12)].map((_,i) => from + i).map(y =>
     `<button class="btn ${y === state.year ? 'primary' : ''}" onclick="state.year=${y};closeForm();render()">${y}</button>`).join('')}</div>
     <div class="btns"><button class="btn" onclick="closeForm()">Cancelar</button></div>`);
+}
+// Resumo: o filtro é de mês e ano. state.rmes guarda o mês escolhido e state.year acompanha o ano dele.
+const resumoMes = () => state.year + (state.rmes || curYM).slice(4);
+function setResumoMes(m){ state.rmes = m; state.year = +m.slice(0, 4); state.dia = 0; }
+function resMes(d){ setResumoMes(addMonths(resumoMes(), d)); renderIn(); }
+function pickResumo(y = state.year){
+  settingsOpen = false; F = null;
+  const sel = resumoMes();
+  showSheet(`<h3>Escolher mês e ano</h3>
+    <div class="nav" style="box-shadow:none;background:var(--bg)"><button onclick="pickResumo(${y - 1})" aria-label="Ano anterior">‹</button><b>${y}</b><button onclick="pickResumo(${y + 1})" aria-label="Próximo ano">›</button></div>
+    <div class="filters">${MESES.map((n,i) => { const m = ymOf(y, i); return `<button class="btn ${m === sel ? 'primary' : ''}" style="text-transform:capitalize${m === curYM ? ';outline:2px solid var(--brand)' : ''}" onclick="setResumoMes('${m}');closeForm();render()">${n.slice(0,3)}</button>`; }).join('')}</div>
+    <div class="btns"><button class="btn" onclick="setResumoMes(curYM);closeForm();render()">Mês atual</button><button class="btn" onclick="closeForm()">Cancelar</button></div>`);
 }
 function pickMonth(y = +state.month.slice(0, 4)){
   settingsOpen = false; F = null;

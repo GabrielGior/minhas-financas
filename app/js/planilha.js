@@ -167,8 +167,7 @@ const sheetCreate = umaVez(async function(semPerguntar){
 });
 function sheetOpenUrl(){ if (window.Android && Android.abrir) Android.abrir(sheetUrl()); else window.open(sheetUrl(), '_blank', 'noopener'); }
 async function sheetNow(){
-  toast('Sincronizando com a planilha…');
-  const n = await sheetSync(true);
+  const n = await comCarga('Sincronizando com a planilha…', () => sheetSync(true));
   if (sync.sheetErr) tell(sync.sheetErr); else if (!n) toast('Planilha e app estão iguais.');
   if (sheetOpen() && document.getElementById('shLink')) openSheetLink();
 }

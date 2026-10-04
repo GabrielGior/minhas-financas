@@ -710,3 +710,47 @@ html[data-troca=gira] #app.enter{animation:trGira .38s ease-out;transform-origin
 .abreAto.at-volta{left:100%;animation-name:atVem}
 .gastoAnim .gastoFig{left:-28px;top:-70px;width:56px;height:56px;opacity:1;animation:gastoFig 1.2s cubic-bezier(.3,1.5,.5,1) forwards}
 @keyframes gastoFig{0%{opacity:0;transform:scale(.2) translateY(30px)}25%{opacity:1;transform:scale(1.15) translateY(0)}70%{opacity:1;transform:scale(1) translateY(-10px)}100%{opacity:0;transform:scale(.9) translateY(-70px)}}
+
+/* ---------- 1.55: carregando, soma rápida, Resumo mais elaborado, avisos da conta compartilhada ---------- */
+#carga{position:fixed;top:0;left:0;right:0;height:3px;z-index:80;overflow:hidden;pointer-events:none;background:color-mix(in srgb,var(--brand) 18%,transparent)}
+#carga i{position:absolute;top:0;bottom:0;width:38%;border-radius:3px;background:linear-gradient(90deg,transparent,var(--brand),var(--brand2),transparent);animation:cargaVai 1.1s ease-in-out infinite}
+@keyframes cargaVai{from{left:-40%}to{left:102%}}
+#cargaCx{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top));transform:translateX(-50%);z-index:80;display:flex;align-items:center;gap:10px;max-width:calc(100% - 32px);padding:10px 16px 10px 12px;border-radius:99px;background:var(--card);color:var(--text);border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.28);font-size:13.5px;pointer-events:none;animation:pop .18s ease-out}
+#cargaCx span{flex:none;width:20px;height:20px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--brand);border-right-color:var(--brand2);animation:ptrGira .8s linear infinite}
+#carga[hidden],#cargaCx[hidden]{display:none}
+.btn[disabled]{opacity:.4}
+.chips.soma{margin:8px 0 0;gap:8px}
+.chips.soma button{flex:1;padding:9px 4px;border-radius:12px;font-size:14px;color:var(--brand);background:color-mix(in srgb,var(--brand) 12%,var(--bg));border:1px solid color-mix(in srgb,var(--brand) 28%,transparent)}
+.chips.soma button:active{transform:scale(.94)}
+.msg.ola+.msg.ola{margin-top:-2px}
+/* Resumo */
+.nav.periodo b{display:flex;flex-direction:column;align-items:center;line-height:1.15;cursor:pointer;padding:2px 18px;border-radius:12px}
+.nav.periodo b span{font-size:17px;font-weight:700}
+.nav.periodo b small{font-size:12px;font-weight:600;color:var(--brand)}
+.hero2 .hero{display:flex;flex-direction:column;border-radius:22px;box-shadow:0 10px 24px -12px var(--hero1),var(--shadow)}
+.hero .uso{height:5px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden;margin:6px 0 5px}
+.hero .uso i{display:block;height:100%;border-radius:99px;background:#fff}
+.hero .selo{align-self:flex-start;margin-top:8px;padding:3px 9px;border-radius:99px;background:rgba(255,255,255,.2);font-size:11.5px;font-weight:700;white-space:nowrap}
+.hero2 .hero small{font-size:12px}
+.card.rosca{padding:18px 16px}
+.leg.duas{align-items:flex-start;padding:5px 0}
+.leg.duas .dot{margin-top:5px;border-radius:50%}
+.leg.duas span{display:flex;flex-direction:column;white-space:normal;line-height:1.2;font-weight:600}
+.leg.duas span small{color:var(--muted);font-weight:500;font-size:12px}
+.leg.duas b{color:var(--text);font-weight:700}
+.escala{display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:12px;font-size:11px;color:var(--muted)}
+.escala i{width:14px;height:14px;border-radius:4px;background:var(--bg)}
+.escala .n1{background:color-mix(in srgb,var(--out) 30%,var(--card))}.escala .n2{background:color-mix(in srgb,var(--out) 52%,var(--card))}
+.escala .n3{background:color-mix(in srgb,var(--out) 76%,var(--card))}.escala .n4{background:var(--out)}
+.chart .bars i,.chart .bars .stk{max-width:13px;border-radius:6px 6px 0 0}
+.chart .col.sel{background:color-mix(in srgb,var(--brand) 12%,transparent)}
+.chart .col.sel small{color:var(--brand);font-weight:700}
+.card.stat{position:relative;overflow:hidden;padding-top:18px}
+.card.stat::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:linear-gradient(90deg,var(--hero1),var(--hero2))}
+.catrow .bar{height:6px;background:color-mix(in srgb,var(--line) 70%,transparent)}
+/* Conta compartilhada */
+.avisoComp{display:flex;align-items:center;gap:12px;cursor:pointer;border-color:color-mix(in srgb,var(--brand) 45%,var(--line))}
+.avisoComp>span{flex:none;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--hero1),var(--hero2))}
+.avisoComp>div{flex:1;min-width:0}
+.avisoComp b{display:block}
+.avisoComp small{display:block;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

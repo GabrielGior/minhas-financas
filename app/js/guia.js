@@ -3,7 +3,7 @@
 // "(só no Android)" marca o que não existe na versão web (iPhone e computador).
 const GUIA = [
   ['Lançar', [
-    ['Novo gasto', 'Botão + (abas Gastos, Ganhos e Investir) ou atalho "+ Gasto" no Resumo', 'Digite o valor (só os números; os centavos entram sozinhos) e escolha a categoria. O resto é opcional e fica em "Mais opções".'],
+    ['Novo gasto', 'Botão + (abas Gastos, Ganhos e Investir) ou atalho "+ Gasto" no Resumo', 'Digite o valor (só os números; os centavos entram sozinhos) ou use os botões +10, +20, +50 e +100, que somam ao valor do campo, e escolha a categoria. O resto é opcional e fica em "Mais opções".'],
     ['Novo ganho', 'Aba Ganhos › botão +, ou atalho "+ Ganho" no Resumo', 'Informe o valor e a categoria. Em "Tipo", escolha fixo (todo mês), anual (13º, bônus) ou avulso.'],
     ['Gasto fixo, anual ou assinatura', 'Novo gasto › Mais opções › Tipo', 'Fixo repete todo mês; anual, uma vez por ano. Gastos fixos com nome de serviço (Netflix, academia…) viram assinatura sozinhos; "É uma assinatura?" corrige.'],
     ['Compra parcelada', 'Aba Gastos › Parceladas › botão +', 'Informe o total (ou o valor da parcela), o número de parcelas e quantas já pagou. As parcelas entram sozinhas em cada mês.'],
@@ -17,7 +17,8 @@ const GUIA = [
     ['Importar extrato', 'Aba Gastos › Importar extrato', 'O app mostra primeiro o formato esperado (OFX, ou CSV com as colunas Data e Valor, e Descrição se houver). Depois você escolhe o arquivo, confere os lançamentos e importa.'],
     ['Editar, excluir e desfazer', 'Toque num lançamento; ou deslize para a esquerda', 'Depois de excluir ou salvar uma alteração aparece "Desfazer" por alguns segundos. O que foi excluído fica 30 dias na Lixeira.']]],
   ['Resumo', [
-    ['Saldo do ano e gráfico', 'Aba Resumo', 'Troque o ano nas setas. Toque num mês do gráfico para ver ganhos, gastos e saldo.'],
+    ['Escolher mês e ano', 'Aba Resumo › seletor no topo', 'As setas trocam o mês; tocar no nome do mês abre a escolha de mês e ano. Os cartões do topo, a rosca, o calendário e as faturas mostram o mês escolhido; o gráfico e as listas, o ano dele.'],
+    ['Saldo do ano e gráfico', 'Aba Resumo', 'Toque num mês do gráfico para ver ganhos, gastos e saldo.'],
     ['Previsão', 'Aba Resumo › Previsão', 'Mostra quanto sobra ou falta neste mês e nos três seguintes, com fixos, anuais e parcelas.'],
     ['Contas a vencer', 'Aba Resumo (topo)', 'Gastos fixos com dia de vencimento aparecem até 7 dias antes. Toque em "Pago" para marcar.'],
     ['Contas bancárias e transferências', 'Aba Resumo › Contas', 'Cadastre as contas com o saldo inicial. O saldo acompanha os lançamentos feitos com o mesmo nome de banco. "Transferir" passa dinheiro de uma para outra.'],
@@ -50,7 +51,7 @@ const GUIA = [
     ['Notícias (só no Android)', 'Aba Notícias', 'Manchetes de economia; tocar abre a notícia no navegador.']]],
   ['Conta e segurança', [
     ['Sincronização com a conta Google', 'Configurações › Conta e sincronização', 'Os dados ficam na pasta privada do app no seu Google Drive e sincronizam entre os aparelhos. "Versões salvas" restaura uma cópia dos últimos 30 dias.'],
-    ['Conta compartilhada (casal ou família)', 'Configurações › Conta compartilhada', 'Três formas de começar: compartilhar os seus lançamentos, criar uma conta do zero (vazia) ou entrar com um código de convite. Cada lançamento mostra quem fez. Sair encerra a conta para todos: a outra pessoa volta para a conta individual, a planilha é apagada e cada um pode ficar com uma cópia.'],
+    ['Conta compartilhada (casal ou família)', 'Configurações › Conta compartilhada', 'Três formas de começar: compartilhar os seus lançamentos, criar uma conta do zero (vazia) ou entrar com um código de convite. Cada lançamento mostra quem fez. Com a conta ligada, a mesma tela lista as pessoas e tem "Atividade recente"; o app avisa quando outra pessoa entra ou adiciona/edita um gasto, ganho ou investimento (na tela e, com o app fechado, por notificação em até cerca de uma hora). Sair encerra a conta para todos: a outra pessoa volta para a conta individual, a planilha é apagada e cada um pode ficar com uma cópia.'],
     ['Bloqueio por senha ou biometria (só no Android)', 'Configurações › Ícone e bloqueio', 'Ligue para o app pedir a digital, o rosto ou a senha do celular ao abrir.'],
     ['Backup em arquivo', 'Configurações › Dados e ajustes › Backup em arquivo', '"Exportar" salva um arquivo com tudo; "Importar" troca os dados pelos do arquivo.'],
     ['Lixeira', 'Configurações › Dados e ajustes › Lixeira', 'Restaure lançamentos excluídos nos últimos 30 dias.'],

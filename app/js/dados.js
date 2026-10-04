@@ -17,7 +17,7 @@ function logErr(onde, e){
 }
 addEventListener('error', e => logErr('erro na tela', (e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0)));
 addEventListener('unhandledrejection', e => logErr('promessa', e.reason));
-const APP_VERSION = '1.54'; // manter igual ao versionName do build.gradle
+const APP_VERSION = '1.55'; // manter igual ao versionName do build.gradle
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 // Ícones do app: desenhos em dois tons (traço + preenchimento translúcido nas partes com class="d"),
 // todos numa grade de 24×24. I('nome', tamanho) devolve o <svg>; a cor vem do texto ao redor (currentColor).
@@ -104,6 +104,7 @@ const ICONS = {
   cross:'<rect class="d" x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/>',
   heart:'<path class="d" d="M12 20s-7-4.400-7-10a4 4 0 0 1 7-2.600A4 4 0 0 1 19 10c0 5.600-7 10-7 10z"/>',
   person:'<circle class="d" cx="12" cy="7" r="3.500"/><path class="d" d="M5 21v-2a7 7 0 0 1 14 0v2z"/>',
+  bell:'<path class="d" d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/>',
   user:'<circle class="d" cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
   people:'<circle class="d" cx="8.500" cy="8" r="3"/><circle class="d" cx="16.500" cy="9.500" r="2.500"/><path d="M3 20v-2a5.500 5.500 0 0 1 11 0v2M16 14.500a4.500 4.500 0 0 1 5 4.500v1"/>',
   grad:'<path class="d" d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.500V16c1.500 1.500 3.500 2.500 6 2.500s4.500-1 6-2.500v-4.500M22 9v6"/>',
@@ -169,7 +170,7 @@ const COLS = ['incomes', 'expenses', 'installments', 'investments', 'goals', 'ac
 // Completa campos que versões antigas do app (ou um backup antigo) não tinham.
 function fixDb(d){
   for (const c of COLS) if (!Array.isArray(d[c])) d[c] = [];
-  for (const k of ['tomb', 'budgets', 'cardClose', 'cardDue', 'cardAcc', 'cardLimit', 'yieldLog', 'netLog', 'catMemo', 'cats']) if (!d[k] || typeof d[k] !== 'object') d[k] = {};
+  for (const k of ['tomb', 'budgets', 'cardClose', 'cardDue', 'cardAcc', 'cardLimit', 'yieldLog', 'netLog', 'catMemo', 'cats', 'membros']) if (!d[k] || typeof d[k] !== 'object') d[k] = {};
   for (const t of ['gasto', 'ganho']) if (!d.cats[t]) d.cats[t] = {};
   if (typeof d.archUntil !== 'string') d.archUntil = '';
   // Lixeira: o que foi excluído fica 30 dias, só neste aparelho. [{col, rec, at}]
@@ -295,7 +296,8 @@ function saveWarn(){
 const newerDb = d => (d && d.ver || 1) > DB_VER;
 // Marca o registro como alterado agora. Registro novo (ainda sem u) guarda quem o criou (by), para a conta compartilhada.
 const myName = () => (db.prefs && db.prefs.name) || '';
-const touch = r => { if (!r.u && !r.by && myName()) r.by = myName(); r.u = Date.now(); return r; };
+// Conta compartilhada: by = quem lançou; ed = quem alterou por último (usado nos avisos "fulano editou…").
+const touch = r => { if (!r.u && !r.by && myName()) r.by = myName(); else if (r.u && typeof sync === 'object' && sync.shared && myName()) r.ed = myName(); r.u = Date.now(); return r; };
 // Cópia de segurança automática em arquivo, uma vez por semana, na pasta do app no celular (só no APK).
 function autoFile(){
   if (!(window.Android && Android.backupArquivo) || Date.now() - (sync.fileAt || 0) < 7*864e5) return;
@@ -326,23 +328,23 @@ const COLORS = {
 // [nome, escuro?, destaque, destaque 2, cartão de destaque 1 e 2, fundo, cartões, linhas, texto secundário, texto, matiz, saturação]
 const SKINS = {
   hacker:['Hacker', true, '#22c55e', '#4ade80', '#052e16', '#166534', '#020a04', '#07140b', '#14532d', '#86efac', '#d1fae5', 140, 70],
-  boneca:['Bárbi', false, '#be185d', '#db2777', '#db2777', '#c026d3', '#fff0f7', '#ffffff', '#fbcfe8', '#9d174d', '#500724', 328, 80],
-  corrida:['Carrinhos', true, '#ef4444', '#f59e0b', '#991b1b', '#1f2937', '#0c0c0f', '#17171c', '#2a2a33', '#a1a1aa', '#fafafa', 0, 70],
+  boneca:['Boneca', false, '#be185d', '#db2777', '#db2777', '#c026d3', '#fff0f7', '#ffffff', '#fbcfe8', '#9d174d', '#500724', 328, 80],
+  corrida:['Corrida', true, '#ef4444', '#f59e0b', '#991b1b', '#1f2937', '#0c0c0f', '#17171c', '#2a2a33', '#a1a1aa', '#fafafa', 0, 70],
   neon:['Neon', true, '#f472b6', '#22d3ee', '#7c3aed', '#db2777', '#0d0221', '#1a0b3b', '#3b1d7a', '#c4b5fd', '#f5f3ff', 290, 80],
   papel:['Papel antigo', false, '#7c2d12', '#92400e', '#78350f', '#92400e', '#f5efe0', '#fffaf0', '#e7dcc3', '#6b5a3e', '#2b2118', 35, 45],
   praia:['Praia', false, '#0e7490', '#0369a1', '#0e7490', '#155e75', '#fdf6e3', '#ffffff', '#f0e2bd', '#5b6b73', '#0c2a33', 190, 70],
   noite:['Noite estrelada', true, '#f4d35e', '#9cc0e7', '#1e3a8a', '#274690', '#0b1437', '#13205a', '#2b3f8f', '#b4c6f0', '#f4f7ff', 225, 75], // inspirado no quadro de Van Gogh
-  bruxo:['Réri Póter', true, '#eab308', '#fbbf24', '#7f1d1d', '#991b1b', '#1a0b0e', '#2a1216', '#4a1f26', '#d6b3a0', '#fdf4e3', 0, 60],
+  bruxo:['Bruxo', true, '#eab308', '#fbbf24', '#7f1d1d', '#991b1b', '#1a0b0e', '#2a1216', '#4a1f26', '#d6b3a0', '#fdf4e3', 0, 60],
   espaco:['Espaço', true, '#a78bfa', '#38bdf8', '#312e81', '#4338ca', '#05060f', '#0e1024', '#1f2347', '#a5b4d4', '#eef2ff', 240, 60],
   floresta:['Floresta', false, '#166534', '#3f6212', '#166534', '#3f6212', '#eef5e6', '#fbfdf7', '#cfe3bf', '#4b5d3f', '#1a2e12', 110, 45],
   retro:['Retrô 8-bit', true, '#facc15', '#fb7185', '#7c3aed', '#be185d', '#12121c', '#1e1e2e', '#3a3a55', '#b8b8d0', '#f8f8f2', 250, 30],
-  dragao:['Como Domar seu Dragão', true, '#a3e635', '#4ade80', '#111827', '#064e3b', '#07090c', '#11151b', '#232a33', '#9ca3af', '#f3f4f6', 150, 20],
-  grandprix:['Espide Reicer', false, '#b91c1c', '#1d4ed8', '#b91c1c', '#1e3a8a', '#f4f6fb', '#ffffff', '#d9e0ee', '#475569', '#0f172a', 0, 70],
-  rua:['Velozes e Furiosinhos', true, '#fb923c', '#a3e635', '#7c2d12', '#1c1917', '#0c0a09', '#1c1917', '#33302c', '#a8a29e', '#fafaf9', 25, 70],
-  drift:['Derrapada em Tóquio', true, '#fb7185', '#fde68a', '#b91c1c', '#1e293b', '#0b0f1a', '#151b2b', '#27304a', '#a8b3cf', '#f8fafc', 350, 70],
-  fusca:['Rérbi, o Fusca', false, '#1d4ed8', '#b91c1c', '#1e40af', '#b91c1c', '#f7f3e8', '#fffdf6', '#e5dcc5', '#5c5546', '#1f1b12', 45, 50],
-  vikings:['Vaiquingues', true, '#7dd3fc', '#fbbf24', '#1e3a5f', '#334155', '#0b1220', '#141d2e', '#26334d', '#9fb0c8', '#f1f5f9', 210, 45],
-  espartano:['Deus da Guerrinha', true, '#f87171', '#e5e7eb', '#7f1d1d', '#374151', '#0f0f10', '#1a1a1c', '#2e2e33', '#a3a3a3', '#f5f5f5', 0, 30]
+  dragao:['Dragão', true, '#a3e635', '#4ade80', '#111827', '#064e3b', '#07090c', '#11151b', '#232a33', '#9ca3af', '#f3f4f6', 150, 20],
+  grandprix:['Grand Prix', false, '#b91c1c', '#1d4ed8', '#b91c1c', '#1e3a8a', '#f4f6fb', '#ffffff', '#d9e0ee', '#475569', '#0f172a', 0, 70],
+  rua:['Corrida de rua', true, '#fb923c', '#a3e635', '#7c2d12', '#1c1917', '#0c0a09', '#1c1917', '#33302c', '#a8a29e', '#fafaf9', 25, 70],
+  drift:['Drift', true, '#fb7185', '#fde68a', '#b91c1c', '#1e293b', '#0b0f1a', '#151b2b', '#27304a', '#a8b3cf', '#f8fafc', 350, 70],
+  fusca:['Fusca de corrida', false, '#1d4ed8', '#b91c1c', '#1e40af', '#b91c1c', '#f7f3e8', '#fffdf6', '#e5dcc5', '#5c5546', '#1f1b12', 45, 50],
+  vikings:['Vikings', true, '#7dd3fc', '#fbbf24', '#1e3a5f', '#334155', '#0b1220', '#141d2e', '#26334d', '#9fb0c8', '#f1f5f9', 210, 45],
+  espartano:['Espartano', true, '#f87171', '#e5e7eb', '#7f1d1d', '#374151', '#0f0f10', '#1a1a1c', '#2e2e33', '#a3a3a3', '#f5f5f5', 0, 30]
 };
 // Temas por categoria (js/temas.js): só trazem os destaques, o matiz e a saturação; o resto sai daí, como nas cores comuns.
 const SKIN_ANTIGOS = Object.keys(SKINS); // os primeiros temas: têm ícone do app também com os desenhos de barras e porquinho
@@ -610,7 +612,7 @@ const FX_POPULAR = ['USD','EUR','GBP','BTC','ETH','JPY','CAD','AUD','CHF','ARS',
 const fmtQ = v => v.toLocaleString('pt-BR', {style:'currency', currency:'BRL', maximumFractionDigits: v < 10 ? 4 : 2});
 const fmtDate = d => d ? d.split('-').reverse().join('/') : 'sem data';
 const plain = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-const getJson = async url => { const r = await fetch(url); if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); };
+const getJson = async url => { const r = await espera(fetch(url)); if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); };
 function recalc(v){
   v.qty = sum(v.lots, l => l.qty);
   v.paid = v.qty ? sum(v.lots, l => l.qty * l.paid) / v.qty : 0;

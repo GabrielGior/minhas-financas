@@ -46,6 +46,9 @@ try {
 <div class="sheet" id="picker" role="dialog" aria-modal="true"></div>
 <div id="dlg" hidden><div class="box"><div id="dlgMsg"></div><div class="btns" id="dlgBtns"></div></div></div>
 <div id="snack" hidden></div>
+<!-- Carregando: faixa no topo durante qualquer espera de rede e cartão com texto nas ações demoradas (ver cargaDraw). -->
+<div id="carga" hidden aria-hidden="true"><i></i></div>
+<div id="cargaCx" hidden role="status"><span></span><b></b></div>
 <div id="saveWarn" hidden>Não consegui salvar as últimas alterações neste aparelho (armazenamento cheio?). Exporte um backup em Configurações antes de fechar o app.</div>
 <div id="lockAsk" hidden><div class="box">
   <button class="iconbtn x" onclick="answerLock(false)" aria-label="Não habilitar biometria" id="lockX"></button>

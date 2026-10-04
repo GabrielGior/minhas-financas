@@ -44,15 +44,18 @@ function gastosPorDia(m){
 const fmtCurto = v => hideVals ? MASK : Math.abs(v) < 1e4 ? 'R$ ' + Math.round(v).toLocaleString('pt-BR') : 'R$ ' + v.toLocaleString('pt-BR', {notation:'compact', maximumFractionDigits:1});
 function donut(parts, total, rotulo = 'Total'){
   let acc = 0;
-  const ring = (color, p, off) => `<circle cx="21" cy="21" r="15.915" fill="none" stroke="${color}" stroke-width="6" stroke-dasharray="${p} ${100 - p}" stroke-dashoffset="${off}"/>`;
+  // Cada fatia termina um pouco antes da seguinte (folga), para o anel não parecer um bloco só.
+  const folga = parts.length > 1 ? .7 : 0;
+  const ring = (color, p, off) => `<circle cx="21" cy="21" r="15.915" fill="none" stroke="${color}" stroke-width="5.2" stroke-dasharray="${p} ${100 - p}" stroke-dashoffset="${off}"/>`;
   return `<svg viewBox="0 0 42 42" style="width:160px;height:160px;display:block;margin:0 auto 4px">${ring('var(--line)', 100, 25)}
-    ${parts.map(([color, v]) => { const p = v / total * 100, s = ring(color, p, 25 - acc); acc += p; return s; }).join('')}
+    ${parts.map(([color, v]) => { const p = v / total * 100, s = ring(color, Math.max(p - folga, .3), 25 - acc); acc += p; return s; }).join('')}
     <text x="21" y="19.6" text-anchor="middle" font-size="2.8" fill="var(--muted)">${rotulo}</text>
     <text x="21" y="24.2" text-anchor="middle" font-size="3.6" font-weight="700" fill="var(--text)">${hideVals ? MASK : 'R$ ' + total.toLocaleString('pt-BR', {notation:'compact', maximumFractionDigits:1})}</text></svg>`;
 }
 
 function viewResumo(){
-  const y = state.year, months = [...Array(12)].map((_,i) => ymOf(y,i));
+  // rm = mês escolhido no Resumo (state.rmes), sempre dentro do ano escolhido (state.year).
+  const y = state.year, rm = resumoMes(), nomeM = monthName(rm).split(' ')[0], months = [...Array(12)].map((_,i) => ymOf(y,i));
   const ins = months.map(totalIn), outs = months.map(totalOut), yields = months.map(yieldOf);
   const tin = sum(ins, x=>x), tout = sum(outs, x=>x), tyield = sum(yields, x=>x), max = Math.max(1, ...ins.map((v,i) => v + yields[i]), ...outs);
   const cats = {}, banks = {}, pays = {};
@@ -70,34 +73,40 @@ function viewResumo(){
   const invNow = sum(db.investments, x => x.value);
   const bills = upcomingBills(), over = budgetStatus(curYM).filter(b => b.pct >= 80), odd = unusual();
   const si = months.indexOf(state.sel); // mês tocado no gráfico
-  const goals = db.goals, open = db.installments.filter(p => p.paid < p.n), inv = invoices(curYM);
+  const goals = db.goals, open = db.installments.filter(p => p.paid < p.n), inv = invoices(rm);
   // Blocos do Resumo. Quais aparecem e em que ordem vem de db.prefs.resumo (ver RESUMO e openResumoEdit).
   const B = {
   mascote: () => db.prefs.fun ? funMascot() : '',
   conquistas: () => db.prefs.fun ? funBadges() : '',
   atalhos: () => `<div class="quick">${[['expenses','receipt','Gasto'],['incomes','income','Ganho'],['investments','trend','Investir']].map(([col, ic, t]) => `<button onclick="openForm('${col}')"><span>${I(ic, 20)}</span>+ ${t}</button>`).join('')}</div>`,
   // Mês e ano lado a lado, no mesmo cartão de destaque: o gasto em cima, os ganhos embaixo. Tocar leva aos gastos do mês.
-  destaque: () => { const mi = totalIn(curYM), mo = totalOut(curYM); return `<div class="hero2">
-    <div class="hero" onclick="goMonth('${curYM}')"><small>Gastos do mês</small><div class="big">${fmtCurto(mo)}</div><small>▲ ${fmtCurto(mi)} de ganhos</small></div>
-    <div class="hero ano"><small>Gastos de ${y}</small><div class="big">${fmtCurto(tout)}</div><small>▲ ${fmtCurto(tin)} de ganhos</small></div></div>`; },
+  // Em cada um: barra de quanto dos ganhos já foi gasto e um selo (mês: comparação com o mês anterior; ano: sobra ou falta).
+  destaque: () => { const mi = totalIn(rm), mo = totalOut(rm), ant = totalOut(addMonths(rm, -1)), dif = ant ? Math.round((mo - ant) / ant * 100) : null;
+    const uso = (g, t) => `<div class="uso"><i style="width:${g ? Math.min(100, t / g * 100) : 0}%"></i></div><small>${g ? `${hideVals ? '••' : Math.round(t / g * 100)}% dos ganhos (${fmtCurto(g)})` : 'sem ganhos lançados'}</small>`;
+    return `<div class="hero2">
+    <div class="hero" onclick="goMonth('${rm}')"><small>Gastos de ${nomeM}</small><div class="big">${fmtCurto(mo)}</div>${uso(mi, mo)}
+      ${dif == null || hideVals ? '' : `<span class="selo">${dif > 0 ? '▲' : dif < 0 ? '▼' : '='} ${Math.abs(dif)}% que no mês anterior</span>`}</div>
+    <div class="hero ano"><small>Gastos de ${y}</small><div class="big">${fmtCurto(tout)}</div>${uso(tin, tout)}
+      ${tin || tout ? `<span class="selo">${tin - tout < 0 ? 'faltou' : 'sobrou'} ${fmtCurto(Math.abs(tin - tout))}</span>` : ''}</div></div>`; },
   // Rosca do mês atual por categoria, com o total no centro e as maiores categorias ao lado.
-  rosca: () => { const g = {}, lista = expensesOf(curYM); lista.forEach(e => g[e.cat] = (g[e.cat] || 0) + e.value);
+  rosca: () => { const g = {}, lista = expensesOf(rm); lista.forEach(e => g[e.cat] = (g[e.cat] || 0) + e.value);
     const cs = Object.entries(g).sort((a, b) => b[1] - a[1]), tot = sum(lista, x => x.value), top = cs.slice(0, 5), resto = sum(cs.slice(5), c => c[1]);
     const cor = (k, i) => (CAT_GASTO[k] || CAT_GASTO.outros)[2] || shade(i, top.length);
-    return `<h2>Para onde foi o dinheiro <button onclick="goMonth('${curYM}')">Ver gastos</button></h2>${cs.length ? `<div class="card rosca">
-      ${donut([...top.map(([k, v], i) => [cor(k, i), v]), ...(resto ? [['var(--muted)', resto]] : [])], tot, cap(monthName(curYM).split(' ')[0]))}
-      <div>${top.map(([k, v], i) => `<div class="leg"><i class="dot" style="background:${cor(k, i)}"></i><span>${(CAT_GASTO[k] || CAT_GASTO.outros)[1]}</span><b>${Math.round(v / tot * 100)}%</b></div>`).join('')}
-        ${resto ? `<div class="leg"><i class="dot" style="background:var(--muted)"></i><span>Outras</span><b>${Math.round(resto / tot * 100)}%</b></div>` : ''}</div></div>`
-    : `<div class="hint" style="margin:0 4px 12px">Nenhum gasto em ${monthName(curYM)}.</div>`}`; },
+    return `<h2>Para onde foi o dinheiro <button onclick="goMonth('${rm}')">Ver gastos</button></h2>${cs.length ? `<div class="card rosca">
+      ${donut([...top.map(([k, v], i) => [cor(k, i), v]), ...(resto ? [['var(--muted)', resto]] : [])], tot, cap(monthName(rm).split(' ')[0]))}
+      <div>${[...top.map(([k, v], i) => [cor(k, i), (CAT_GASTO[k] || CAT_GASTO.outros)[1], v]), ...(resto ? [['var(--muted)', 'Outras', resto]] : [])].map(([c, nome, v]) =>
+        `<div class="leg duas"><i class="dot" style="background:${c}"></i><span>${nome}<small>${fmtCurto(v)}</small></span><b>${Math.round(v / tot * 100)}%</b></div>`).join('')}</div></div>`
+    : `<div class="hint" style="margin:0 4px 12px">Nenhum gasto em ${monthName(rm)}.</div>`}`; },
   // Calendário do mês atual: cada dia fica mais escuro quanto mais se gastou nele. Tocar num dia mostra o que saiu.
-  dias: () => { const por = gastosPorDia(curYM), max = Math.max(...por.slice(1).map(d => d.v)), n = daysIn(curYM), [ay, am] = curYM.split('-').map(Number), vazio = new Date(ay, am - 1, 1).getDay();
+  dias: () => { const por = gastosPorDia(rm), max = Math.max(...por.slice(1).map(d => d.v)), n = daysIn(rm), [ay, am] = rm.split('-').map(Number), vazio = new Date(ay, am - 1, 1).getDay();
     const sel = state.dia && state.dia <= n ? por[state.dia] : null;
-    return `<h2>Dias de ${monthName(curYM).split(' ')[0]}</h2><div class="card">
+    return `<h2>Dias de ${monthName(rm).split(' ')[0]}</h2><div class="card">
       <div class="cal">${['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map(d => `<small>${d}</small>`).join('')}${'<span></span>'.repeat(vazio)}
       ${[...Array(n)].map((_, i) => { const d = i + 1, v = por[d].v, nivel = !v || !max ? 0 : Math.max(1, Math.ceil(v / max * 4));
-        return `<button class="n${nivel}${d === now.getDate() ? ' hoje' : ''}${state.dia === d ? ' sel' : ''}" onclick="state.dia=${state.dia === d ? 0 : d};render()" aria-label="Dia ${d}: ${hideVals ? MASK : fmt(v)}">${d}</button>`; }).join('')}</div>
+        return `<button class="n${nivel}${rm === curYM && d === now.getDate() ? ' hoje' : ''}${state.dia === d ? ' sel' : ''}" onclick="state.dia=${state.dia === d ? 0 : d};render()" aria-label="Dia ${d}: ${hideVals ? MASK : fmt(v)}">${d}</button>`; }).join('')}</div>
       ${sel ? `<div class="calSel"><b>Dia ${state.dia}: ${fmt(sel.v)}</b>${sel.itens.length ? sel.itens.map(x => `<div class="leg"><span>${esc(x.desc)}</span><b>${fmt(x.value)}</b></div>`).join('') : '<div class="hint" style="margin:2px 0 0">Nenhum gasto neste dia.</div>'}</div>`
-      : `<div class="hint">Quanto mais escuro, mais gasto no dia. Toque num dia para ver o que saiu.${por[0].v ? ` Sem dia informado: ${fmt(por[0].v)}.` : ''}</div>`}</div>`; },
+      : `<div class="escala"><span>menos</span>${[0, 1, 2, 3, 4].map(i => `<i class="n${i}"></i>`).join('')}<span>mais</span></div>
+        <div class="hint">Quanto mais escuro, mais gasto no dia. Toque num dia para ver o que saiu.${por[0].v ? ` Sem dia informado: ${fmt(por[0].v)}.` : ''}</div>`}</div>`; },
   alertas: () => `${bills.length ? `<div class="card"><b>${I('calendar')} Contas a vencer</b>${bills.map(({x, diff}) => `
     <div class="item" style="cursor:default"><div class="mid"><b>${esc(x.desc)}</b>
       <small class="${diff < 0 ? 'out' : diff <= 2 ? 'warn' : ''}">${diff < 0 ? `venceu há ${-diff} dia${diff < -1 ? 's' : ''}` : diff === 0 ? 'vence hoje' : `vence em ${diff} dia${diff > 1 ? 's' : ''}`} · dia ${dueDay(x, curYM)}</small></div>
@@ -139,7 +148,8 @@ function viewResumo(){
   categorias: () => `<h2>Gastos por categoria em ${y}</h2>
   ${catList.length ? `<div class="card">${donut(catList.map(([k,v], i) => [shade(i, catList.length), v]), tout)}
     ${catList.map(([k,v], i) => { const c = CAT_GASTO[k] || CAT_GASTO.outros; return `
-    <div class="catrow"><div class="top"><span><i class="dot" style="background:${shade(i, catList.length)}"></i>${catName(c)}</span><b>${fmt(v)} · ${Math.round(v/tout*100)}%</b></div></div>`; }).join('')}</div>`
+    <div class="catrow"><div class="top"><span><i class="dot" style="background:${shade(i, catList.length)}"></i>${catName(c)}</span><b>${fmt(v)} · ${Math.round(v/tout*100)}%</b></div>
+      <div class="bar"><i style="width:${v/tout*100}%;background:${shade(i, catList.length)}"></i></div></div>`; }).join('')}</div>`
   : empty('receipt','Nenhum gasto cadastrado neste ano.')}`,
   bancos: () => catList.length ? `<h2>Gastos por banco em ${y}</h2>${breakdown(banks)}` : '',
   pagamentos: () => catList.length ? `<h2>Gastos por forma de pagamento em ${y}</h2>${breakdown(pays)}` : '',
@@ -153,12 +163,12 @@ function viewResumo(){
       ${hasAcc ? `<div class="hint" style="margin-top:3px">Saldo das contas no fim do mês: <b class="${end < 0 ? 'out' : ''}">${fmt(end)}</b></div>` : ''}</div>`; }).join('')}
       ${pendIn || pendOut ? `<div class="hint">Até o fim de ${monthName(curYM).split(' ')[0]} ainda entram ${fmt(pendIn)} e saem ${fmt(pendOut)} (lançamentos com dia depois de hoje).</div>` : ''}
       <div class="hint">Considera ganhos e gastos fixos, anuais, parcelas e o que já está lançado em cada mês.</div></div>`; },
-  mes: () => { const a = totalIn(curYM), b = totalOut(curYM); return `<h2 style="text-transform:none;letter-spacing:0"><span style="text-transform:uppercase;letter-spacing:.06em">${monthName(curYM)}</span><button onclick="goMonth('${curYM}')">Ver gastos</button></h2>
+  mes: () => { const a = totalIn(rm), b = totalOut(rm); return `<h2 style="text-transform:none;letter-spacing:0"><span style="text-transform:uppercase;letter-spacing:.06em">${monthName(rm)}</span><button onclick="goMonth('${rm}')">Ver gastos</button></h2>
     <div class="card grid3">
       <div class="stat"><small>Ganhos</small><b class="in" style="font-size:14px">${fmt(a)}</b></div>
       <div class="stat"><small>Gastos</small><b class="out" style="font-size:14px">${fmt(b)}</b></div>
       <div class="stat"><small>Saldo</small><b class="${a - b < 0 ? 'out' : ''}" style="font-size:14px">${fmt(a - b)}</b></div></div>`; },
-  faturas: () => `<h2>Faturas de ${monthName(curYM)}</h2>${inv.length ? `<div class="card">${inv.map(([bank, v]) => `<div class="item" style="cursor:default">${tile('card')}<div class="mid"><b>${esc(bank)}</b></div><div class="val out">${fmt(v)}</div></div>`).join('')}</div>`
+  faturas: () => `<h2>Faturas de ${monthName(rm)}</h2>${inv.length ? `<div class="card">${inv.map(([bank, v]) => `<div class="item" style="cursor:default">${tile('card')}<div class="mid"><b>${esc(bank)}</b></div><div class="val out">${fmt(v)}</div></div>`).join('')}</div>`
     : '<div class="hint" style="margin:0 4px 12px">Nenhuma compra no crédito neste mês.</div>'}`,
   parcelas: () => `<h2>Compras parceladas <button onclick="state.gsub='parc';go('gastos')">Ver todas</button></h2>${open.length ? `<div class="card grid2">
       <div class="stat"><small>Falta pagar (${open.length})</small><b class="out">${fmt(sum(open, p => p.total / p.n * (p.n - p.paid)))}</b></div>
@@ -180,8 +190,8 @@ function viewResumo(){
   return `${greeting() ? `<div class="hello">${greeting()}</div>` : ''}
   <h1 style="margin-bottom:0">Resumo <span>${eyeBtn()}<button class="iconbtn" onclick="openResumoEdit()" aria-label="Personalizar o Resumo">${I('sliders', 24)}</button><button class="iconbtn" onclick="openSettings('')" aria-label="Configurações">${I('gear', 24)}</button></span></h1>
   <div class="muted" style="margin:0 2px 14px;font-size:13.5px">Hoje é ${todayLabel()}</div>${offlinePill()}
-  <div class="nav"><button onclick="state.year--;renderIn()">‹</button><b onclick="pickYear()">${y} ▾</b><button onclick="state.year++;renderIn()">›</button></div>
-  ${archBanner(y)}${bankNotesHtml()}${blocks('resumo', B)}
+  <div class="nav periodo"><button onclick="resMes(-1)" aria-label="Mês anterior">‹</button><b onclick="pickResumo()"><span>${nomeM}</span><small>${y} ▾</small></b><button onclick="resMes(1)" aria-label="Próximo mês">›</button></div>
+  ${archBanner(y)}${ativHtml()}${bankNotesHtml()}${blocks('resumo', B)}
   <div class="btns" style="margin-bottom:12px"><button class="btn" onclick="openResumoEdit()">${I('sliders')}Personalizar o Resumo</button></div>`;
 }
 // Sugestões de lançamento a partir das notificações dos bancos (opcional, só no APK; ver BankListener no lado nativo).
@@ -334,7 +344,7 @@ function viewGanhos(){
   ${once.length ? `<div class="card">${once.map(row).join('')}</div>` : empty('wallet','Nenhum ganho avulso cadastrado.')}`
   };
   return head('Ganhos', 'ganhos') + ganhosSeg() + blocks('ganhos', B)
-    + `<div class="btns" style="margin-bottom:12px"><button class="btn danger" onclick="openApagar('ganhos')">${I('trash')}Apagar ganhos por dia, mês ou ano</button></div>`;
+    + `<div class="btns" style="margin-bottom:12px"><button class="btn danger" style="flex:1" onclick="openApagar('ganhos')">${I('trash')}Apagar ganhos por dia, mês ou ano</button></div>`;
 }
 
 // Comparativo: gasto de cada categoria no mês m, no mês anterior e na média dos 6 meses antes de m.
@@ -420,7 +430,7 @@ function viewGastos(){
   acoes: () => `<div class="btns"><button class="btn" onclick="openStatementHelp()">${I('upload')}Importar extrato</button><button class="btn" onclick="shown(printReport)">${I('doc')}Relatório (PDF)</button></div>
   <div class="btns"><button class="btn" onclick="openSheetLink()">${I('doc')}${sheetId() ? 'Planilha do Google (ligada)' : 'Exportar para uma planilha do Google ligada ao app'}</button></div>
   <div class="btns"><button class="btn" onclick="shown(exportPlanilha)">${I('download')}Exportar planilha de ${m.slice(0,4)} (Excel)</button></div>
-  <div class="btns" style="margin-bottom:12px"><button class="btn danger" onclick="openApagar('gastos')">${I('trash')}Apagar gastos por dia, mês ou ano</button></div>`
+  <div class="btns" style="margin-bottom:12px"><button class="btn danger" style="flex:1" onclick="openApagar('gastos')">${I('trash')}Apagar gastos por dia, mês ou ano</button></div>`
   };
   return `${head('Gastos', 'gastos')}${gastosSeg()}
   <div class="nav"><button onclick="state.month=addMonths(state.month,-1);renderIn()">‹</button><b onclick="pickMonth()">${monthName(m)} ▾</b><button onclick="state.month=addMonths(state.month,1);renderIn()">›</button></div>
@@ -587,7 +597,7 @@ function viewInvest(){
     ${vs.some(v => v.ticker) ? '<br>Ações e moedas entram pelo valor atual, sem projeção. As cotações podem ter alguns minutos de atraso.' : ''}</div>`
   };
   return head('Investimentos', 'invest') + blocks('invest', B)
-    + (vs.length ? `<div class="btns" style="margin-bottom:12px"><button class="btn danger" onclick="openApagar('invest')">${I('trash')}Apagar investimentos por dia, mês ou ano</button></div>` : '');
+    + (vs.length ? `<div class="btns" style="margin-bottom:12px"><button class="btn danger" style="flex:1" onclick="openApagar('invest')">${I('trash')}Apagar investimentos por dia, mês ou ano</button></div>` : '');
 }
 function openDiv(id){ const v = db.investments.find(x => x.id === id); openForm('div', null, {id, title:'Provento de ' + v.ticker}); }
 function buyMore(id){
@@ -625,8 +635,8 @@ const newsLoading = {};
 // Baixa um texto de outro site. No APK passa pelo lado nativo (sites de notícia não permitem acesso direto do WebView);
 // no navegador do PC, pelo /proxy do serve.ps1.
 function httpGet(url){
-  if (window.Android && Android.get) return new Promise((res, rej) => { const id = ++driveSeq; drivePending[id] = r => r.status === 200 ? res(r.text) : rej(r); Android.get(id, url); });
-  return fetch(location.hostname === 'localhost' ? '/proxy?u=' + encodeURIComponent(url) : url).then(r => { if (!r.ok) throw r; return r.text(); });
+  if (window.Android && Android.get) return espera(new Promise((res, rej) => { const id = ++driveSeq; drivePending[id] = r => r.status === 200 ? res(r.text) : rej(r); Android.get(id, url); }));
+  return espera(fetch(location.hostname === 'localhost' ? '/proxy?u=' + encodeURIComponent(url) : url)).then(r => { if (!r.ok) throw r; return r.text(); });
 }
 function parseRss(xml, source){
   return [...new DOMParser().parseFromString(xml, 'text/xml').querySelectorAll('item')].map(it => {
