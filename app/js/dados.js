@@ -17,7 +17,7 @@ function logErr(onde, e){
 }
 addEventListener('error', e => logErr('erro na tela', (e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0)));
 addEventListener('unhandledrejection', e => logErr('promessa', e.reason));
-const APP_VERSION = '1.65'; // manter igual ao versionName do build.gradle
+const APP_VERSION = '1.66'; // manter igual ao versionName do build.gradle
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 // Ícones do app: desenhos em dois tons (traço + preenchimento translúcido nas partes com class="d"),
 // todos numa grade de 24×24. I('nome', tamanho) devolve o <svg>; a cor vem do texto ao redor (currentColor).
@@ -916,7 +916,8 @@ function updateWidget(){
   if (!(window.Android && Android.widget)) return;
   const tin = totalIn(curYM), tout = totalOut(curYM), m = monthName(curYM), humor = funMood();
   const frase = {feliz:'Oinc! Mês no azul', ok:'Tudo sob controle', triste:'Segura o cartão…'}[humor];
-  Android.widget(JSON.stringify({mes:m[0].toUpperCase() + m.slice(1), saldo:fmt(tin - tout), negativo:tin - tout < 0, ganhos:fmt(tin), gastos:fmt(tout),
+  const curto = v => fmt(v).replace(/^R\$\s?/, '').replace(/,\d\d$/, ''); // sem "R$" nem centavos: cabe no widget de saldo, que é estreito
+  Android.widget(JSON.stringify({mes:m[0].toUpperCase() + m.slice(1), saldo:fmt(tin - tout), negativo:tin - tout < 0, ganhos:fmt(tin), gastos:fmt(tout), ganhosC:curto(tin), gastosC:curto(tout),
     fun:!!db.prefs.fun, frase, linhas:widgetLines(), pig:db.prefs.widgetPig ?? !!db.prefs.fun, humor, skin:db.prefs.skin || '',
     // cor = cor do app (o fundo dos widgets acompanha); fundo = 'tema' (cor ou tema especial) ou 'escuro'; pct = gastos sobre ganhos.
     cor:db.prefs.color, fundo:db.prefs.widgetFundo || 'tema', pct:tin > 0 ? Math.min(100, Math.round(tout / tin * 100)) : tout > 0 ? 100 : 0,

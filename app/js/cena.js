@@ -144,22 +144,24 @@ function cenaHtml(k){
 const WFUNDO_KEY = 'financas-wfundo';
 function cenaWidgetSvg(k){
   const s = SKINS[k], [hz, astro] = cenaDe(k), [longe, perto] = CENA_HORIZ[hz] || CENA_HORIZ.nenhum, ato = ATOS[k];
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="780" height="400" viewBox="0 0 390 200">
-    ${astro !== 'nenhum' && CENA_ASTRO[astro] ? `<g transform="translate(268,10) scale(.9)" opacity=".75">${CENA_ASTRO[astro]('#ffffff', s[3])}</g>` : ''}
-    ${longe ? `<path transform="translate(0,80)" d="${longe}" fill="#000000" opacity=".16"/>` : ''}
-    ${perto ? `<path transform="translate(0,80)" d="${perto}" fill="#000000" opacity=".28"/>` : ''}
-    ${ato ? `<g transform="translate(206,104) scale(1.6)" opacity=".8">${ato[0]}</g>` : ''}</svg>`;
+  // O widget corta a imagem para caber (do meio para fora), então o astro e a figura ficam na faixa central, à direita
+  // e embaixo, longe dos números; o horizonte é encolhido na largura para aparecer inteiro.
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 300 200">
+    ${astro !== 'nenhum' && CENA_ASTRO[astro] ? `<g transform="translate(176,6) scale(.62)" opacity=".7">${CENA_ASTRO[astro]('#ffffff', s[3])}</g>` : ''}
+    ${longe ? `<path transform="translate(0,80) scale(.77,1)" d="${longe}" fill="#000000" opacity=".16"/>` : ''}
+    ${perto ? `<path transform="translate(0,80) scale(.77,1)" d="${perto}" fill="#000000" opacity=".28"/>` : ''}
+    ${ato ? `<g transform="translate(186,132) scale(1.25)" opacity=".38">${ato[0]}</g>` : ''}</svg>`;
 }
 function widgetFundoEnviar(){
   if (!(window.Android && Android.widgetFundo) || window.TESTE) return;
-  const k = db.prefs.skin && SKINS[db.prefs.skin] ? db.prefs.skin : '', marca = k + '|1';
+  const k = db.prefs.skin && SKINS[db.prefs.skin] ? db.prefs.skin : '', marca = k + "|3";
   try { if (localStorage.getItem(WFUNDO_KEY) === marca) return; } catch(e){}
   const pronto = b64 => { Android.widgetFundo(b64, k); try { localStorage.setItem(WFUNDO_KEY, marca); } catch(e){} };
   if (!k) return pronto('');
   const img = new Image();
   img.onload = () => { try {
-    const c = document.createElement('canvas'); c.width = 585; c.height = 300;
-    c.getContext('2d').drawImage(img, 0, 0, 585, 300);
+    const c = document.createElement('canvas'); c.width = 600; c.height = 400;
+    c.getContext('2d').drawImage(img, 0, 0, 600, 400);
     pronto(c.toDataURL('image/png').split(',')[1]);
   } catch(e){ logErr('fundo do widget', e); } };
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(cenaWidgetSvg(k));
