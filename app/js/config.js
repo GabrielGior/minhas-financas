@@ -460,7 +460,8 @@ function openSettings(sec){
     <label>Tema</label>
     <div class="btns" style="margin-top:0">${Object.entries(MODES).map(([k,v]) => `<button class="btn ${p.mode === k ? 'primary' : ''}" onclick="setPref('mode','${k}')">${v}</button>`).join('')}</div>
     <label>Cor</label>
-    <div class="swatches">${Object.entries(COLORS).map(([k,c]) => `<button class="sw ${p.color === k ? 'on' : ''}" style="background:linear-gradient(135deg,${c[1]},${c[2]})" onclick="setPref('color','${k}')" aria-label="${c[0]}" title="${c[0]}"></button>`).join('')}</div>
+    <div class="swatches">${Object.entries(COLORS).map(([k,c]) => `<button class="sw ${p.color === k ? 'on' : ''}" style="background:linear-gradient(135deg,${c[1]},${c[2]})" onclick="setCor('${k}')" aria-label="${c[0]}" title="${c[0]}"></button>`).join('')}</div>
+    ${sorteioBtn('cor', 'Cor aleatória todo dia')}
     <label>Tamanho do texto</label>
     <div class="btns" style="margin-top:0">${[[.9,'Pequeno'],[1,'Normal'],[1.12,'Grande'],[1.25,'Maior']].map(([v,t]) => `<button class="btn ${p.font === v ? 'primary' : ''}" style="padding:11px 4px" onclick="setPref('font',${v})">${t}</button>`).join('')}</div>
     ${window.Android && Android.girar ? `<label>Girar a tela com o celular</label>
@@ -478,6 +479,7 @@ function openSettings(sec){
   ['temas', 'sparkle', 'Temas especiais', `${Object.keys(SKINS).length} temas por categoria, com mascote próprio`, `
     <div class="hint" style="margin-top:0">Um tema especial muda as cores do app inteiro, o mascote do modo divertido, a abertura e os widgets; os ícones das categorias ficam com a cor de cada uma. ${p.skin ? `Em uso: <b>${SKINS[p.skin][0]}</b>.` : 'Nenhum em uso.'}</div>
     <div class="btns" style="margin-top:0"><button class="btn ${p.skin ? '' : 'primary'}" onclick="setSkin('')">Sem tema especial</button></div>
+    ${sorteioBtn('tema', 'Tema aleatório todo dia')}
     ${WEB_APP ? '<div class="hint">No iPhone, o ícone do app é fixado na hora de adicionar à Tela de Início. Para ele ficar com o tema: abra o app no Safari com o tema já escolhido, toque em Compartilhar › Adicionar à Tela de Início e apague o ícone antigo.</div>' : ''}
     ${TEMA_CATS.map(([c, nome, ks]) => `<details class="grp" ${ks.includes(p.skin) || (!p.skin && c === 'estilos') ? 'open' : ''}><summary>${nome}<small>${ks.length}</small>${I('chev')}</summary>
       <div class="icoGrid t3">${ks.map(k => `<button class="${p.skin === k ? 'on' : ''}" onclick="setSkin('${k}')"><span class="temaM" style="background:linear-gradient(135deg,${SKINS[k][4]},${SKINS[k][5]})">${mascoteEm(k, 'ok', 0, 0, 46)}</span><small>${SKINS[k][0]}</small></button>`).join('')}</div></details>`).join('')}`],
@@ -575,7 +577,36 @@ function openSettings(sec){
 // O APK instalado tem ícone para esta cor ou tema? (Os temas por categoria chegaram ao ícone no APK 1.46.)
 const iconeTem = k => !SKINS[k] || SKIN_ANTIGOS.includes(k) || !!(window.Android && Android.iconeTem && Android.iconeTem(k));
 // Tema especial: aplica e, no APK, oferece trocar também o ícone do app para combinar.
+// ---------- Tema ou cor do dia ----------
+// db.prefs.sorteio = 'tema' (um tema especial por dia) ou 'cor' (uma cor comum por dia); '' = desligado. A cada dia o
+// app sorteia um que ainda não saiu (sorteioVistos); quando todos já saíram, a rodada recomeça. Escolher um tema ou uma
+// cor à mão desliga o sorteio.
+function sorteioDoDia(forcar){
+  const p = db.prefs, modo = p.sorteio, hoje = new Date().toLocaleDateString('sv');
+  if ((modo !== 'tema' && modo !== 'cor') || (!forcar && p.sorteioDia === hoje)) return false;
+  const todos = Object.keys(modo === 'tema' ? SKINS : COLORS), atual = modo === 'tema' ? p.skin : p.color;
+  let vistos = (p.sorteioVistos || []).filter(k => todos.includes(k)), resto = todos.filter(k => !vistos.includes(k) && k !== atual);
+  if (!resto.length){ vistos = []; resto = todos.filter(k => k !== atual); } // todos já saíram: começa outra rodada
+  const k = resto[Math.floor(Math.random() * resto.length)];
+  if (modo === 'tema') p.skin = k; else { p.skin = ''; p.color = k; }
+  Object.assign(p, {sorteioVistos:[...vistos, k], sorteioDia:hoje});
+  db.cfgMod = Date.now(); save(); applyTheme();
+  return true;
+}
+const sorteioNome = () => db.prefs.sorteio === 'tema' ? SKINS[db.prefs.skin][0] : COLORS[db.prefs.color][0];
+function setSorteio(modo){
+  const p = db.prefs;
+  p.sorteio = p.sorteio === modo ? '' : modo;
+  if (p.sorteio){ p.sorteioVistos = []; sorteioDoDia(true); toast(`${modo === 'tema' ? 'Tema' : 'Cor'} de hoje: ${sorteioNome()}`); }
+  else { db.cfgMod = Date.now(); save(); }
+  render(); openSettings();
+}
+const sorteioBtn = (modo, texto) => `<div class="btns" style="margin-top:8px"><button class="btn ${db.prefs.sorteio === modo ? 'primary' : ''}" onclick="setSorteio('${modo}')">${I('sparkle')}${texto}: ${db.prefs.sorteio === modo ? 'ligado' : 'desligado'}</button></div>
+  ${db.prefs.sorteio === modo ? `<div class="hint">Todo dia o app escolhe ${modo === 'tema' ? 'um tema especial' : 'uma cor'} diferente, sem repetir até passar por ${modo === 'tema' ? 'todos' : 'todas'} (${(db.prefs.sorteioVistos || []).length} de ${Object.keys(modo === 'tema' ? SKINS : COLORS).length}). Hoje: <b>${sorteioNome()}</b>. <button style="color:var(--brand);font-weight:700" onclick="sorteioDoDia(true);render();openSettings()">Sortear outro agora</button></div>` : ''}`;
+// Escolha feita à mão: vale ela, e o sorteio diário para.
+function setCor(k){ db.prefs.sorteio = ''; setPref('color', k); }
 async function setSkin(k){
+  db.prefs.sorteio = '';
   setPref('skin', k);
   if (k && window.Android && Android.setIconeApp && Android.icone() !== k && iconeTem(k)
     && await ask(`Trocar também o ícone do app para combinar com o tema ${SKINS[k][0]}?\n\nO Android fecha o app ao trocar o ícone: é só abrir de novo pelo ícone novo.`, 'Trocar o ícone')) Android.setIconeApp(k, 't', Android.iconeNome()); // o ícone do tema: o mascote dele e as barras do app
@@ -649,6 +680,7 @@ function diagText(){
     `Fotos na fila: ${sync.up.length} para enviar, ${sync.del.length} para apagar`,
     `Preferências: tema ${db.prefs.mode}/${db.prefs.color}, animações ${db.prefs.anim ? 'sim' : 'não'}, modo divertido ${db.prefs.fun ? 'sim' : 'não'}, abas escondidas ${db.prefs.tabsOff.join(',') || 'nenhuma'}`,
     `Último fechamento por erro: ${(() => { const e = window.Android && Android.ultimoErro ? String(Android.ultimoErro()) : ''; return e ? new Date(+e.split('|')[0]).toLocaleString('pt-BR') + ' — ' + e.slice(e.indexOf('|') + 1, 1500) : 'nenhum registrado'; })()}`,
+    `Conferências da conta compartilhada com o app fechado: ${(() => { const h = window.Android && Android.compartHist ? String(Android.compartHist()) : ''; return h ? '\n' + h.split('\n').map(l => { const i = l.indexOf('|'); return '  ' + new Date(+l.slice(0, i)).toLocaleString('pt-BR') + ' — ' + l.slice(i + 1); }).join('\n') : 'nenhuma registrada'; })()}`,
     '', `Erros registrados (${errs.length}):`,
     ...errs.slice().reverse().map(e => `[${new Date(e.t).toLocaleString('pt-BR')} · v${e.v}] ${e.onde}: ${e.msg}`)].join('\n');
 }
@@ -915,6 +947,7 @@ function avisoNativoHtml(){
   return `${semPerm ? `<div class="hint warn">O Android está bloqueando as notificações do app.</div><div class="btns" style="margin-top:6px"><button class="btn primary" onclick="Android.pedirNotificacao();setTimeout(openSettings,1500)">Permitir notificações</button></div>` : ''}
     ${economia ? `<div class="hint warn">O app está na economia de bateria: o Android pode atrasar ou cortar os avisos com ele fechado.</div><div class="btns" style="margin-top:6px"><button class="btn" onclick="Android.bateria()">Tirar da economia de bateria</button></div>` : ''}
     <div class="hint">Última conferência com o app fechado: ${t ? `${quando(+t)} — ${esc(r || '')}` : 'ainda não aconteceu'}.</div>
+    ${A.compartHist && A.compartHist() ? `<details class="grp"><summary>Últimas conferências${I('chev')}</summary><div class="hint" style="margin:0 0 8px">${String(A.compartHist()).split('\n').map(l => { const i = l.indexOf('|'); return `${quando(+l.slice(0, i))} — ${esc(l.slice(i + 1))}`; }).join('<br>')}</div></details>` : ''}
     <div class="btns" style="margin-top:6px"><button class="btn" onclick="Android.notificar('Conta compartilhada','Teste: é assim que o aviso aparece.')">Testar notificação</button><button class="btn" onclick="conferirNativo()">Conferir agora</button></div>`;
 }
 function conferirNativo(){ Android.compartConferir(); comCarga('Conferindo a conta compartilhada…', () => new Promise(r => setTimeout(r, 6000))).then(() => { if (settingsShown()) openSettings(); }); }

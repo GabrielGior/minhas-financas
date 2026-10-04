@@ -137,6 +137,33 @@ function cenaHtml(k){
     <div class="cenaPart mov-${P[1]}">${[...Array(P[2])].map((_, i) => { const r = j => cenaRnd(k, i, j), t = Math.round(P[3] + r(0) * (P[4] - P[3]));
       return `<svg viewBox="0 0 20 20" fill="currentColor" style="left:${(r(1) * 100).toFixed(1)}%;top:${(r(2) * 100).toFixed(1)}%;width:${t}px;height:${t}px;color:${[c, c2, escuro ? '#fff' : s[4]][i % 3]};opacity:${(.35 + r(3) * .5).toFixed(2)};animation-duration:${(P[1] === 'chove' ? 1.1 + r(4) * 1.4 : P[1] === 'pisca' ? 1.8 + r(4) * 3.2 : 9 + r(4) * 14).toFixed(1)}s;animation-delay:-${(r(5) * 20).toFixed(1)}s;--dx:${Math.round(r(6) * 80 - 40)}px">${P[0]}</svg>`; }).join('')}</div><div class="cenaVeu"></div>`;
 }
+// ---------- Fundo do tema nos widgets (só no app instalado) ----------
+// O widget não consegue desenhar a cena; então o app desenha uma versão parada dela (astro, horizonte e a figura do tema,
+// sobre fundo transparente), transforma em imagem e entrega ao lado nativo (Android.widgetFundo), que a põe por trás
+// dos números, bem suave. Só refaz quando o tema muda (WFUNDO_KEY guarda o último enviado).
+const WFUNDO_KEY = 'financas-wfundo';
+function cenaWidgetSvg(k){
+  const s = SKINS[k], [hz, astro] = cenaDe(k), [longe, perto] = CENA_HORIZ[hz] || CENA_HORIZ.nenhum, ato = ATOS[k];
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="780" height="400" viewBox="0 0 390 200">
+    ${astro !== 'nenhum' && CENA_ASTRO[astro] ? `<g transform="translate(268,10) scale(.9)" opacity=".75">${CENA_ASTRO[astro]('#ffffff', s[3])}</g>` : ''}
+    ${longe ? `<path transform="translate(0,80)" d="${longe}" fill="#000000" opacity=".16"/>` : ''}
+    ${perto ? `<path transform="translate(0,80)" d="${perto}" fill="#000000" opacity=".28"/>` : ''}
+    ${ato ? `<g transform="translate(206,104) scale(1.6)" opacity=".8">${ato[0]}</g>` : ''}</svg>`;
+}
+function widgetFundoEnviar(){
+  if (!(window.Android && Android.widgetFundo) || window.TESTE) return;
+  const k = db.prefs.skin && SKINS[db.prefs.skin] ? db.prefs.skin : '', marca = k + '|1';
+  try { if (localStorage.getItem(WFUNDO_KEY) === marca) return; } catch(e){}
+  const pronto = b64 => { Android.widgetFundo(b64, k); try { localStorage.setItem(WFUNDO_KEY, marca); } catch(e){} };
+  if (!k) return pronto('');
+  const img = new Image();
+  img.onload = () => { try {
+    const c = document.createElement('canvas'); c.width = 585; c.height = 300;
+    c.getContext('2d').drawImage(img, 0, 0, 585, 300);
+    pronto(c.toDataURL('image/png').split(',')[1]);
+  } catch(e){ logErr('fundo do widget', e); } };
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(cenaWidgetSvg(k));
+}
 // Põe (ou tira) a cena do tema em uso; chamada por applyTheme.
 function cenaAplicar(){
   const el = document.getElementById('cena'), k = db.prefs.skin || '';
@@ -144,6 +171,7 @@ function cenaAplicar(){
   if (el.dataset.k !== k){ el.dataset.k = k; el.innerHTML = k && SKINS[k] ? cenaHtml(k) : ''; }
   // Os primeiros temas (SKIN_ANTIGOS) já têm a sua troca de tela no app.css; os demais usam a escolhida em CENAS.
   document.documentElement.dataset.troca = k && !SKIN_ANTIGOS.includes(k) ? cenaDe(k)[4] : '';
+  if (typeof logErr === 'function') widgetFundoEnviar(); // na primeira chamada (carga deste arquivo) config.js ainda não existe; inicio.js chama de novo
 }
 cenaAplicar(); // o tema já foi aplicado antes de este arquivo carregar
 // A cena para quando o app sai da tela (não gasta bateria à toa) e volta a andar quando ele reaparece.

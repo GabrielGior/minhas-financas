@@ -17,6 +17,7 @@ function onAtalho(){
 funVisit();
 if (lang() !== 'pt'){ document.documentElement.lang = LOCALES[lang()]; trAll(); } // partes fixas da página (login, bloqueio)
 render();
+sorteioDoDia(); // tema ou cor do dia, se ligado: troca antes de a abertura e as telas aparecerem
 abertura();
 restoreFromIdb();
 save(false);
@@ -39,6 +40,7 @@ document.addEventListener('visibilitychange', () => {
   now = new Date();
   curYM = ymOf(now.getFullYear(), now.getMonth());
   funVisit();
+  if (sorteioDoDia()) toast(`${db.prefs.sorteio === 'tema' ? 'Tema' : 'Cor'} de hoje: ${sorteioNome()}`); // virou o dia com o app aberto
   rollover();
   if (!sheetOpen()) render();
   updateRates();
@@ -49,6 +51,7 @@ document.addEventListener('visibilitychange', () => {
 // ao alterar algo). Com o app fechado, quem confere é o lado nativo (ShareReceiver).
 // Na conta pessoal de quem tem conta compartilhada, só espia a planilha (espiarComp), sem misturar os dados.
 if (!window.TESTE) setInterval(() => { if (document.hidden || navigator.onLine === false || needGate()) return; if (shared()) syncNow(); else espiarComp(); }, 60e3);
+widgetFundoEnviar(); // fundo do tema para os widgets, se ainda não foi entregue
 if (window.Android && Android.webOk) Android.webOk(); // APK: as telas abriram sem erro (confirma uma atualização recém-aplicada)
 if (window.webResume) webResume(); // versão web: continua o que estava sendo feito antes de ir ao login do Google
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
