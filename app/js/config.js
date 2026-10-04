@@ -396,6 +396,7 @@ function openBadges(){
 }
 function confetti(){
   if (!db.prefs.anim) return;
+  if (festaTema()) return; // com tema especial, a comemoração usa as formas e as cores dele (js/cena.js)
   const box = document.createElement('div'), cores = [shade(0, 4), shade(2, 4), '#fbbf24', '#34d399', '#f472b6', '#38bdf8'];
   box.className = 'confetti';
   box.innerHTML = [...Array(44)].map((_, i) => `<i style="left:${Math.random() * 100}%;background:${cores[i % cores.length]};animation-delay:${Math.random() * .25}s;animation-duration:${1.1 + Math.random() * .9}s;--r:${Math.round(Math.random() * 720 - 360)}deg;--x:${Math.round(Math.random() * 120 - 60)}px;${i % 3 ? '' : 'border-radius:50%'}"></i>`).join('');

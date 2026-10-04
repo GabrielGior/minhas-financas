@@ -595,8 +595,9 @@ function submitForm(){
   }
   if (F.col === 'expenses' && !F.id) state.month = out.fixed && out.start > state.month ? out.start : (out.fixed ? state.month : out.start);
   rollover(); // marca registros novos com o mês atual
-  const done = savedMsg(F.col, !F.id);
+  const done = savedMsg(F.col, !F.id), gastoNovo = F.col === 'expenses' && !F.id ? out.value : 0;
   save(); closeForm(); render();
+  if (gastoNovo) gastoAnim(gastoNovo); // animação de novo gasto, com as formas do tema (js/cena.js)
   if (after) after();
   if (voltar) openWelcome();
   if (antes && done === 'Salvo') showUndo('Alteração salva', () => restoreSnap(antes)); else toast(done);

@@ -17,7 +17,7 @@ function logErr(onde, e){
 }
 addEventListener('error', e => logErr('erro na tela', (e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0)));
 addEventListener('unhandledrejection', e => logErr('promessa', e.reason));
-const APP_VERSION = '1.51'; // manter igual ao versionName do build.gradle
+const APP_VERSION = '1.52'; // manter igual ao versionName do build.gradle
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 // Ícones do app: desenhos em dois tons (traço + preenchimento translúcido nas partes com class="d"),
 // todos numa grade de 24×24. I('nome', tamanho) devolve o <svg>; a cor vem do texto ao redor (currentColor).
@@ -437,6 +437,7 @@ function applyTheme(){
   // Cores da tela de abertura da próxima vez (lidas pelo index.html antes de tudo).
   try { localStorage.setItem('financas-abre', JSON.stringify([sk ? sk[4] : c[1], sk ? sk[5] : c[2]])); } catch(e){}
   if (window.webIcone) webIcone(); // versão web: o ícone indicado pela página acompanha o tema
+  if (window.cenaAplicar) cenaAplicar(); // fundo animado do tema especial (js/cena.js)
   // barras do sistema no APK
   if (window.Android && Android.cores) Android.cores(bg, card, dark);
   else if (window.Android && Android.tema) Android.tema(dark);
