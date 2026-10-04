@@ -762,3 +762,26 @@ html[data-troca=gira] #app.enter{animation:trGira .38s ease-out;transform-origin
 .trocaConta{display:flex;gap:4px;padding:4px;margin:0 0 12px;border-radius:16px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
 .trocaConta button{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 6px;border-radius:12px;font-weight:600;font-size:14px;color:var(--muted)}
 .trocaConta button.on{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff}
+/* 1.57: calendário do Resumo nas cores do tema e gráfico de ganhos e gastos refeito */
+.cal .n1,.escala .n1{background:color-mix(in srgb,var(--hero1) 26%,var(--card));color:var(--text)}
+.cal .n2,.escala .n2{background:color-mix(in srgb,var(--hero1) 50%,var(--card));color:var(--text)}
+.cal .n3,.escala .n3{background:color-mix(in srgb,var(--hero1) 76%,var(--card));color:#fff}
+.cal .n4,.escala .n4{background:linear-gradient(135deg,var(--hero1),var(--hero2));color:#fff}
+.cal .hoje{outline-color:var(--brand)}
+.grafTopo{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.grafTopo>div{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:9px 7px;min-width:0}
+.grafTopo small{display:flex;align-items:center;font-size:11.5px;color:var(--muted);white-space:nowrap}
+.grafTopo b{display:block;font-size:clamp(11.5px,3.3vw,15px);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.graf .chart{height:176px;gap:2px;margin-top:0}
+.graf .chart .grid i{border-top:1px dashed var(--line)}
+.graf .chart .col{border-radius:12px;padding:6px 0 4px;gap:6px}
+.graf .chart .bars{gap:3px}
+.graf .chart .bars>i,.graf .chart .bars .stk{width:44%;max-width:14px;border-radius:7px 7px 2px 2px;min-height:3px}
+.graf .chart .bars .gas{background:linear-gradient(180deg,var(--out),color-mix(in srgb,var(--out) 55%,var(--card)))}
+.graf .chart .bars .gan{background:linear-gradient(180deg,var(--in),color-mix(in srgb,var(--in) 55%,var(--card)))}
+.graf .chart .bars .rend{background:var(--brand)}
+.graf .chart .col.fut .bars{opacity:.4}
+.graf .chart .col.atual small{color:var(--text);font-weight:700}
+.graf .chart .col.atual::after{content:"";width:5px;height:5px;border-radius:50%;background:var(--brand);margin-top:-3px}
+.graf .chart .col.sel{background:color-mix(in srgb,var(--brand) 14%,transparent)}
+.graf .chart small{font-size:10.5px;text-transform:capitalize}

@@ -33,7 +33,11 @@ function grpMove(i, d){ const o = db.prefs.grpOrder; [o[i], o[i + d]] = [o[i + d
 // Gráfico de rosca. parts = [[cor, valor], ...]
 // Dia do mês de um gasto (para o calendário do Resumo e a ordenação das listas): o dia lançado ou, numa conta fixa,
 // o do vencimento; 0 = sem dia informado.
-const diaDe = (x, m) => x.kind === 'installment' ? +x.day || 0 : x.fixed ? (x.due ? dueDay(x, m) : 0) : +x.day || 0;
+// Gasto sem dia informado (avulso, fixo sem vencimento ou parcelado): vale o dia do mês em que foi cadastrado (o id
+// guarda o momento da criação, ver uid). Um fixo cadastrado no dia 15 aparece no dia 15 de cada mês.
+const criadoEm = x => { const t = parseInt(String(x.id).slice(0, -5), 36); return t > 1.5e12 && t < 4e12 ? new Date(t) : null; };
+const diaCriado = (x, m) => { const d = criadoEm(x); return d ? Math.min(d.getDate(), daysIn(m)) : 0; };
+const diaDe = (x, m) => (x.kind === 'installment' ? +x.day : x.fixed ? (x.due ? dueDay(x, m) : 0) : +x.day) || diaCriado(x, m);
 // Gastos do mês por dia: posição = dia (a 0 junta os sem dia); cada uma {v: total, itens}.
 function gastosPorDia(m){
   const por = [...Array(daysIn(m) + 1)].map(() => ({v:0, itens:[]}));
@@ -106,7 +110,7 @@ function viewResumo(){
         return `<button class="n${nivel}${rm === curYM && d === now.getDate() ? ' hoje' : ''}${state.dia === d ? ' sel' : ''}" onclick="state.dia=${state.dia === d ? 0 : d};render()" aria-label="Dia ${d}: ${hideVals ? MASK : fmt(v)}">${d}</button>`; }).join('')}</div>
       ${sel ? `<div class="calSel"><b>Dia ${state.dia}: ${fmt(sel.v)}</b>${sel.itens.length ? sel.itens.map(x => `<div class="leg"><span>${esc(x.desc)}</span><b>${fmt(x.value)}</b></div>`).join('') : '<div class="hint" style="margin:2px 0 0">Nenhum gasto neste dia.</div>'}</div>`
       : `<div class="escala"><span>menos</span>${[0, 1, 2, 3, 4].map(i => `<i class="n${i}"></i>`).join('')}<span>mais</span></div>
-        <div class="hint">Quanto mais escuro, mais gasto no dia. Toque num dia para ver o que saiu.${por[0].v ? ` Sem dia informado: ${fmt(por[0].v)}.` : ''}</div>`}</div>`; },
+        <div class="hint">Quanto mais forte a cor, mais gasto no dia. Toque num dia para ver o que saiu. Gasto sem dia informado entra no dia do mês em que foi cadastrado.${por[0].v ? ` Sem dia informado: ${fmt(por[0].v)}.` : ''}</div>`}</div>`; },
   alertas: () => `${bills.length ? `<div class="card"><b>${I('calendar')} Contas a vencer</b>${bills.map(({x, diff}) => `
     <div class="item" style="cursor:default"><div class="mid"><b>${esc(x.desc)}</b>
       <small class="${diff < 0 ? 'out' : diff <= 2 ? 'warn' : ''}">${diff < 0 ? `venceu há ${-diff} dia${diff < -1 ? 's' : ''}` : diff === 0 ? 'vence hoje' : `vence em ${diff} dia${diff > 1 ? 's' : ''}`} · dia ${dueDay(x, curYM)}</small></div>
@@ -116,12 +120,18 @@ function viewResumo(){
   planejar: () => planHtml(),
   saldo: () => `<div class="hero"><small>Saldo de ${y}</small><div class="big">${fmt(tin - tout)}</div>
     <div class="row"><div><small>Ganho total</small><b>${fmt(tin)}</b></div><div><small>Gasto total</small><b>${fmt(tout)}</b></div></div></div>`,
-  grafico: () => `<div class="card">
-    <div class="legend"><span><i class="dot" style="background:var(--in)"></i>Ganhos</span><span><i class="dot" style="background:var(--brand)"></i>Rendimento de investimentos</span><span><i class="dot" style="background:var(--out)"></i>Gastos</span></div>
-    <div class="chart">${chartGrid(max)}${months.map((m,i) => `<div class="col ${i === si ? 'sel' : ''}" onclick="state.sel='${m}';render()"><div class="bars">
-      <span class="stk" style="height:${(ins[i] + yields[i])/max*100}%"><i style="flex:${yields[i]};background:var(--brand)"></i><i style="flex:${ins[i]};background:var(--in)"></i></span>
-      <i style="height:${outs[i]/max*100}%;background:var(--out)"></i></div>
+  // Ganhos e gastos mês a mês: totais do ano no topo, barras arredondadas (mês atual em destaque, meses futuros mais
+  // claros) e, ao tocar num mês, os números dele.
+  grafico: () => `<h2>Ganhos e gastos de ${y}</h2><div class="card graf">
+    <div class="grafTopo">
+      <div><small><i class="dot" style="background:var(--in)"></i>Ganhos</small><b class="in">${fmtCurto(tin)}</b></div>
+      <div><small><i class="dot" style="background:var(--out)"></i>Gastos</small><b class="out">${fmtCurto(tout)}</b></div>
+      <div><small>${tin - tout < 0 ? 'Faltou' : 'Sobrou'}</small><b class="${tin - tout < 0 ? 'out' : ''}">${fmtCurto(Math.abs(tin - tout))}</b></div></div>
+    <div class="chart">${chartGrid(max)}${months.map((m,i) => `<div class="col ${i === si ? 'sel' : ''}${m === curYM ? ' atual' : ''}${m > curYM ? ' fut' : ''}" onclick="state.sel='${state.sel === m ? '' : m}';render()"><div class="bars">
+      <span class="stk" style="height:${(ins[i] + yields[i])/max*100}%"><i class="rend" style="flex:${yields[i]}"></i><i class="gan" style="flex:${ins[i]}"></i></span>
+      <i class="gas" style="height:${outs[i]/max*100}%"></i></div>
       <small>${MESES[i].slice(0,3)}</small></div>`).join('')}</div>
+    ${tyield ? '<div class="legend" style="margin-top:10px"><span><i class="dot" style="background:var(--brand)"></i>Rendimento de investimentos (em cima dos ganhos)</span></div>' : ''}
     ${si < 0 ? '<div class="hint">Toque em um mês para ver os valores.</div>' : `
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)"><b style="text-transform:capitalize">${monthName(months[si])}</b>
       <div class="grid2" style="margin-top:8px;row-gap:8px">
@@ -189,7 +199,7 @@ function viewResumo(){
   };
   return `${greeting() ? `<div class="hello">${greeting()}</div>` : ''}
   <h1 style="margin-bottom:0">Resumo <span>${eyeBtn()}<button class="iconbtn" onclick="openResumoEdit()" aria-label="Personalizar o Resumo">${I('sliders', 24)}</button><button class="iconbtn" onclick="openSettings('')" aria-label="Configurações">${I('gear', 24)}</button></span></h1>
-  <div class="muted" style="margin:0 2px 14px;font-size:13.5px">Hoje é ${todayLabel()}</div>${offlinePill()}${trocaContaHtml()}
+  <div class="muted" style="margin:0 2px 14px;font-size:13.5px">Hoje é ${todayLabel()}</div>${offlinePill(true)}${trocaContaHtml()}
   <div class="nav periodo"><button onclick="resMes(-1)" aria-label="Mês anterior">‹</button><b onclick="pickResumo()"><span>${nomeM}</span><small>${y} ▾</small></b><button onclick="resMes(1)" aria-label="Próximo mês">›</button></div>
   ${archBanner(y)}${ativHtml()}${bankNotesHtml()}${blocks('resumo', B)}
   <div class="btns" style="margin-bottom:12px"><button class="btn" onclick="openResumoEdit()">${I('sliders')}Personalizar o Resumo</button></div>`;

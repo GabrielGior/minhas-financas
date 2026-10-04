@@ -875,8 +875,23 @@ function openAtividade(){
 function compNativo(){
   if (!(window.Android && Android.compart) || (sync.shared && sync.pessoal)) return; // na conta pessoal, o lado nativo segue com o último estado da compartilhada
   const ligado = shared() && db.prefs.avisoComp !== false;
+  // Sem a permissão de notificações do Android nada aparece com o app fechado: pede uma vez a quem já estava na conta.
+  if (ligado && !sync.notifPedida && Android.pedirNotificacao && !window.TESTE){ sync.notifPedida = true; saveSync(); Android.pedirNotificacao(); }
   Android.compart(ligado ? JSON.stringify({id:shared(), eu:myName(), t:Math.max(0, ...Object.keys(ATIV_COLS).flatMap(c => db[c].map(r => r.u || 0))), membros:Object.keys(db.membros)}) : '');
 }
+// Estado dos avisos com o app fechado (só no app instalado): o que falta liberar no Android, quando foi a última
+// conferência e o que ela achou, e os botões para testar.
+function avisoNativoHtml(){
+  const A = window.Android;
+  if (!A || db.prefs.avisoComp === false) return '';
+  if (!A.compartLog) return '<div class="hint warn">Para receber os avisos com o app fechado, instale a atualização do app (Configurações › Atualização).</div>';
+  const [t, r] = String(A.compartLog()).split('|'), semPerm = A.notificacaoLiberada && !A.notificacaoLiberada(), economia = A.bateriaLivre && !A.bateriaLivre();
+  return `${semPerm ? `<div class="hint warn">O Android está bloqueando as notificações do app.</div><div class="btns" style="margin-top:6px"><button class="btn primary" onclick="Android.pedirNotificacao();setTimeout(openSettings,1500)">Permitir notificações</button></div>` : ''}
+    ${economia ? `<div class="hint warn">O app está na economia de bateria: o Android pode atrasar ou cortar os avisos com ele fechado.</div><div class="btns" style="margin-top:6px"><button class="btn" onclick="Android.bateria()">Tirar da economia de bateria</button></div>` : ''}
+    <div class="hint">Última conferência com o app fechado: ${t ? `${quando(+t)} — ${esc(r || '')}` : 'ainda não aconteceu'}.</div>
+    <div class="btns" style="margin-top:6px"><button class="btn" onclick="Android.notificar('Conta compartilhada','Teste: é assim que o aviso aparece.')">Testar notificação</button><button class="btn" onclick="conferirNativo()">Conferir agora</button></div>`;
+}
+function conferirNativo(){ Android.compartConferir(); comCarga('Conferindo a conta compartilhada…', () => new Promise(r => setTimeout(r, 6000))).then(() => { if (settingsShown()) openSettings(); }); }
 // Fim da conta compartilhada neste aparelho: a lista de pessoas e os avisos dela deixam de valer.
 function compFim(){ sync.pessoal = false; saveSync(); db.membros = {}; try { localStorage.removeItem(ATIV_KEY); } catch(e){} compNativo(); }
 function setAvisoComp(on){
@@ -958,7 +973,8 @@ function shareHtml(){
     ${membrosHtml(s)}
     <label>Avisos</label>
     <div class="btns" style="margin-top:0">${[[true, 'Avisar'], [false, 'Não avisar']].map(([v, t]) => `<button class="btn ${(db.prefs.avisoComp !== false) === v ? 'primary' : ''}" onclick="setAvisoComp(${v})">${t}</button>`).join('')}</div>
-    <div class="hint">Avisa quando outra pessoa entra na conta ou adiciona/edita um gasto, ganho ou investimento: na tela do app e, com ele fechado, por notificação do celular (pode levar até cerca de uma hora).</div>
+    <div class="hint">Avisa quando outra pessoa entra na conta ou adiciona/edita um gasto, ganho ou investimento: na tela do app e, com ele fechado, por notificação do celular. O celular confere a cada 15 minutos, mais ou menos (o app não tem servidor para avisar na hora).</div>
+    ${avisoNativoHtml()}
     <div class="btns"><button class="btn" onclick="openAtividade()">${I('bell')}Atividade recente${ativNovas() ? ` (${ativNovas()})` : ''}</button></div>
     <label>Código do convite</label>
     <div class="btns" style="margin-top:0"><input readonly value="${esc(s.id)}" style="flex:3;min-width:0;font-size:12px" onclick="this.select()"><button class="btn" style="flex:1" onclick="shareCopy()">Copiar</button></div>
@@ -1213,7 +1229,8 @@ function applySnapshot(snap){
 }
 // Sem conexão: aviso discreto no topo das telas. As alterações ficam salvas no aparelho e sobem depois.
 const offline = () => navigator.onLine === false || (canSync() && sync.on && sync.err === 'Sem conexão com a internet.');
-const offlinePill = () => contaPill() + (offline() ? `<div class="offline">${I('signal', 14)}Sem conexão: o que você lançar fica salvo e sincroniza depois.</div>` : '');
+// semConta: o Resumo já mostra a conta em uso no botão Pessoal / Compartilhada, então dispensa a faixa.
+const offlinePill = semConta => (semConta ? '' : contaPill()) + (offline() ? `<div class="offline">${I('signal', 14)}Sem conexão: o que você lançar fica salvo e sincroniza depois.</div>` : '');
 addEventListener('online', () => { render(); syncNow(); });
 addEventListener('offline', () => render());
 function scheduleSync(){ if (!canSync() || !sync.on) return; clearTimeout(syncTimer); syncTimer = setTimeout(syncNow, 3000); }
