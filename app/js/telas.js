@@ -380,11 +380,9 @@ function viewGastos(){
   const sel = (key, label, options) => { filterOpts[key] = [['', 'Todos'], ...options]; const cur = options.find(o => o[0] === state[key]);
     return `<button type="button" class="pickBtn sm ${cur ? 'on' : ''}" onclick="pickFilter('${key}','${label}')"><span>${esc(cur ? cur[1] : label)}</span>${I('chev', 14)}</button>`; };
   const B = {
-  mes: () => `<div class="card grid3">
-    <div class="stat"><small>Ganhos</small><b class="in" style="font-size:14px">${fmt(tin)}</b></div>
-    <div class="stat"><small>Gastos</small><b class="out" style="font-size:14px">${fmt(tout)}</b></div>
-    <div class="stat"><small>Saldo</small><b class="${tin-tout < 0 ? 'out' : ''}" style="font-size:14px">${fmt(tin - tout)}</b></div>
-  </div>`,
+  // O mesmo cartão de destaque das outras abas (Ganhos, Investir, Resumo): o total do mês em cima, o resto embaixo.
+  mes: () => `<div class="hero"><small>Gastos em ${monthName(m)}</small><div class="big">${fmt(tout)}</div>
+    <div class="row"><div><small>Ganhos</small><b>${fmt(tin)}</b></div><div><small>Saldo</small><b>${fmt(tin - tout)}</b></div><div><small>Lançamentos</small><b>${list.length}</b></div></div></div>`,
   orcamento: () => `<h2>Orçamento do mês <button onclick="openForm('budgets', db.budgets)">${budgets.length ? 'Alterar' : 'Definir'}</button></h2>
   ${budgets.length ? `<div class="card">${budgets.map(b => { const c = CAT_GASTO[b.cat] || CAT_GASTO.outros; return `
     <div class="catrow"><div class="top"><span>${catName(c)}</span><b>${fmt(b.used)} de ${fmt(b.lim)}</b></div>${b.extra ? `<div class="hint" style="margin-top:2px">inclui ${fmt(b.extra)} que sobraram do mês anterior</div>` : ''}
@@ -439,7 +437,10 @@ function expListHtml(){
   if (!list.length) return empty('search','Nenhum lançamento com esses filtros.');
   const filt = q || state.fcat || state.fbank || state.fpay || state.ftag, open = state.gopen || (state.gopen = {});
   // Dentro de cada grupo, pela data: mais recente ou mais antigo primeiro (db.prefs.ordem); os sem dia ficam no fim.
-  const sinal = db.prefs.ordem === 'ant' ? -1 : 1, porDia = l => [...l].sort((a, b) => { const da = diaDe(a, m), dd = diaDe(b, m); return !da - !dd || sinal * (dd - da); });
+  // Quando dois não têm dia (contas fixas sem vencimento, parcelas), vale o mês em que começaram e, por fim, quando
+  // foram lançados: assim o botão sempre inverte a lista, mesmo num mês só de contas fixas.
+  const sinal = db.prefs.ordem === 'ant' ? -1 : 1, quando = x => [diaDe(x, m), x.start || '', x.u || 0];
+  const porDia = l => [...l].sort((a, b) => { const qa = quando(a), qb = quando(b), i = qa.findIndex((v, j) => v !== qb[j]); return i < 0 ? 0 : sinal * (qb[i] > qa[i] ? 1 : -1); });
   const gs = db.prefs.grpOrder.map(k => [k, GRUPOS[k][0], porDia(list.filter(GRUPOS[k][1]))]);
   // Todos os grupos começam abertos; tocar no título fecha (fica só o total). Numa busca ou filtro, todo grupo com resultado abre.
   return gs.map(([k, t, g]) => { if (!g.length) return ''; const on = filt ? true : open[k] ?? true; return `

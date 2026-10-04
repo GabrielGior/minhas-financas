@@ -596,11 +596,11 @@ html[data-fun=on] .fab.chat{animation:none}
 #cena{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
 #cena:empty{display:none}
 .cenaCeu{position:absolute;inset:0 0 auto 0;height:540px}
-.cenaVeu{position:absolute;inset:0;background:linear-gradient(180deg,transparent 240px,color-mix(in srgb,var(--bg) 74%,transparent) 440px)}
+.cenaVeu{position:absolute;inset:0;background:linear-gradient(180deg,transparent 170px,color-mix(in srgb,var(--bg) 74%,transparent) 440px)}
 .cenaAstro{position:absolute;top:22px;width:76px;height:76px;opacity:.7;animation:cenaAstro 9s ease-in-out infinite alternate}
-.cenaHz{position:absolute;left:-5%;width:110%;top:150px;height:150px}
+.cenaHz{position:absolute;left:-5%;width:110%;top:22px;height:118px}
 .cenaHz.longe{animation:cenaVai 26s ease-in-out infinite alternate}
-.cenaHz.perto{top:178px;animation:cenaVai 18s ease-in-out infinite alternate-reverse}
+.cenaHz.perto{top:44px;animation:cenaVai 18s ease-in-out infinite alternate-reverse}
 .cenaPart{position:absolute;inset:0}
 .cenaPart svg{position:absolute;animation-iteration-count:infinite;animation-timing-function:linear;will-change:transform}
 .mov-cai svg{top:-30px!important;animation-name:cenaCai}
@@ -666,3 +666,47 @@ html[data-troca=gira] #app.enter{animation:trGira .38s ease-out;transform-origin
 .gastoAnim.j-tec svg{animation-timing-function:steps(6,end)}
 .gastoAnim.j-gira svg,.gastoAnim.j-zoom svg{animation-name:gastoGira}
 @keyframes gastoGira{0%{opacity:1;transform:rotate(0) translate(8px) scale(.4)}100%{opacity:0;transform:rotate(320deg) translate(112px) scale(1.15)}}
+
+/* ---------- O ato de cada tema (js/atos.js): a figura própria do tema e o movimento dela, dentro da cena ----------
+   As que atravessam a tela andam no <i>; o desenho de dentro quica, rola, balança… As outras ficam num ponto. */
+.cenaAto{position:absolute;inset:0}
+.cenaAto i{position:absolute;display:block;animation-timing-function:linear;animation-iteration-count:infinite;will-change:transform}
+.cenaAto svg{display:block;overflow:visible;animation-iteration-count:infinite;will-change:transform}
+.at-cruza i,.at-quica i,.at-rola i,.at-navega i,.at-arco i{left:-110px;animation-name:atVai}
+.at-volta i{left:100%;animation-name:atVem}
+@keyframes atVai{to{transform:translateX(calc(100vw + 220px))}}
+@keyframes atVem{to{transform:translateX(calc(-100vw - 220px))}}
+.at-quica svg{animation:atPula .5s ease-out infinite alternate}
+@keyframes atPula{to{transform:translateY(-24px)}}
+.at-rola svg{animation:atRoda 1.5s linear infinite}
+@keyframes atRoda{to{transform:rotate(360deg)}}
+.at-navega svg{animation:atBalanca 2.6s ease-in-out infinite alternate;transform-origin:50% 90%}
+@keyframes atBalanca{from{transform:rotate(-6deg) translateY(2px)}to{transform:rotate(6deg) translateY(-3px)}}
+.at-arco svg{animation:atArco 2.2s ease-in-out infinite alternate}
+@keyframes atArco{from{transform:translateY(26px) rotate(6deg)}to{transform:translateY(-26px) rotate(-6deg)}}
+.at-flutua svg{animation-name:atFlutua;animation-timing-function:ease-in-out;animation-direction:alternate}
+@keyframes atFlutua{from{transform:translateY(8px)}to{transform:translateY(-10px)}}
+.at-gira svg{animation-name:atRoda;animation-timing-function:linear}
+.at-pendula svg{animation-name:atPendula;animation-timing-function:ease-in-out;animation-direction:alternate;transform-origin:50% 0}
+@keyframes atPendula{from{transform:rotate(-18deg)}to{transform:rotate(18deg)}}
+.at-pulsa svg{animation-name:atPulsa;animation-timing-function:ease-in-out;animation-direction:alternate}
+@keyframes atPulsa{from{transform:scale(.86)}to{transform:scale(1.12)}}
+.at-pisca svg{animation-name:atPisca;animation-timing-function:steps(1,end)}
+@keyframes atPisca{0%,40%{opacity:1}45%{opacity:.15}50%{opacity:1}55%{opacity:.25}62%,100%{opacity:1}}
+.at-sobe svg{animation-name:atSobe;animation-timing-function:ease-in-out}
+@keyframes atSobe{0%,12%{transform:translateY(105%)}35%,65%{transform:translateY(0)}88%,100%{transform:translateY(105%)}}
+.at-cai svg{animation-name:atCai;animation-timing-function:cubic-bezier(.5,0,.9,.6)}
+@keyframes atCai{0%{transform:translateY(-260px);opacity:0}8%{opacity:1}55%{transform:translateY(0)}62%{transform:translateY(-10px)}70%,86%{transform:translateY(0);opacity:1}100%{transform:translateY(0);opacity:0}}
+.at-orbita svg{animation-name:atOrbita;animation-timing-function:linear}
+@keyframes atOrbita{from{transform:rotate(0) translateX(46px) rotate(0)}to{transform:rotate(360deg) translateX(46px) rotate(-360deg)}}
+.at-treme svg{animation-name:atTreme;animation-timing-function:linear}
+@keyframes atTreme{0%,100%{transform:translate(0,0) rotate(0)}20%{transform:translate(-2px,1px) rotate(-3deg)}40%{transform:translate(2px,-1px) rotate(3deg)}60%{transform:translate(-1px,-2px) rotate(-2deg)}80%{transform:translate(1px,2px) rotate(2deg)}}
+.at-solta svg{animation-name:atSolta;animation-timing-function:linear}
+@keyframes atSolta{0%{transform:translateY(0);opacity:0}10%{opacity:1}80%{opacity:.9}100%{transform:translateY(-250px);opacity:0}}
+.at-cresce svg{animation-name:atCresce;animation-timing-function:ease-out;transform-origin:50% 100%}
+@keyframes atCresce{0%{transform:scale(0);opacity:0}30%,80%{transform:scale(1);opacity:1}100%{transform:scale(1);opacity:0}}
+/* Na abertura, a figura do tema passa por trás do mascote; no novo gasto, ela dá um pulo e some. */
+.abreAto{position:absolute;left:-90px;top:calc(50% - 170px);width:78px;height:78px;animation:atVai 1.9s linear both;overflow:visible}
+.abreAto.at-volta{left:100%;animation-name:atVem}
+.gastoAnim .gastoFig{left:-28px;top:-70px;width:56px;height:56px;opacity:1;animation:gastoFig 1.2s cubic-bezier(.3,1.5,.5,1) forwards}
+@keyframes gastoFig{0%{opacity:0;transform:scale(.2) translateY(30px)}25%{opacity:1;transform:scale(1.15) translateY(0)}70%{opacity:1;transform:scale(1) translateY(-10px)}100%{opacity:0;transform:scale(.9) translateY(-70px)}}

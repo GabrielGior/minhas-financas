@@ -109,7 +109,20 @@ Object.assign(CENAS, typeof CENAS_NOVAS === 'undefined' ? {} : CENAS_NOVAS); // 
 const cenaDe = k => CENAS[k] || ['serras', 'sol', 'estrelas', 'cai', 'sobe'];
 // Números "sorteados" sempre iguais para o mesmo tema e a mesma partícula: a cena não muda a cada redesenho.
 const cenaRnd = (k, i, j) => { let h = 2166136261; for (const ch of k + '|' + i + '|' + j) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return ((h >>> 0) % 10000) / 10000; };
-// HTML da cena de um tema: céu, astro, dois planos de horizonte e as partículas.
+// O ato do tema (js/atos.js) dentro da cena: a figura própria dele com o movimento dela. As que atravessam a tela
+// andam no <i> de fora; o desenho de dentro faz o resto (quicar, rolar, balançar…).
+const ATO_ANDA = ['cruza', 'volta', 'quica', 'rola', 'navega', 'arco'];
+function atoHtml(k){
+  const a = typeof ATOS !== 'undefined' && ATOS[k];
+  if (!a) return '';
+  const [fig, mov, tam = 46, alt = 150, dur = 10, n = 1] = a, anda = ATO_ANDA.includes(mov);
+  // A faixa livre da tela é o topo (atrás do título): as figuras de chão ficam apoiadas no horizonte, logo acima do
+  // primeiro cartão; as que voam, mais para cima. (Em ATOS, altura de 150 para cima quer dizer "no chão".)
+  const y = alt >= 150 ? 126 - tam : Math.round(alt * .34);
+  return `<div class="cenaAto at-${mov}">${[...Array(n)].map((_, i) => { const atraso = `animation-delay:-${(i * dur / n + cenaRnd(k, 'at', i) * 2).toFixed(1)}s`, dy = n > 1 && alt < 150 ? Math.round((cenaRnd(k, 'ay', i) - .5) * 30) : 0;
+    return `<i style="top:${y + dy}px;${anda ? `animation-duration:${dur}s;${atraso}` : `left:${Math.round(n > 1 ? 6 + (i + cenaRnd(k, 'ax', i) * .6) * 80 / n : 12 + cenaRnd(k, 'ax', 0) * 52)}%`}"><svg viewBox="0 0 40 40" style="width:${tam}px;height:${tam}px${anda ? '' : `;animation-duration:${dur}s;${atraso}`}">${fig}</svg></i>`; }).join('')}</div>`;
+}
+// HTML da cena de um tema: céu, astro, dois planos de horizonte, o ato do tema e as partículas.
 function cenaHtml(k){
   const s = SKINS[k], [hz, astro, part] = cenaDe(k), P = CENA_PART[part] || CENA_PART.estrelas, [longe, perto] = CENA_HORIZ[hz] || CENA_HORIZ.nenhum;
   const escuro = s[1], c = s[2], c2 = s[3], fundo = s[6];
@@ -118,7 +131,9 @@ function cenaHtml(k){
   return `<div class="cenaCeu" style="background:linear-gradient(180deg,${mix(s[4], escuro ? 62 : 26, fundo)},${mix(s[5], escuro ? 30 : 12, fundo)} 62%,${fundo})"></div>
     ${astro !== 'nenhum' ? `<svg class="cenaAstro" viewBox="0 0 100 100" style="left:${ax}%">${CENA_ASTRO[astro](mix(c2, escuro ? 88 : 70, fundo), mix(c, escuro ? 70 : 55, fundo))}</svg>` : ''}
     ${longe ? `<svg class="cenaHz longe" viewBox="0 0 390 120" preserveAspectRatio="none"><path d="${longe}" fill="${mix(s[5], escuro ? 62 : 40, fundo)}"/></svg>` : ''}
+    ${(ATOS[k] || [])[1] === 'sobe' ? atoHtml(k) : ''}
     ${perto ? `<svg class="cenaHz perto" viewBox="0 0 390 120" preserveAspectRatio="none"><path d="${perto}" fill="${mix(s[4], escuro ? 66 : 54, escuro ? "#000" : fundo)}"/></svg>` : ''}
+    ${(ATOS[k] || [])[1] === 'sobe' ? '' : atoHtml(k)}
     <div class="cenaPart mov-${P[1]}">${[...Array(P[2])].map((_, i) => { const r = j => cenaRnd(k, i, j), t = Math.round(P[3] + r(0) * (P[4] - P[3]));
       return `<svg viewBox="0 0 20 20" fill="currentColor" style="left:${(r(1) * 100).toFixed(1)}%;top:${(r(2) * 100).toFixed(1)}%;width:${t}px;height:${t}px;color:${[c, c2, escuro ? '#fff' : s[4]][i % 3]};opacity:${(.35 + r(3) * .5).toFixed(2)};animation-duration:${(P[1] === 'chove' ? 1.1 + r(4) * 1.4 : P[1] === 'pisca' ? 1.8 + r(4) * 3.2 : 9 + r(4) * 14).toFixed(1)}s;animation-delay:-${(r(5) * 20).toFixed(1)}s;--dx:${Math.round(r(6) * 80 - 40)}px">${P[0]}</svg>`; }).join('')}</div><div class="cenaVeu"></div>`;
 }
@@ -140,9 +155,12 @@ function festaTema(){
   const k = db.prefs.skin;
   if (!db.prefs.anim || !k || !SKINS[k]) return false;
   const s = SKINS[k], P = CENA_PART[cenaDe(k)[2]] || CENA_PART.estrelas, cores = [s[2], s[3], s[4], s[5], '#fbbf24', '#ffffff'], box = document.createElement('div');
+  const fig = (ATOS[k] || [])[0]; // a figura do tema cai junto com as partículas dele
   box.className = 'confetti tema';
   box.innerHTML = [...Array(36)].map((_, i) => { const t = 12 + Math.round(Math.random() * 14);
-    return `<svg viewBox="0 0 20 20" fill="currentColor" style="left:${Math.random() * 100}%;width:${t}px;height:${t}px;color:${cores[i % cores.length]};animation-delay:${Math.random() * .35}s;animation-duration:${1.5 + Math.random() * 1.1}s;--r:${Math.round(Math.random() * 720 - 360)}deg;--x:${Math.round(Math.random() * 140 - 70)}px">${P[0]}</svg>`; }).join('');
+    const fx = `left:${Math.random() * 100}%;animation-delay:${Math.random() * .35}s;animation-duration:${1.5 + Math.random() * 1.1}s;--r:${Math.round(Math.random() * 720 - 360)}deg;--x:${Math.round(Math.random() * 140 - 70)}px`;
+    return fig && i % 3 === 0 ? `<svg viewBox="0 0 40 40" style="${fx};width:${t + 16}px;height:${t + 16}px">${fig}</svg>`
+      : `<svg viewBox="0 0 20 20" fill="currentColor" style="${fx};width:${t}px;height:${t}px;color:${cores[i % cores.length]}">${P[0]}</svg>`; }).join('');
   document.body.appendChild(box);
   setTimeout(() => box.remove(), 3200);
   return true;
@@ -154,7 +172,8 @@ function gastoAnim(valor){
   const k = db.prefs.skin, s = SKINS[k], P = (s && CENA_PART[cenaDe(k)[2]]) || CENA_PART.moedas, jeito = s ? cenaDe(k)[3] : 'cai';
   const cores = s ? [s[2], s[3], '#fff'] : ['#fbbf24', '#f59e0b', '#fde68a'], n = 12, box = document.createElement('div');
   box.className = 'gastoAnim j-' + jeito;
-  box.innerHTML = `<b>− ${fmt(valor)}</b>` + [...Array(n)].map((_, i) => { const a = (jeito === 'calma' || jeito === 'magia' ? -150 + i * 120 / (n - 1) : i * 360 / n) * Math.PI / 180, d = 70 + (i % 3) * 34, t = 12 + (i % 4) * 4;
+  const fig = s && (ATOS[k] || [])[0]; // no meio, a figura do tema dá um pulo e some
+  box.innerHTML = `<b>− ${fmt(valor)}</b>` + (fig ? `<svg class="gastoFig" viewBox="0 0 40 40">${fig}</svg>` : '') + [...Array(n)].map((_, i) => { const a = (jeito === 'calma' || jeito === 'magia' ? -150 + i * 120 / (n - 1) : i * 360 / n) * Math.PI / 180, d = 70 + (i % 3) * 34, t = 12 + (i % 4) * 4;
     return `<svg viewBox="0 0 20 20" fill="currentColor" style="width:${t}px;height:${t}px;color:${cores[i % 3]};--x:${Math.round(Math.cos(a) * d)}px;--y:${Math.round(Math.sin(a) * d)}px;animation-delay:${(i % 4) * 30}ms">${P[0]}</svg>`; }).join('');
   document.body.appendChild(box);
   setTimeout(() => box.remove(), 1500);

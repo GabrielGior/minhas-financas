@@ -86,7 +86,7 @@ function abertura(){
   const sk = db.prefs.skin || '', comMascote = sk || db.prefs.fun;
   el.dataset.g = sk ? cenaDe(sk)[3] : ''; // o jeito de entrar de cada tema vem da cena dele (js/cena.js)
   document.getElementById('abreIn').innerHTML = (comMascote
-    ? `<div class="abreM">${mascoteEm(sk, 'feliz', 0, 0, 150, true)}</div>`
+    ? `${sk && ATOS[sk] ? `<svg class="abreAto at-${ATOS[sk][1]}" viewBox="0 0 40 40">${ATOS[sk][0]}</svg>` : ''}<div class="abreM">${mascoteEm(sk, 'feliz', 0, 0, 150, true)}</div>`
     : `<svg viewBox="28 28 52 52" width="132" height="132" aria-hidden="true">${[[33, 58, 16, .7], [47.5, 47, 27, .85], [62, 34, 40, 1]].map(([x, y, h, o], i) => `<rect class="abreBar" style="animation-delay:${i * 90}ms" x="${x}" y="${y}" width="13" height="${h}" rx="2" fill="#fff" opacity="${o}"/>`).join('')}</svg>`)
     + `<b>${esc(window.Android && Android.iconeNome && APP_NOMES[Android.iconeNome()] || 'Minhas Finanças')}</b>`;
   let acabou = false;
