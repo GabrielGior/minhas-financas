@@ -2,6 +2,7 @@
 // está atualizando, e o publicar.ps1 copia a lista da versão atual para o versao.json (a prévia que o app mostra
 // antes de atualizar). Formato fixo: uma versão por linha, em JSON (aspas duplas), a mais nova primeiro.
 const NOVIDADES = {
+  "1.64": [["Falas dos mascotes por tema", "O mascote de cada tema especial agora só diz frases do próprio tema (três ou mais para cada humor). Antes, boa parte das falas vinha da categoria e nem sempre combinava com o personagem."]],
   "1.63": [["Tema ou cor do dia", "Em Configurações › Temas especiais há a opção Tema aleatório todo dia, e em Aparência a opção Cor aleatória todo dia. A cada dia o app escolhe um diferente, sem repetir até passar por todos. Escolher um tema ou uma cor à mão desliga o sorteio."]],
   "1.62": [["Correção: o app fechava com erro", "Em alguns celulares aparecia o aviso de que o app tem um bug ao sair dele ou voltar para ele. A causa foi corrigida. É preciso instalar a atualização do app."], ["Avisos da conta compartilhada também na conta pessoal", "Quem está usando a conta pessoal passa a ser avisado do que acontece na compartilhada: o app confere a cada minuto, mostra o aviso e a faixa de novidades no Resumo e oferece trocar de conta. Os dados das duas contas continuam separados."]],
   "1.61": [["Gráfico de ganhos e gastos em curvas", "O gráfico do ano ficou com linhas suaves: os ganhos em linha cheia na cor do tema, com a área preenchida, e os gastos em linha pontilhada vermelha. O mês atual (ou o que você tocar) ganha um anel e uma etiqueta com o valor."]],

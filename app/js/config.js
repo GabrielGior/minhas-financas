@@ -350,10 +350,11 @@ const FUN_TEMA = {
     ok:['Formação mantida, {nome}.', 'Guardando a passagem do orçamento.', 'Algum gasto em combate? Anota.', 'Sem baixas por enquanto.', 'Vigília tranquila.', 'Treino diário: anotar tudo.'],
     triste:['Perdemos terreno: faltam {v}.', 'Batalha dura, {nome}. Faltam {v}.', 'O inimigo levou {v}.', 'Recuar para reagrupar os gastos.', 'Um guerreiro não desiste: vamos rever.', 'A muralha cedeu. Faltam {v}.']}
 };
-// Temas por categoria (js/temas.js): as falas da categoria e mais uma própria do tema, por humor.
+// Temas por categoria (js/temas.js e js/temas2.js): três falas próprias do tema por humor (FALAS_TEMA + FALAS_MAIS).
+// As falas da categoria só entram se um tema ainda não tiver as suas em FALAS_MAIS.
 for (const [k, [feliz, ok, triste]] of Object.entries(FALAS_TEMA)){
-  const c = FALAS_CAT[temaCat(k)] || FALAS_CAT.contos;
-  FUN_TEMA[k] = {feliz:[feliz, ...c.feliz], ok:[ok, ...c.ok], triste:[triste, ...c.triste]};
+  const m = FALAS_MAIS[k], c = FALAS_CAT[temaCat(k)] || FALAS_CAT.gerais;
+  FUN_TEMA[k] = m ? {feliz:[feliz, ...m[0]], ok:[ok, ...m[1]], triste:[triste, ...m[2]]} : {feliz:[feliz, ...c.feliz], ok:[ok, ...c.ok], triste:[triste, ...c.triste]};
 }
 // Bloco do Resumo: o porquinho reage ao saldo do mês atual. Tocar nele troca a fala.
 function funMascot(){

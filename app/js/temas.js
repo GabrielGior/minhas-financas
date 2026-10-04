@@ -380,7 +380,8 @@ const MASCOTES_NOVOS = {
 };
 
 // ---------- Falas ----------
-// Falas dos mascotes novos: as da categoria (cinco por humor) e mais uma própria de cada tema. {v} = saldo do mês; {nome} = a pessoa.
+// Falas dos mascotes novos. As da categoria (FALAS_CAT) só valem para um tema que ainda não tenha as suas em FALAS_MAIS
+// (js/temas2.js); hoje todos têm, então o mascote só diz frases do próprio tema. {v} = saldo do mês; {nome} = a pessoa.
 const FALAS_CAT = {
   filmes:{feliz:['Final feliz: sobrou {v}, {nome}!', 'Esse mês merece continuação.', 'Sucesso de bilheteria: {v} no azul.', 'Cena pós-créditos: ainda tem {v} na conta.', 'Roteiro perfeito este mês, {nome}.'],
     ok:['O enredo segue equilibrado, {nome}.', 'Nem drama, nem comédia: tudo no eixo.', 'Próxima cena: anotar os gastos de hoje.', 'Suspense leve nas contas. Sigo de olho.', 'Meio do filme, tudo sob controle.'],
@@ -456,6 +457,6 @@ const FALAS_TEMA = {
   pomagico:['Um punhado de brilho e {v} de sobra!', 'Um tilintar: contas em dia.', 'Faltou pó mágico: {v} no vermelho.'],
   supercao:['Super latido de alegria: {v}!', 'De guarda, e tudo calmo.', 'Sem superpoder hoje: faltam {v}.'],
   cacadores:['Licença de caçador: {v} conquistados!', 'Prova em andamento, sem tropeços.', 'Reprovado nesta fase: faltam {v}.'],
-  ninja:['Tigela cheia: {v} de sobra!', 'Caldo quente, contas em dia.', 'Tigela vazia: faltam {v}.'],
+  ninja:['Golpe silencioso: {v} de sobra!', 'Passos leves, contas em dia.', 'A bomba de fumaça falhou: faltam {v}.'],
   espada:['Andar concluído: {v} de recompensa!', 'Vida cheia, seguimos no jogo.', 'Barra de vida baixa: faltam {v}.']
 };
