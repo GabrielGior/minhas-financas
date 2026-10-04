@@ -105,6 +105,7 @@ const CENAS = {
   supercao:['cidade', 'sol', 'raios', 'vel', 'lado'], cacadores:['serras', 'sol', 'folhas', 'vel', 'sobe'], ninja:['templo', 'sol', 'folhas', 'vel', 'lado'],
   espada:['castelo', 'duasluas', 'quadrados', 'tec', 'zoom']
 };
+Object.assign(CENAS, typeof CENAS_NOVAS === 'undefined' ? {} : CENAS_NOVAS); // as dos temas de js/temas2.js
 const cenaDe = k => CENAS[k] || ['serras', 'sol', 'estrelas', 'cai', 'sobe'];
 // Números "sorteados" sempre iguais para o mesmo tema e a mesma partícula: a cena não muda a cada redesenho.
 const cenaRnd = (k, i, j) => { let h = 2166136261; for (const ch of k + '|' + i + '|' + j) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return ((h >>> 0) % 10000) / 10000; };
