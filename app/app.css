@@ -821,3 +821,20 @@ html[data-troca=gira] #app.enter{animation:trGira .38s ease-out;transform-origin
 .graf .chart.linha small{height:24px;line-height:24px}
 .graf .chart.linha .col.atual::after{display:none}
 .graf .chart.linha .col.atual small{color:var(--brand)}
+/* 1.61: ganhos e gastos do ano em curvas suaves (linha cheia + pontilhada, anel e etiqueta no mês em destaque) */
+.grafTit{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:14px}
+.grafTit span{font-weight:600;letter-spacing:0}
+.graf .chart.curva{height:210px;gap:0;align-items:stretch;margin-top:0}
+.graf .chart.curva svg{position:absolute;left:0;top:0;width:100%;height:calc(100% - 26px);overflow:visible;pointer-events:none}
+.graf .chart.curva .col{padding:0;gap:0;border-radius:10px;background:none}
+.graf .chart.curva .bars{display:block;position:relative;flex:1;width:100%}
+.graf .chart.curva .anel{position:absolute;left:50%;width:16px;height:16px;max-width:none;min-height:0;border-radius:50%;transform:translate(-50%,50%);background:var(--card);border:3.5px solid var(--brand);box-sizing:border-box;z-index:2}
+.graf .chart.curva .dica{position:absolute;left:50%;transform:translate(-50%,-16px);z-index:3;white-space:nowrap;padding:6px 11px;border-radius:10px;background:var(--text);color:var(--card);font-size:12.5px;font-weight:600;pointer-events:none}
+.graf .chart.curva .dica.baixo{transform:translate(-50%,calc(100% + 16px))}
+.graf .chart.curva .dica.esq{left:0;transform:translate(0,-16px)}
+.graf .chart.curva .dica.esq.baixo{transform:translate(0,calc(100% + 16px))}
+.graf .chart.curva .dica.dir{left:auto;right:0;transform:translate(0,-16px)}
+.graf .chart.curva .dica.dir.baixo{transform:translate(0,calc(100% + 16px))}
+.graf .chart.curva small{height:26px;line-height:30px;font-size:11.5px;text-transform:lowercase}
+.graf .chart.curva .col.atual::after{display:none}
+.graf .chart.curva .col.sel small,.graf .chart.curva .col.atual small{color:var(--brand);font-weight:700}

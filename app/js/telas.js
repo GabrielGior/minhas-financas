@@ -125,23 +125,25 @@ function viewResumo(){
   planejar: () => planHtml(),
   saldo: () => `<div class="hero"><small>Saldo de ${y}</small><div class="big">${fmt(tin - tout)}</div>
     <div class="row cores"><div><small>Ganho total</small><b class="hIn">${fmt(tin)}</b></div><div><small>Gasto total</small><b class="hOut">${fmt(tout)}</b></div></div></div>`,
-  // Ganhos e gastos mês a mês, em gráfico de linha: totais do ano no topo, uma linha para os ganhos (com o rendimento
-  // dos investimentos) e outra para os gastos, um ponto por mês; os meses futuros ficam tracejados. Tocar num mês
-  // mostra os números dele. O desenho das linhas é um SVG esticado atrás das colunas (que continuam recebendo o toque).
-  grafico: () => { const ci = months.includes(curYM) ? months.indexOf(curYM) : y < now.getFullYear() ? 11 : 0, gan = ins.map((v, i) => v + yields[i]);
-    const linha = (vals, cor) => { const p = vals.map((v, i) => `${i * 10 + 5},${(100 - v / max * 100).toFixed(2)}`), tr = 'fill="none" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"';
-      return `<polygon points="5,100 ${p.join(' ')} 115,100" fill="${cor}" opacity=".1"/><polyline points="${p.slice(0, ci + 1).join(' ')}" stroke="${cor}" stroke-width="2.6" ${tr}/>`
-        + (ci < 11 ? `<polyline points="${p.slice(ci).join(' ')}" stroke="${cor}" stroke-width="2" stroke-dasharray="5 5" opacity=".55" ${tr}/>` : ''); };
-    return `<h2>Ganhos e gastos de ${y}</h2><div class="card graf">
-    <div class="grafTopo">
-      <div><small><i class="dot" style="background:var(--in)"></i>Ganhos</small><b class="in">${fmtCurto(tin)}</b></div>
-      <div><small><i class="dot" style="background:var(--out)"></i>Gastos</small><b class="out">${fmtCurto(tout)}</b></div>
-      <div><small>${tin - tout < 0 ? 'Faltou' : 'Sobrou'}</small><b class="${tin - tout < 0 ? 'out' : ''}">${fmtCurto(Math.abs(tin - tout))}</b></div></div>
-    <div class="chart linha">${chartGrid(max)}<svg viewBox="0 0 120 100" preserveAspectRatio="none" aria-hidden="true">${linha(gan, 'var(--in)')}${linha(outs, 'var(--out)')}</svg>
-      ${months.map((m,i) => `<div class="col ${i === si ? 'sel' : ''}${m === curYM ? ' atual' : ''}${m > curYM ? ' fut' : ''}" onclick="state.sel='${state.sel === m ? '' : m}';render()"><div class="bars">
-        <i class="pt gan" style="bottom:${gan[i] / max * 100}%"></i><i class="pt gas" style="bottom:${outs[i] / max * 100}%"></i></div>
-      <small>${MESES[i].slice(0,3)}</small></div>`).join('')}</div>
-    <div class="legend" style="margin-top:10px"><span><i class="dot" style="background:var(--in)"></i>Ganhos${tyield ? ' (com rendimento)' : ''}</span><span><i class="dot" style="background:var(--out)"></i>Gastos</span>${ci < 11 ? '<span>- - -  previsto</span>' : ''}</div>
+  // Ganhos e gastos mês a mês, em curvas suaves: a linha cheia (cor do tema, com a área preenchida em degradê) são os
+  // ganhos, com o rendimento dos investimentos; a pontilhada vermelha são os gastos. O mês tocado (ou, sem toque, o mês
+  // atual) ganha um anel na linha dos ganhos e uma etiqueta com o valor. O desenho é um SVG esticado atrás das colunas.
+  grafico: () => { const gan = ins.map((v, i) => v + yields[i]), alt = v => v / max * 90, mi = si >= 0 ? si : months.indexOf(curYM);
+    const lim = v => Math.max(0, Math.min(100, v)).toFixed(2);
+    const curva = vals => { const p = vals.map((v, i) => [i * 10 + 5, 100 - alt(v)]);
+      return p.map(([x, yy], i) => { if (!i) return `M${x},${lim(yy)}`; const a = p[i - 2] || p[i - 1], b = p[i - 1], d = p[i + 1] || p[i];
+        return `C${(b[0] + (x - a[0]) / 6).toFixed(2)},${lim(b[1] + (yy - a[1]) / 6)} ${(x - (d[0] - b[0]) / 6).toFixed(2)},${lim(yy - (d[1] - b[1]) / 6)} ${x},${lim(yy)}`; }).join(''); };
+    const tr = 'fill="none" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"', cg = curva(gan);
+    return `<div class="card graf"><div class="grafTit">Ganhos e gastos por mês<span>${y}</span></div>
+    <div class="chart curva"><svg viewBox="0 0 120 100" preserveAspectRatio="none" aria-hidden="true">
+        <defs><linearGradient id="grafDeg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--brand);stop-opacity:.38"/><stop offset="1" style="stop-color:var(--brand);stop-opacity:0"/></linearGradient></defs>
+        ${[25, 50, 75].map(g => `<line x1="0" x2="120" y1="${g}" y2="${g}" stroke="var(--line)" stroke-width="1" vector-effect="non-scaling-stroke"/>`).join('')}
+        <path d="${cg}L115,100L5,100Z" fill="url(#grafDeg)"/><path d="${cg}" stroke="var(--brand)" stroke-width="3.5" ${tr}/>
+        <path d="${curva(outs)}" stroke="var(--out)" stroke-width="3.5" stroke-dasharray="0.1 8" ${tr}/></svg>
+      ${months.map((m,i) => `<div class="col ${i === si ? 'sel' : ''}${m === curYM ? ' atual' : ''}" onclick="state.sel='${state.sel === m ? '' : m}';render()"><div class="bars">
+        ${i === mi ? `<i class="anel" style="bottom:${alt(gan[i])}%"></i><span class="dica${alt(gan[i]) > 62 ? ' baixo' : ''}${i < 2 ? ' esq' : i > 9 ? ' dir' : ''}" style="bottom:${alt(gan[i])}%">${MESES[i].slice(0,3)} · ${fmtCurto(gan[i])}</span>` : ''}</div>
+      <small>${[0, 3, 6, 9, 11].includes(i) || i === mi ? MESES[i].slice(0,3) : ''}</small></div>`).join('')}</div>
+    <div class="legend" style="margin-top:8px"><span><i class="dot" style="background:var(--brand)"></i>Ganhos${tyield ? ' (com rendimento)' : ''}</span><span><i class="dot" style="background:var(--out)"></i>Gastos</span></div>
     ${si < 0 ? '<div class="hint">Toque em um mês para ver os valores.</div>' : `
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)"><b style="text-transform:capitalize">${monthName(months[si])}</b>
       <div class="grid2" style="margin-top:8px;row-gap:8px">
