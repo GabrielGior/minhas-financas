@@ -31,12 +31,23 @@ function openGrpOrder(){
 }
 function grpMove(i, d){ const o = db.prefs.grpOrder; [o[i], o[i + d]] = [o[i + d], o[i]]; db.cfgMod = Date.now(); save(); render(); openGrpOrder(); }
 // Gráfico de rosca. parts = [[cor, valor], ...]
-function donut(parts, total){
+// Dia do mês de um gasto (para o calendário do Resumo e a ordenação das listas): o dia lançado ou, numa conta fixa,
+// o do vencimento; 0 = sem dia informado.
+const diaDe = (x, m) => x.kind === 'installment' ? +x.day || 0 : x.fixed ? (x.due ? dueDay(x, m) : 0) : +x.day || 0;
+// Gastos do mês por dia: posição = dia (a 0 junta os sem dia); cada uma {v: total, itens}.
+function gastosPorDia(m){
+  const por = [...Array(daysIn(m) + 1)].map(() => ({v:0, itens:[]}));
+  for (const x of expensesOf(m)){ const d = por[Math.min(diaDe(x, m), por.length - 1)]; d.v += x.value; d.itens.push(x); }
+  return por;
+}
+// Valor curto para os cartões de destaque: "R$ 3.975" até dez mil, "R$ 28,8 mil" acima.
+const fmtCurto = v => hideVals ? MASK : Math.abs(v) < 1e4 ? 'R$ ' + Math.round(v).toLocaleString('pt-BR') : 'R$ ' + v.toLocaleString('pt-BR', {notation:'compact', maximumFractionDigits:1});
+function donut(parts, total, rotulo = 'Total'){
   let acc = 0;
   const ring = (color, p, off) => `<circle cx="21" cy="21" r="15.915" fill="none" stroke="${color}" stroke-width="6" stroke-dasharray="${p} ${100 - p}" stroke-dashoffset="${off}"/>`;
   return `<svg viewBox="0 0 42 42" style="width:160px;height:160px;display:block;margin:0 auto 4px">${ring('var(--line)', 100, 25)}
     ${parts.map(([color, v]) => { const p = v / total * 100, s = ring(color, p, 25 - acc); acc += p; return s; }).join('')}
-    <text x="21" y="19.6" text-anchor="middle" font-size="2.8" fill="var(--muted)">Total</text>
+    <text x="21" y="19.6" text-anchor="middle" font-size="2.8" fill="var(--muted)">${rotulo}</text>
     <text x="21" y="24.2" text-anchor="middle" font-size="3.6" font-weight="700" fill="var(--text)">${hideVals ? MASK : 'R$ ' + total.toLocaleString('pt-BR', {notation:'compact', maximumFractionDigits:1})}</text></svg>`;
 }
 
@@ -65,6 +76,28 @@ function viewResumo(){
   mascote: () => db.prefs.fun ? funMascot() : '',
   conquistas: () => db.prefs.fun ? funBadges() : '',
   atalhos: () => `<div class="quick">${[['expenses','receipt','Gasto'],['incomes','income','Ganho'],['investments','trend','Investir']].map(([col, ic, t]) => `<button onclick="openForm('${col}')"><span>${I(ic, 20)}</span>+ ${t}</button>`).join('')}</div>`,
+  // Mês e ano lado a lado, no mesmo cartão de destaque: o gasto em cima, os ganhos embaixo. Tocar leva aos gastos do mês.
+  destaque: () => { const mi = totalIn(curYM), mo = totalOut(curYM); return `<div class="hero2">
+    <div class="hero" onclick="goMonth('${curYM}')"><small>Gastos do mês</small><div class="big">${fmtCurto(mo)}</div><small>▲ ${fmtCurto(mi)} de ganhos</small></div>
+    <div class="hero ano"><small>Gastos de ${y}</small><div class="big">${fmtCurto(tout)}</div><small>▲ ${fmtCurto(tin)} de ganhos</small></div></div>`; },
+  // Rosca do mês atual por categoria, com o total no centro e as maiores categorias ao lado.
+  rosca: () => { const g = {}, lista = expensesOf(curYM); lista.forEach(e => g[e.cat] = (g[e.cat] || 0) + e.value);
+    const cs = Object.entries(g).sort((a, b) => b[1] - a[1]), tot = sum(lista, x => x.value), top = cs.slice(0, 5), resto = sum(cs.slice(5), c => c[1]);
+    const cor = (k, i) => (CAT_GASTO[k] || CAT_GASTO.outros)[2] || shade(i, top.length);
+    return `<h2>Para onde foi o dinheiro <button onclick="goMonth('${curYM}')">Ver gastos</button></h2>${cs.length ? `<div class="card rosca">
+      ${donut([...top.map(([k, v], i) => [cor(k, i), v]), ...(resto ? [['var(--muted)', resto]] : [])], tot, cap(monthName(curYM).split(' ')[0]))}
+      <div>${top.map(([k, v], i) => `<div class="leg"><i class="dot" style="background:${cor(k, i)}"></i><span>${(CAT_GASTO[k] || CAT_GASTO.outros)[1]}</span><b>${Math.round(v / tot * 100)}%</b></div>`).join('')}
+        ${resto ? `<div class="leg"><i class="dot" style="background:var(--muted)"></i><span>Outras</span><b>${Math.round(resto / tot * 100)}%</b></div>` : ''}</div></div>`
+    : `<div class="hint" style="margin:0 4px 12px">Nenhum gasto em ${monthName(curYM)}.</div>`}`; },
+  // Calendário do mês atual: cada dia fica mais escuro quanto mais se gastou nele. Tocar num dia mostra o que saiu.
+  dias: () => { const por = gastosPorDia(curYM), max = Math.max(...por.slice(1).map(d => d.v)), n = daysIn(curYM), [ay, am] = curYM.split('-').map(Number), vazio = new Date(ay, am - 1, 1).getDay();
+    const sel = state.dia && state.dia <= n ? por[state.dia] : null;
+    return `<h2>Dias de ${monthName(curYM).split(' ')[0]}</h2><div class="card">
+      <div class="cal">${['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map(d => `<small>${d}</small>`).join('')}${'<span></span>'.repeat(vazio)}
+      ${[...Array(n)].map((_, i) => { const d = i + 1, v = por[d].v, nivel = !v || !max ? 0 : Math.max(1, Math.ceil(v / max * 4));
+        return `<button class="n${nivel}${d === now.getDate() ? ' hoje' : ''}${state.dia === d ? ' sel' : ''}" onclick="state.dia=${state.dia === d ? 0 : d};render()" aria-label="Dia ${d}: ${hideVals ? MASK : fmt(v)}">${d}</button>`; }).join('')}</div>
+      ${sel ? `<div class="calSel"><b>Dia ${state.dia}: ${fmt(sel.v)}</b>${sel.itens.length ? sel.itens.map(x => `<div class="leg"><span>${esc(x.desc)}</span><b>${fmt(x.value)}</b></div>`).join('') : '<div class="hint" style="margin:2px 0 0">Nenhum gasto neste dia.</div>'}</div>`
+      : `<div class="hint">Quanto mais escuro, mais gasto no dia. Toque num dia para ver o que saiu.${por[0].v ? ` Sem dia informado: ${fmt(por[0].v)}.` : ''}</div>`}</div>`; },
   alertas: () => `${bills.length ? `<div class="card"><b>${I('calendar')} Contas a vencer</b>${bills.map(({x, diff}) => `
     <div class="item" style="cursor:default"><div class="mid"><b>${esc(x.desc)}</b>
       <small class="${diff < 0 ? 'out' : diff <= 2 ? 'warn' : ''}">${diff < 0 ? `venceu há ${-diff} dia${diff < -1 ? 's' : ''}` : diff === 0 ? 'vence hoje' : `vence em ${diff} dia${diff > 1 ? 's' : ''}`} · dia ${dueDay(x, curYM)}</small></div>
@@ -246,20 +279,22 @@ const ganhosSeg = () => `<div class="seg">${[['todos','Ganhos'],['vale','Vales']
 // Uma linha da lista de ganhos.
 function incRow(x){ const c = CAT_GANHO[x.cat] || CAT_GANHO.outros; return `
     <div class="item" onclick="edit('incomes','${x.id}')">${ico(c)}<div class="mid"><b>${esc(x.desc)}</b>
-    <small>${c[1]} · ${x.fixed === 'y' ? 'todo mês de ' + MESES[+x.start.slice(5) - 1] + ', ' : ''}${x.fixed ? 'desde ' + (x.fixed === 'y' ? x.start.slice(0,4) : monthName(x.start)) + (x.end ? ' até ' + monthName(x.end) : '') : monthName(x.start)}${bySmall(x)}</small></div>
+    <small>${c[1]}${x.bank ? ' · ' + esc(x.bank) : ''}<span class="tag">${x.fixed === 'y' ? 'anual, em ' + MESES[+x.start.slice(5) - 1] : x.fixed ? 'fixo' : monthName(x.start) + (x.day ? ', dia ' + x.day : '')}</span>${x.fixed ? `<span class="tag">desde ${x.fixed === 'y' ? x.start.slice(0,4) : monthName(x.start)}${x.end ? ' até ' + monthName(x.end) : ''}</span>` : ''}${byTag(x)}</small></div>
     <div class="val in">${fmt(x.value)}</div></div>`; }
+// Ordem das listas de Gastos e Ganhos: db.prefs.ordem = 'ant' (mais antigo primeiro) ou qualquer outro valor (mais
+// recente primeiro, o padrão). O botão alterna.
+const ordemBtn = () => `<button onclick="setOrdem()">${db.prefs.ordem === 'ant' ? '↑ Mais antigo' : '↓ Mais recente'}</button>`;
+function setOrdem(){ db.prefs.ordem = db.prefs.ordem === 'ant' ? 'rec' : 'ant'; db.cfgMod = Date.now(); save(); render(); }
 function viewGanhos(){
   if (state.isub === 'vale') return `${head('Ganhos', 'ganhos')}${ganhosSeg()}${viewVales('ganhos')}`;
   const naoVale = db.incomes.filter(x => !valeGanho(x));
-  const row = x => { const c = CAT_GANHO[x.cat] || CAT_GANHO.outros; return `
-    <div class="item" onclick="edit('incomes','${x.id}')">${ico(c)}<div class="mid"><b>${esc(x.desc)}</b>
-    <small>${c[1]} · ${x.fixed === 'y' ? 'todo mês de ' + MESES[+x.start.slice(5) - 1] + ', ' : ''}${x.fixed ? 'desde ' + (x.fixed === 'y' ? x.start.slice(0,4) : monthName(x.start)) + (x.end ? ' até ' + monthName(x.end) : '') : monthName(x.start)}${bySmall(x)}</small></div>
-    <div class="val in">${fmt(x.value)}</div></div>`; };
-  const fixed = naoVale.filter(isMonthly), yearly = naoVale.filter(x => x.fixed === 'y'), once = naoVale.filter(x => !x.fixed).sort((a,b) => b.start.localeCompare(a.start));
+  const row = incRow, sinal = db.prefs.ordem === 'ant' ? -1 : 1, quando = x => x.start + String(x.day || 0).padStart(2, '0');
+  const ordena = l => [...l].sort((a, b) => sinal * quando(b).localeCompare(quando(a)));
+  const fixed = ordena(naoVale.filter(isMonthly)), yearly = ordena(naoVale.filter(x => x.fixed === 'y')), once = ordena(naoVale.filter(x => !x.fixed));
   const B = {
   total: () => `<div class="hero"><small>Ganhos em ${monthName(curYM)}</small><div class="big">${fmt(totalIn(curYM))}</div>
     <small>Fixos mensais: ${fmt(sum(fixed.filter(x => activeIn(x,curYM)), x => x.value))}</small></div>`,
-  fixos: () => `<h2>Fixos (todo mês)</h2>
+  fixos: () => `<h2>Fixos (todo mês) ${ordemBtn()}</h2>
   ${fixed.length ? `<div class="card">${fixed.map(row).join('')}</div>` : empty('briefcase','Cadastre seu salário e outros ganhos fixos.<br>Eles entram automaticamente em todos os meses.')}`,
   anuais: () => `<h2>Anuais (uma vez por ano)</h2>
   ${yearly.length ? `<div class="card">${yearly.map(row).join('')}</div>` : empty('gift','13º, férias, bônus…<br>Escolha o mês em que você recebe.')}`,
@@ -339,7 +374,7 @@ function viewGastos(){
       db.accounts.length && cardAccount(bank) && 'Paga pela conta ' + esc(cardAccount(bank))].filter(Boolean).map(t => `<small style="display:block">${t}</small>`).join('')}
     ${db.accounts.length && !cardAccount(bank) ? `<small class="warn" style="display:block">${I('alert', 13)} Escolha a conta que paga esta fatura; sem isso ela não é descontada de nenhuma conta.</small>` : ''}</div><div class="val out">${fmt(v)}</div></div>`).join('')}
     ${inv.some(([bank]) => db.accounts.length && !cardAccount(bank)) ? `<div class="btns"><button class="btn primary" onclick="openForm('cardClose', db.cardClose)">Escolher a conta que paga</button></div>` : ''}</div>` : '',
-  lancamentos: () => `<h2>Lançamentos <button onclick="openGrpOrder()">Ordenar grupos</button></h2>
+  lancamentos: () => `<h2>Lançamentos <span>${ordemBtn()} · <button onclick="openGrpOrder()">Grupos</button></span></h2>
   <div class="card" style="padding:12px">
     <div class="search">${I('search')}<input id="q" type="text" placeholder="Buscar por descrição" value="${esc(state.q)}" autocomplete="off" oninput="state.q=this.value;this.nextElementSibling.hidden=!this.value;drawExpList()"><button type="button" class="iconbtn" ${state.q ? '' : 'hidden'} onclick="clearSearch()" aria-label="Limpar busca">${I('close')}</button></div>
     <div class="filters">
@@ -369,7 +404,9 @@ function expListHtml(){
   if (!all.length) return empty('receipt','Nenhum gasto em ' + monthName(m) + '.<br>Toque em + para adicionar.');
   if (!list.length) return empty('search','Nenhum lançamento com esses filtros.');
   const filt = q || state.fcat || state.fbank || state.fpay || state.ftag, open = state.gopen || (state.gopen = {});
-  const gs = db.prefs.grpOrder.map(k => [k, GRUPOS[k][0], list.filter(GRUPOS[k][1])]);
+  // Dentro de cada grupo, pela data: mais recente ou mais antigo primeiro (db.prefs.ordem); os sem dia ficam no fim.
+  const sinal = db.prefs.ordem === 'ant' ? -1 : 1, porDia = l => [...l].sort((a, b) => { const da = diaDe(a, m), dd = diaDe(b, m); return !da - !dd || sinal * (dd - da); });
+  const gs = db.prefs.grpOrder.map(k => [k, GRUPOS[k][0], porDia(list.filter(GRUPOS[k][1]))]);
   // Todos os grupos começam abertos; tocar no título fecha (fica só o total). Numa busca ou filtro, todo grupo com resultado abre.
   return gs.map(([k, t, g]) => { if (!g.length) return ''; const on = filt ? true : open[k] ?? true; return `
     <button type="button" class="grpHead ${on ? 'on' : ''}" ${filt ? 'disabled' : `onclick="state.gopen.${k}=${!on};drawExpList()"`} aria-expanded="${on}"><b>${t}</b><small>${g.length} · ${fmt(sum(g, x => x.value))}</small>${filt ? '' : I('chev', 16)}</button>

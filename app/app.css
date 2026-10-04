@@ -543,3 +543,33 @@ html[data-fun=on] .ico:active,html[data-fun=on] .item:active .ico{animation:pigP
 .icoGrid.t3{grid-template-columns:repeat(3,1fr);margin-bottom:10px}
 .temaM{display:flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:20px}
 .icoGrid.t3 small{text-align:center;line-height:1.2}
+
+/* Resumo: mês e ano lado a lado no mesmo cartão de destaque; rosca do mês com a legenda ao lado; calendário de dias. */
+.hero2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.hero2 .hero{margin:0;padding:15px 14px;cursor:pointer}
+.hero2 .hero .big{font-size:23px;margin:1px 0 2px;white-space:nowrap}
+.hero2 .hero small{font-size:12.5px}
+.hero2 .hero.ano{background:linear-gradient(135deg,var(--hero2),var(--hero1));cursor:default}
+.rosca{display:flex;align-items:center;gap:14px}
+.rosca svg{flex:none;width:146px!important;height:146px!important;margin:0!important}
+.rosca>div{flex:1;min-width:0}
+.leg{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13.5px}
+.leg span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.leg b{font-weight:600;color:var(--muted)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal small{text-align:center;color:var(--muted);font-size:11px;font-weight:600}
+.cal button{aspect-ratio:1;border-radius:9px;font-size:12px;font-weight:600;color:var(--muted);background:var(--bg)}
+.cal .n1{background:color-mix(in srgb,var(--out) 30%,var(--card));color:var(--text)}
+.cal .n2{background:color-mix(in srgb,var(--out) 52%,var(--card));color:var(--text)}
+.cal .n3{background:color-mix(in srgb,var(--out) 76%,var(--card));color:#fff}
+.cal .n4{background:var(--out);color:#fff}
+.cal .hoje{outline:2px solid var(--brand);outline-offset:1px}
+.cal .sel{outline:2px solid var(--text);outline-offset:1px}
+.calSel{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+/* Assistente: botão flutuante redondo; sobe quando a tela também tem o "+". */
+.fab.chat{border-radius:50%;width:52px;height:52px;display:flex;align-items:center;justify-content:center;background:var(--card);color:var(--brand);border:1.5px solid var(--line);box-shadow:var(--shadow);right:max(21px,calc(50% - 239px))}
+.fab.chat.alto{bottom:calc(156px + env(safe-area-inset-bottom))}
+.fab.chat[hidden]{display:none}
+h1 .volta{display:flex;align-items:center;gap:4px}
+html[data-fun=on] .fab.chat{animation:none}
+@media (min-width:700px){.fab.chat{right:max(21px,calc(50% - 479px))}}

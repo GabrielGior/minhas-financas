@@ -12,7 +12,7 @@ const GUIA = [
     ['Etiquetas', 'Novo gasto › Mais opções › Etiquetas', 'Escreva palavras separadas por vírgula (ex.: viagem). Depois filtre por etiqueta na lista de lançamentos.'],
     ['Dividir um gasto com alguém', 'Novo gasto › Mais opções › Dividir com', 'Informe o nome e a parte da outra pessoa. O app mostra em Gastos › "A receber" e você marca quando receber.'],
     ['Comprovante por foto', 'Novo gasto › Mais opções › Comprovante', 'Tire uma foto ou escolha da galeria. No Android, o app tenta ler o valor e a data da foto.'],
-    ['Lançar escrevendo ou falando', 'Aba Assistente', 'Escreva "mercado 45 nubank crédito" ou toque no microfone (só no Android). O app mostra o que entendeu e pede confirmação.'],
+    ['Lançar escrevendo ou falando', 'Botão redondo do assistente, em qualquer tela', 'Escreva "mercado 45 nubank crédito" ou toque no microfone (só no Android). O app mostra o que entendeu e pede confirmação.'],
     ['Sugestões pelos avisos do banco (só no Android)', 'Configurações › Lançamento automático', 'Ligue e autorize o acesso às notificações. Compras e Pix avisados pelo banco viram sugestões no Resumo.'],
     ['Importar extrato', 'Aba Gastos › Importar extrato', 'Escolha um arquivo OFX ou CSV do banco, confira os lançamentos e importe.'],
     ['Editar, excluir e desfazer', 'Toque num lançamento; ou deslize para a esquerda', 'Depois de excluir ou salvar uma alteração aparece "Desfazer" por alguns segundos. O que foi excluído fica 30 dias na Lixeira.']]],
@@ -24,9 +24,10 @@ const GUIA = [
     ['Planejamento', 'Aba Resumo › Planejamento', 'Reserva de emergência, lista de assinaturas, dívidas e simulador de quitação.'],
     ['Gastos por categoria, banco e pagamento', 'Aba Resumo', 'Gráfico e listas do ano escolhido.'],
     ['Personalizar o Resumo', 'Botão de ajustes no topo do Resumo', 'Escolha quais blocos aparecem e em que ordem. As outras abas têm o mesmo botão.'],
+    ['Gastos do mês e do ano, rosca e calendário', 'Aba Resumo', 'No topo, os gastos do mês e do ano lado a lado. Abaixo, a rosca mostra para onde foi o dinheiro do mês e o calendário pinta mais escuro os dias com mais gasto; toque num dia para ver o que saiu.'],
     ['Esconder valores', 'Botão do olho no topo', 'Troca os valores por •••• para abrir o app em público.']]],
   ['Gastos', [
-    ['Grupos da lista', 'Aba Gastos › Lançamentos', 'Assinaturas, Fixos e anuais, Parceladas e Ocasionais. Toque no título para fechar um grupo e em "Ordenar grupos" para mudar a ordem.'],
+    ['Grupos da lista', 'Aba Gastos › Lançamentos', 'Assinaturas, Fixos e anuais, Parceladas e Ocasionais. Toque no título para fechar um grupo, em "Grupos" para mudar a ordem deles e em "Mais recente" para inverter a ordem dos lançamentos (também em Ganhos).'],
     ['Busca e filtros', 'Aba Gastos › Lançamentos', 'Busque pela descrição e filtre por categoria, banco, pagamento e etiqueta. "Buscar em todos os meses" procura em tudo.'],
     ['Trocar de mês', 'Setas do mês, ou deslize a tela para os lados', 'Toque no nome do mês para escolher outro direto.'],
     ['Marcar conta como paga', 'Deslize o lançamento para a direita, ou toque no círculo', 'Vale para gastos fixos com dia de vencimento.'],
@@ -43,7 +44,7 @@ const GUIA = [
     ['Metas', 'Aba Investir › Metas', 'Crie a meta com valor e prazo e use "Guardar" para registrar o que já juntou.'],
     ['Taxas de referência', 'Configurações › Dados e ajustes › Taxas de referência', 'CDI, Selic e IPCA vêm do Banco Central; dá para ajustar à mão.']]],
   ['Assistente e notícias', [
-    ['Perguntas sobre os seus dados', 'Aba Assistente', 'Pergunte "quanto gastei com mercado este mês?" ou "qual meu saldo?". As contas são feitas no aparelho, sem enviar nada.'],
+    ['Perguntas sobre os seus dados', 'Botão redondo do assistente, em qualquer tela', 'Pergunte "quanto gastei com mercado este mês?" ou "qual meu saldo?". As contas são feitas no aparelho, sem enviar nada.'],
     ['Notícias (só no Android)', 'Aba Notícias', 'Manchetes de economia; tocar abre a notícia no navegador.']]],
   ['Conta e segurança', [
     ['Sincronização com a conta Google', 'Configurações › Conta e sincronização', 'Os dados ficam na pasta privada do app no seu Google Drive e sincronizam entre os aparelhos. "Versões salvas" restaura uma cópia dos últimos 30 dias.'],

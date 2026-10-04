@@ -255,7 +255,7 @@ function sendChat(text){
 }
 function viewChat(){
   return `
-  ${head('Assistente', 'chat')}
+  <h1><span class="volta"><button class="iconbtn" onclick="sairChat()" aria-label="Voltar">‹</button>Assistente</span><span>${eyeBtn()}</span></h1>
   <div id="chatLog">${chatHtml()}</div>
   <div style="height:70px"></div>
   <form class="chatbar" onsubmit="sendChat();return false">
@@ -272,7 +272,7 @@ addEventListener('scroll', () => {
   const y = scrollY;
   document.getElementById('topbar').classList.toggle('show', y > 110);
   if (Math.abs(y - lastScroll) < 6) return;
-  document.getElementById('fab').classList.toggle('away', y > lastScroll && y > 80);
+  for (const id of ['fab', 'fabChat']) document.getElementById(id).classList.toggle('away', y > lastScroll && y > 80);
   lastScroll = y;
 }, {passive:true});
 function render(){
@@ -283,6 +283,9 @@ function render(){
   const noFab = ['resumo', 'noticias', 'chat'].includes(state.tab);
   document.getElementById('fab').hidden = noFab;
   document.getElementById('fab').classList.remove('away');
+  // Assistente: botão flutuante em todas as telas, acima do "+" quando ele existe; some dentro do próprio assistente.
+  const fc = document.getElementById('fabChat');
+  fc.hidden = state.tab === 'chat'; fc.classList.remove('away'); fc.classList.toggle('alto', !noFab);
   document.getElementById('app').classList.toggle('hasFab', !noFab);
   document.getElementById('app').classList.toggle('cols', state.tab !== 'chat' && state.tab !== 'noticias'); // tela larga: duas colunas
   drawTopbar();
@@ -312,7 +315,9 @@ function renderIn(){
   a.classList.remove('enter', 'fadeIn'); void a.offsetWidth; a.classList.add(state.tab === 'chat' ? 'fadeIn' : 'enter'); // reinicia a animação
   funCount();
 }
-function go(t){ state.tab = t; renderIn(); scrollTo(0,0); if (t === 'invest') refreshQuotes(); }
+// antesChat = a tela de onde o assistente foi aberto: é para ela que o "voltar" do assistente leva.
+function go(t){ if (t === 'chat' && state.tab !== 'chat') state.antesChat = state.tab; state.tab = t; renderIn(); scrollTo(0,0); if (t === 'invest') refreshQuotes(); }
+const sairChat = () => go(visTabs().includes(state.antesChat) ? state.antesChat : visTabs()[0]);
 // Botão "voltar" do Android (chamado pelo APK). Retorna false quando o app deve fechar.
 function onBack(){
   // Fecha a camada de cima primeiro: foto ampliada, diálogo, convite do bloqueio, seletor, folha, e só então a aba.
@@ -322,6 +327,7 @@ function onBack(){
   if (!document.getElementById('lockAsk').hidden){ answerLock(false); return true; }
   if (pickerOpen()){ closePicker(); return true; }
   if (sheetOpen()){ closeForm(); return true; }
+  if (state.tab === 'chat'){ sairChat(); return true; }
   if (state.tab !== visTabs()[0]){ go(visTabs()[0]); return true; }
   return false;
 }

@@ -17,7 +17,7 @@ function logErr(onde, e){
 }
 addEventListener('error', e => logErr('erro na tela', (e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0)));
 addEventListener('unhandledrejection', e => logErr('promessa', e.reason));
-const APP_VERSION = '1.46'; // manter igual ao versionName do build.gradle
+const APP_VERSION = '1.47'; // manter igual ao versionName do build.gradle
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 // Ícones do app: desenhos em dois tons (traço + preenchimento translúcido nas partes com class="d"),
 // todos numa grade de 24×24. I('nome', tamanho) devolve o <svg>; a cor vem do texto ao redor (currentColor).
@@ -362,7 +362,8 @@ let theme = {h:245, s:80, dark:false}; // preenchido por applyTheme
 const shade = (i, n) => hslHex(theme.h, theme.s * .9, theme.dark ? 76 - i * 44 / Math.max(n, 1) : 34 + i * 44 / Math.max(n, 1));
 const MODES = {auto:'Automático', light:'Claro', dark:'Escuro'};
 // Blocos disponíveis na aba Resumo: [nome, aparece por padrão]. O conteúdo de cada um está em viewResumo.
-const RESUMO = {mascote:['Porquinho (modo divertido)', 1, 1], atalhos:['Atalhos para adicionar', 1, 1], alertas:['Contas a vencer e avisos de orçamento', 1], saldo:['Saldo do ano', 1], grafico:['Gráfico de ganhos e gastos', 1],
+const RESUMO = {mascote:['Porquinho (modo divertido)', 1, 1], atalhos:['Atalhos para adicionar', 1, 1],
+  destaque:['Gastos do mês e do ano', 1, 1], rosca:['Para onde foi o dinheiro no mês', 1, 1], dias:['Dias do mês (quanto mais gasto, mais escuro)', 1, 1], alertas:['Contas a vencer e avisos de orçamento', 1], saldo:['Saldo do ano', 1], grafico:['Gráfico de ganhos e gastos', 1],
   numeros:['Média de gastos e total investido', 1], previsao:['Previsão dos próximos meses', 1], contas:['Contas bancárias', 1], planejar:['Planejamento (reserva, assinaturas, dívidas)', 1], categorias:['Gastos por categoria', 1], bancos:['Gastos por banco', 1],
   pagamentos:['Gastos por forma de pagamento', 1], mes:['Resumo do mês atual', 0], faturas:['Faturas do cartão do mês', 0], parcelas:['Compras parceladas', 0],
   metas:['Metas', 0], invest:['Investimentos', 0], vales:['Vale-refeição e alimentação', 1], conquistas:['Conquistas (modo divertido)', 1]};
@@ -409,7 +410,8 @@ function ensurePrefs(){
   p.tabs = p.tabs.filter(t => TABS[t]).concat(Object.keys(TABS).filter(t => !p.tabs.includes(t)));
 }
 // Na versão web não há aba Notícias: os sites de notícias não deixam o navegador ler os feeds (só o APK consegue).
-const visTabs = () => db.prefs.tabs.filter(t => !db.prefs.tabsOff.includes(t) && !(t === 'noticias' && typeof WEB_APP !== 'undefined' && WEB_APP));
+// O assistente não fica no menu de baixo: abre pelo botão flutuante que aparece em todas as telas (ver render).
+const visTabs = () => db.prefs.tabs.filter(t => t !== 'chat' && !db.prefs.tabsOff.includes(t) && !(t === 'noticias' && typeof WEB_APP !== 'undefined' && WEB_APP));
 const layoutOf = tab => tab === 'resumo' ? db.prefs.resumo : db.prefs.layout[tab];
 // Monta a tela: os blocos ligados da aba, na ordem escolhida. B = {chave: () => html}.
 const blocks = (tab, B) => layoutOf(tab).filter(b => b.on && B[b.k]).map(b => B[b.k]()).join('');
