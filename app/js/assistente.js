@@ -5,8 +5,8 @@
 // o período e os filtros (categoria, banco, forma de pagamento, palavra da descrição) e faz a conta nos dados.
 const CAT_WORDS = {moradia:['moradia','casa','habitacao'], alimentacao:['alimentacao','comida','alimento'], transporte:['transporte','locomocao'], saude:['saude'],
   lazer:['lazer','diversao'], educacao:['educacao','estudo'], compras:['compras'], contas:['assinatura'], emprestimo:['emprestimo']};
-const INC_WORDS = {salario:['salario'], freelance:['freela','extra'], rendimentos:['rendimentos'], va:['vale alimentacao'], vr:['vale refeicao'], vendas:['venda']};
-const PAY_WORDS = {credito:['credito'], debito:['debito'], pix:['pix'], dinheiro:['dinheiro','especie'], boleto:['boleto'], va:['vale alimentacao'], vr:['vale refeicao']};
+const INC_WORDS = {salario:['salario'], freelance:['freela','extra'], rendimentos:['rendimentos'], va:['vale alimentacao'], vr:['vale refeicao'], vt:['vale transporte'], vendas:['venda']};
+const PAY_WORDS = {credito:['credito'], debito:['debito'], pix:['pix'], dinheiro:['dinheiro','especie'], boleto:['boleto'], va:['vale alimentacao'], vr:['vale refeicao'], vt:['vale transporte']};
 const CHAT_STOP = new Set(('quanto quantos quais qual gastei gasto gastos gastar ganhei ganho ganhos esse este essa esta nesse neste desse deste mes meses ano com para por que foi meu minha meus minhas tenho total valor ' +
   'passado atual proximo sobre onde mais maior menos como esta estao pagar paguei recebi tive foram reais ultimo ultimos comparado comparando compare media saldo quero saber dizer mostre mostra').split(' '));
 const CHAT_HINTS = ['Quanto gastei este mês?', 'Quanto gastei com alimentação este mês?', 'Onde gastei mais este ano?', 'Qual meu saldo do ano?',

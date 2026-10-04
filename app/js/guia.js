@@ -35,7 +35,7 @@ const GUIA = [
     ['Faturas e limite do cartão', 'Aba Gastos › Faturas do cartão › Configurar cartões', 'Informe o dia de fechamento, o limite e a conta que paga cada cartão.'],
     ['Comparativo', 'Aba Gastos › Comparativo por categoria', 'Compara o mês com o anterior e com a média de 6 meses.'],
     ['Relatório em PDF e planilha', 'Aba Gastos (fim da tela)', '"Relatório (PDF)" abre a impressão; "Exportar planilha (CSV)" gera um arquivo para Excel.'],
-    ['Vale-refeição e vale-alimentação', 'Aba Gastos › Vales e aba Ganhos › Vales', 'Cadastre o crédito como ganho na categoria do vale (de preferência fixo) e os gastos com a forma de pagamento do vale. Eles ficam separados: não entram nos totais do mês, e o app mostra o saldo de cada vale.'],
+    ['Vales: refeição, alimentação e transporte', 'Aba Gastos › Vales e aba Ganhos › Vales', 'Use "+ Crédito deste vale" para o que entra (de preferência todo mês) e "+ Gasto neste vale" para o que sai. O formulário pede só valor, vale, empresa e descrição. Os vales ficam fora dos totais do mês; toque num vale para ver o saldo e o histórico completo dele.'],
     ['Planilha do Google ligada ao app', 'Aba Gastos (fim da tela) ou Configurações › Dados e ajustes', 'O app cria uma planilha na sua conta. O que você lançar no app aparece nela, e o que escrever nela aparece no app.']]],
   ['Investimentos e metas', [
     ['Cadastrar investimento', 'Aba Investir › botão +', 'Renda fixa: valor, índice (CDI, Selic, IPCA) e percentual. Ações, FIIs e moedas: procure o código e informe quantidade e preço.'],

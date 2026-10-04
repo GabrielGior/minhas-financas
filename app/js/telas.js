@@ -164,8 +164,8 @@ function viewResumo(){
       <div class="stat"><small>Falta pagar (${open.length})</small><b class="out">${fmt(sum(open, p => p.total / p.n * (p.n - p.paid)))}</b></div>
       <div class="stat"><small>Parcelas deste mês</small><b>${fmt(sum(expensesOf(curYM).filter(x => x.kind === 'installment'), x => x.value))}</b></div></div>`
     : '<div class="hint" style="margin:0 4px 12px">Nenhuma compra parcelada em aberto.</div>'}`,
-  vales: () => !(temVale('va') || temVale('vr')) ? '' : `<h2>Vales <button onclick="state.gsub='vale';state.month=curYM;go('gastos')">Ver gastos</button></h2>
-    <div class="card">${Object.keys(VALES).filter(temVale).map(k => { const s = valeSaldo(k); return `<div class="item" style="cursor:default">${ico(CAT_GANHO[k])}<div class="mid"><b>${VALES[k]}</b>
+  vales: () => !temVales() ? '' : `<h2>Vales <button onclick="state.gsub='vale';state.month=curYM;go('gastos')">Ver gastos</button></h2>
+    <div class="card">${Object.keys(VALES).filter(temVale).map(k => { const s = valeSaldo(k); return `<div class="item" onclick="openVale('${k}')">${ico(CAT_GANHO[k])}<div class="mid"><b>${VALES[k]}${valeEmp(k) ? ' · ' + esc(valeEmp(k)) : ''}</b>
       <small>neste mês: entrou ${fmt(sum(valeIn(curYM, k), x => x.value))}, saiu ${fmt(sum(valeOut(curYM, k), x => x.value))}</small></div><div class="val ${s < 0 ? 'out' : ''}">${fmt(s)}</div></div>`; }).join('')}
     <div class="hint">Saldo de cada vale. Fica separado dos ganhos, gastos e do saldo do mês.</div></div>`,
   metas: () => `<h2>Metas <button onclick="go('invest')">Ver todas</button></h2>${goals.length ? `<div class="card">${goals.map(g => `
@@ -218,10 +218,11 @@ function noteUse(t){
   const value = p.hidden ? '' : moneyStr(p.value); // aviso escondido: o valor fica para a pessoa digitar
   if (p.income){ noteDrop(t); return openForm('incomes', null, {vals:{desc:p.desc, value, fixed:'', bank:p.bank, start:p.date.slice(0, 7), day:String(+p.date.slice(8))}, more:true}); }
   // Gasto: antes de abrir, pergunta se saiu do dinheiro normal ou de um vale (os vales ficam separados).
-  pickList('Esse gasto foi pago com…', [['', 'Dinheiro normal (conta, cartão, Pix)'], ['va', VALES.va], ['vr', VALES.vr]], null, pay => {
+  pickList('Esse gasto foi pago com…', [['', 'Dinheiro normal (conta, cartão, Pix)'], ...Object.entries(VALES)], null, pay => {
     if (!bankNotes().some(n => n.t === t)) return; // já lançado ou ignorado
     noteDrop(t);
-    openForm('expenses', null, {vals:{desc:p.desc, value, ...(p.desc ? {cat:guessCat(p.desc)} : {}), bank:pay ? '' : p.bank, ...(pay ? {pay} : {}), start:p.date.slice(0, 7), day:String(+p.date.slice(8))}, more:true});
+    if (pay) return openForm('expenses', null, {vale:true, vals:{desc:p.desc, value, pay, emp:valeEmp(pay), fixed:'', start:p.date.slice(0, 7), day:String(+p.date.slice(8))}, more:true});
+    openForm('expenses', null, {vals:{desc:p.desc, value, ...(p.desc ? {cat:guessCat(p.desc)} : {}), bank:p.bank, start:p.date.slice(0, 7), day:String(+p.date.slice(8))}, more:true});
   });
 }
 async function setAvisos(v){
@@ -261,25 +262,47 @@ function layoutSet(tab, i, op){
 // Para cada vale: o crédito e o gasto do mês e o saldo acumulado. Nada disso entra nos totais do mês.
 function viewVales(lado){
   const m = state.month, gastos = lado === 'gastos', lista = gastos ? valeOut(m) : valeIn(m);
-  const novo = k => gastos ? `openForm('expenses',null,{vals:{pay:'${k}'},more:true})` : `openForm('incomes',null,{vals:{cat:'${k}'}})`;
+  const novo = k => `event.stopPropagation();novoVale('${lado}','${k}')`;
   return `<div class="nav"><button onclick="state.month=addMonths(state.month,-1);renderIn()">‹</button><b onclick="pickMonth()">${monthName(m)} ▾</b><button onclick="state.month=addMonths(state.month,1);renderIn()">›</button></div>
   ${Object.keys(VALES).map(k => { const c = sum(valeIn(m, k), x => x.value), g = sum(valeOut(m, k), x => x.value), s = valeSaldo(k, m); return `
-    <div class="card"><b>${I(CAT_GANHO[k][0])} ${VALES[k]}</b>
+    <div class="card" style="cursor:pointer" onclick="openVale('${k}')"><b>${I(CAT_GANHO[k][0])} ${VALES[k]}${valeEmp(k) ? ' · ' + esc(valeEmp(k)) : ''}</b>
       <div class="grid3" style="margin-top:10px">
         <div class="stat"><small>Crédito do mês</small><b class="in" style="font-size:14px">${fmt(c)}</b></div>
         <div class="stat"><small>Gasto do mês</small><b class="out" style="font-size:14px">${fmt(g)}</b></div>
         <div class="stat"><small>Saldo do vale</small><b class="${s < 0 ? 'out' : ''}" style="font-size:14px">${fmt(s)}</b></div></div>
-      <div class="btns"><button class="btn" onclick="${novo(k)}">${gastos ? '+ Gasto neste vale' : '+ Crédito deste vale'}</button></div></div>`; }).join('')}
+      <div class="btns"><button class="btn" onclick="${novo(k)}">${gastos ? '+ Gasto neste vale' : '+ Crédito deste vale'}</button><button class="btn">${I('doc')}Histórico</button></div></div>`; }).join('')}
   <h2>${gastos ? 'Gastos nos vales' : 'Créditos dos vales'}</h2>
   ${lista.length ? `<div class="card">${lista.map(x => gastos ? expRow(x, m) : incRow(x)).join('')}</div>`
     : empty(gastos ? 'receipt' : 'wallet', gastos ? 'Nenhum gasto nos vales em ' + monthName(m) + '.' : 'Nenhum crédito de vale em ' + monthName(m) + '.<br>Cadastre o crédito como fixo para ele entrar todo mês.')}
   <div class="hint" style="text-align:center">Os vales ficam separados: não entram nos ganhos, nos gastos nem no saldo do mês. O saldo do vale é tudo o que entrou menos o que saiu desde o primeiro lançamento. ${gastos ? 'Um gasto vem para cá quando a forma de pagamento é um vale.' : 'Um ganho vem para cá quando a categoria é um vale.'}</div>`;
 }
 const ganhosSeg = () => `<div class="seg">${[['todos','Ganhos'],['vale','Vales']].map(([k,t]) => `<button class="${state.isub === k ? 'on' : ''}" onclick="state.isub='${k}';renderIn()">${t}</button>`).join('')}</div>`;
+// Tela de um vale: saldo, totais e o histórico de tudo o que entrou e saiu nele, mês a mês (do mais novo ao mais antigo).
+function openVale(k){
+  settingsOpen = false; F = null;
+  const todos = [...db.incomes.filter(x => x.cat === k), ...db.expenses.filter(x => x.pay === k), ...db.installments.filter(x => x.pay === k)];
+  const ini = todos.reduce((a, x) => x.start < a ? x.start : a, curYM), fim = todos.reduce((a, x) => !x.fixed && x.start > a ? x.start : a, curYM), meses = [];
+  for (let m = fim, i = 0; m >= ini && i < 240; m = addMonths(m, -1), i++){
+    const e = valeIn(m, k), s = valeOut(m, k);
+    if (e.length || s.length) meses.push([m, e, s]);
+  }
+  const tin = sum(meses, ([, e]) => sum(e, x => x.value)), tout = sum(meses, ([, , s]) => sum(s, x => x.value)), saldo = valeSaldo(k), n = sum(meses, ([, e, s]) => e.length + s.length);
+  const linha = (x, entra) => `<div class="item" onclick="edit('${entra ? 'incomes' : x.kind === 'installment' ? 'installments' : 'expenses'}','${x.pid || x.id}')"><div class="mid"><b>${esc(x.desc)}</b>
+    <small>${entra ? 'crédito' : 'gasto'}${x.day ? ' · dia ' + x.day : ''}${x.emp ? `<span class="tag">${esc(x.emp)}</span>` : ''}${byTag(x)}</small></div><div class="val ${entra ? 'in' : 'out'}">${entra ? '+' : '−'} ${fmt(x.value)}</div></div>`;
+  showSheet(`<h3>${VALES[k]}${valeEmp(k) ? ' · ' + esc(valeEmp(k)) : ''}</h3>
+    <div class="hero" style="margin-bottom:10px"><small>Saldo do vale</small><div class="big">${fmt(saldo)}</div>
+      <div class="row"><div><small>Entrou no total</small><b>${fmt(tin)}</b></div><div><small>Saiu no total</small><b>${fmt(tout)}</b></div></div></div>
+    <div class="btns" style="margin-top:0"><button class="btn" onclick="novoVale('ganhos','${k}')">+ Crédito</button><button class="btn primary" onclick="novoVale('gastos','${k}')">+ Gasto</button></div>
+    <label>Histórico (${n} ${n === 1 ? 'lançamento' : 'lançamentos'})</label>
+    ${meses.length ? meses.map(([m, e, s]) => `<div class="grpHead on" style="cursor:default"><b>${cap(monthName(m))}</b><small>${fmt(sum(e, x => x.value) - sum(s, x => x.value))}</small></div>
+      <div class="card" style="box-shadow:none;background:var(--bg)">${e.map(x => linha(x, true)).join('')}${[...s].sort((a, b) => (b.day || 0) - (a.day || 0)).map(x => linha(x, false)).join('')}</div>`).join('')
+    : '<div class="hint" style="margin-top:0">Nenhum lançamento neste vale ainda.</div>'}
+    <div class="btns foot"><button class="btn primary" onclick="closeForm()">Fechar</button></div>`);
+}
 // Uma linha da lista de ganhos.
 function incRow(x){ const c = CAT_GANHO[x.cat] || CAT_GANHO.outros; return `
     <div class="item" onclick="edit('incomes','${x.id}')">${ico(c)}<div class="mid"><b>${esc(x.desc)}</b>
-    <small>${c[1]}${x.bank ? ' · ' + esc(x.bank) : ''}<span class="tag">${x.fixed === 'y' ? 'anual, em ' + MESES[+x.start.slice(5) - 1] : x.fixed ? 'fixo' : monthName(x.start) + (x.day ? ', dia ' + x.day : '')}</span>${x.fixed ? `<span class="tag">desde ${x.fixed === 'y' ? x.start.slice(0,4) : monthName(x.start)}${x.end ? ' até ' + monthName(x.end) : ''}</span>` : ''}${byTag(x)}</small></div>
+    <small>${c[1]}${x.bank ? ' · ' + esc(x.bank) : ''}${x.emp ? `<span class="tag">${esc(x.emp)}</span>` : ''}<span class="tag">${x.fixed === 'y' ? 'anual, em ' + MESES[+x.start.slice(5) - 1] : x.fixed ? 'fixo' : monthName(x.start) + (x.day ? ', dia ' + x.day : '')}</span>${x.fixed ? `<span class="tag">desde ${x.fixed === 'y' ? x.start.slice(0,4) : monthName(x.start)}${x.end ? ' até ' + monthName(x.end) : ''}</span>` : ''}${byTag(x)}</small></div>
     <div class="val in">${fmt(x.value)}</div></div>`; }
 // Ordem das listas de Gastos e Ganhos: db.prefs.ordem = 'ant' (mais antigo primeiro) ou qualquer outro valor (mais
 // recente primeiro, o padrão). O botão alterna.
@@ -417,7 +440,7 @@ function expListHtml(){
 // Uma linha da lista de lançamentos do mês m.
 function expRow(x, m){ const c = CAT_GASTO[x.cat] || CAT_GASTO.outros, inst = x.kind === 'installment', bill = !inst && x.fixed && x.due, paid = bill && isPaid(x, m); return `
     <div class="item" ${inst ? '' : `data-sw="${x.id}" data-bill="${bill ? 1 : ''}"`} onclick="edit('${inst ? 'installments' : 'expenses'}','${x.id}')">${ico(c)}<div class="mid"><b>${esc(x.desc)}</b>
-    <small>${c[1]}${whereLabel(x)}${inst ? `<span class="tag">parcela ${x.num}/${x.n}${x.paid ? ' paga' : ''}</span>` : x.fixed ? `<span class="tag">${x.fixed === 'y' ? 'anual' : isSub(x) ? 'assinatura' : 'fixo'}</span>` : x.day ? `<span class="tag">dia ${x.day}</span>` : ''}${bill ? `<span class="tag">${paid ? 'pago' : 'vence dia ' + dueDay(x, m)}</span>` : ''}${tagsOf(x).map(t => `<span class="tag">#${esc(t)}</span>`).join('')}${x.share ? `<span class="tag">dividido com ${esc(x.who)}${x.got ? ', recebido' : ''}</span>` : ''}${x.photo ? `<span class="tag">${I('doc', 11)} comprovante</span>` : ''}${byTag(x)}</small></div>
+    <small>${c[1]}${whereLabel(x)}${x.emp ? `<span class="tag">${esc(x.emp)}</span>` : ''}${inst ? `<span class="tag">parcela ${x.num}/${x.n}${x.paid ? ' paga' : ''}</span>` : x.fixed ? `<span class="tag">${x.fixed === 'y' ? 'anual' : isSub(x) ? 'assinatura' : 'fixo'}</span>` : x.day ? `<span class="tag">dia ${x.day}</span>` : ''}${bill ? `<span class="tag">${paid ? 'pago' : 'vence dia ' + dueDay(x, m)}</span>` : ''}${tagsOf(x).map(t => `<span class="tag">#${esc(t)}</span>`).join('')}${x.share ? `<span class="tag">dividido com ${esc(x.who)}${x.got ? ', recebido' : ''}</span>` : ''}${x.photo ? `<span class="tag">${I('doc', 11)} comprovante</span>` : ''}${byTag(x)}</small></div>
     <div class="val out">${fmt(x.value)}</div>${bill ? `<button class="iconbtn ${paid ? 'in' : 'muted'}" onclick="togglePaid('${x.id}','${m}')" aria-label="Marcar como pago">${I(paid ? 'checked' : 'unchecked', 24)}</button>` : ''}</div>`; }
 // Busca em todos os meses: ganhos, gastos e compras parceladas, pela descrição, etiqueta ou banco.
 let searchHits = [];

@@ -49,7 +49,15 @@ function repeatFill(i){
 }
 const FORMS = {
   // Campos com more:true ficam atrás de "Mais opções" num lançamento novo (lançamento rápido); big = valor em destaque.
-  incomes: { title:'ganho', defaults:() => ({cat:'salario', fixed:'1', start:curYM}), fields:[
+  incomes: { title:'ganho', defaults:() => ({cat:'salario', fixed:'1', start:curYM}), fields:() => formVale ? [
+    {k:'value', label:'Valor do crédito', type:'money', big:true},
+    {k:'cat', label:'Qual vale', type:'select', options:() => Object.entries(VALES)},
+    EMP_FIELD,
+    {k:'fixed', label:'Repete', type:'select', options:[['1','Todo mês'],['','Só neste mês']]},
+    {k:'day', label:'Dia em que cai (opcional)', type:'int', optional:true, more:true},
+    {k:'start', label:v => v.fixed ? 'A partir de' : 'Mês', type:'month', more:true},
+    {k:'end', label:'Até (opcional)', type:'month', optional:true, showIf:v => v.fixed, more:true},
+    ...SCOPE_FIELDS] : [
     {k:'value', label:'Valor', type:'money', big:true},
     {k:'cat', label:'Categoria', type:'select', options:() => opts(CAT_GANHO)},
     {k:'desc', label:'Descrição (opcional)', type:'text', ph:'Ex.: Salário', optional:true},
@@ -61,9 +69,16 @@ const FORMS = {
     ...SCOPE_FIELDS],
     load(v){ v.scope = 'from'; v.from = curYM; },
     summary:v => [v.bank, v.day && 'dia ' + v.day, v.start && v.start !== curYM && cap(monthName(v.start))].filter(Boolean).join(' · '),
-    check(v){ if (!v.desc) v.desc = (CAT_GANHO[v.cat] || [0, 'Ganho'])[1]; return dayOk(v, 'day', 'O dia'); },
+    onChange(k, v, isNew, touched){ if (formVale && isNew && k === 'cat' && !touched.emp) v.emp = valeEmp(v.cat); },
+    check(v){ if (!v.desc || formVale) v.desc = (CAT_GANHO[v.cat] || [0, 'Ganho'])[1]; return dayOk(v, 'day', 'O dia'); },
     commit:commitRecurring('incomes')},
-  expenses: { title:'gasto', defaults:() => catDefaults({cat:'alimentacao', fixed:'', start:state.month}), fields:[
+  expenses: { title:'gasto', defaults:() => catDefaults({cat:'alimentacao', fixed:'', start:state.month}), fields:() => formVale ? [
+    {k:'value', label:'Valor', type:'money', big:true},
+    {k:'pay', label:'Qual vale', type:'select', options:() => Object.entries(VALES)},
+    EMP_FIELD,
+    {k:'desc', label:'Descrição (opcional)', type:'text', ph:'Ex.: Almoço', optional:true},
+    {k:'day', label:'Dia (opcional)', type:'int', optional:true, more:true},
+    {k:'start', label:'Mês', type:'month', more:true}] : [
     {k:'value', label:'Valor', type:'money', big:true},
     {k:'cat', label:'Categoria', type:'select', options:() => opts(CAT_GASTO).filter(o => o[0] !== 'emprestimo')},
     {k:'desc', label:'Descrição (opcional)', type:'text', ph:'Ex.: Mercado', optional:true},
@@ -80,11 +95,15 @@ const FORMS = {
     ...SCOPE_FIELDS],
     load(v){ v.scope = 'from'; v.from = state.month; },
     // Repetir um gasto: os avulsos mais frequentes viram botões no topo do formulário novo.
-    top(){ F.freq = frequent(); return F.freq.length ? `<label>Repetir um gasto</label><div class="chips rep">${F.freq.map((x, i) => `<button type="button" onclick="repeatFill(${i})">${esc(x.desc)}</button>`).join('')}</div>` : ''; },
+    top(){ if (formVale) return ''; F.freq = frequent(); return F.freq.length ? `<label>Repetir um gasto</label><div class="chips rep">${F.freq.map((x, i) => `<button type="button" onclick="repeatFill(${i})">${esc(x.desc)}</button>`).join('')}</div>` : ''; },
     // Ao trocar a categoria num gasto novo, banco e forma de pagamento vêm do último gasto dessa categoria.
-    onChange(k, v, isNew, touched){ if (isNew && k === 'cat' && !touched.bank && !touched.pay) catDefaults(v); },
+    onChange(k, v, isNew, touched){
+      if (formVale){ if (isNew && k === 'pay' && !touched.emp) v.emp = valeEmp(v.pay); return; }
+      if (isNew && k === 'cat' && !touched.bank && !touched.pay) catDefaults(v); },
     summary:v => [v.bank, PAY[v.pay], ...tagsOf(v).map(t => '#' + t), v.who && 'dividido com ' + v.who, v.fixed === 'y' ? 'anual' : v.fixed ? 'fixo' : '', v.start && v.start !== curYM && cap(monthName(v.start))].filter(Boolean).join(' · '),
     check(v){
+      // Gasto no vale: sem categoria, banco ou conta no formulário; a categoria sai do tipo do vale (num novo).
+      if (formVale){ if (!F.id){ v.cat = v.pay === 'vt' ? 'transporte' : 'alimentacao'; v.fixed = false; } if (!v.desc) v.desc = VALES[v.pay]; return dayOk(v, 'day', 'O dia'); }
       if (!v.desc) v.desc = (CAT_GASTO[v.cat] || [0, 'Gasto'])[1];
       if (v.who && v.share >= v.value) return 'A parte da outra pessoa precisa ser menor que o valor total.';
       if (!v.who) v.share = '';
@@ -92,7 +111,7 @@ const FORMS = {
       return dayOk(v, 'day', 'O dia da compra') || dayOk(v, 'due', 'O dia do vencimento');
     },
     commit:commitRecurring('expenses'),
-    before:() => photoSection()},
+    before:() => formVale ? '' : photoSection()},
   installments: { title:'compra parcelada', fem:true, defaults:() => ({cat:'compras', pay:'credito', mode:'total', n:'', paid:'0', start:curYM}), fields:[
     {k:'desc', label:'Descrição', type:'text', ph:'Ex.: Celular'},
     {k:'cat', label:'Categoria', type:'select', options:() => opts(CAT_GASTO)},
@@ -258,14 +277,21 @@ const FORMS = {
     extra:() => `<div class="hint">Taxas ${ratesInfo()}.</div>
       <div class="btns"><button class="btn" onclick="updateRatesNow()">${I('refresh')}Atualizar taxas agora</button></div>`}
 };
+let formVale = false; // o formulário que está abrindo é de vale (ver openForm e os campos de incomes/expenses)
+const EMP_FIELD = {k:'emp', label:'Empresa do vale', type:'select', optional:true, options:() => [['', 'Não informar'], ...VALE_EMPRESAS.map(e => [e, e])]};
+// Novo lançamento num vale: lado = 'gastos' ou 'ganhos'; k = qual vale. A empresa usada por último já vem escolhida.
+function novoVale(lado, k){
+  if (lado === 'gastos') openForm('expenses', null, {vale:true, vals:{pay:k, emp:valeEmp(k), fixed:'', start:state.month}});
+  else openForm('incomes', null, {vale:true, vals:{cat:k, emp:valeEmp(k)}});
+}
 let F = null; // formulário aberto: {col, cfg, fields, id, vals, touched, asset}
 let settingsOpen = false;
 
 function addNew(){
   // Na parte dos vales, o + já abre o lançamento no vale (o que a pessoa usa, ou o de alimentação).
-  const vale = temVale('vr') && !temVale('va') ? 'vr' : 'va';
-  if (state.tab === 'gastos' && state.gsub === 'vale') return openForm('expenses', null, {vals:{pay:vale}, more:true});
-  if (state.tab === 'ganhos' && state.isub === 'vale') return openForm('incomes', null, {vals:{cat:vale}});
+  const vale = Object.keys(VALES).find(temVale) || 'va';
+  if (state.tab === 'gastos' && state.gsub === 'vale') return novoVale('gastos', vale);
+  if (state.tab === 'ganhos' && state.isub === 'vale') return novoVale('ganhos', vale);
   const col = {ganhos:'incomes', gastos:state.gsub === 'parc' ? 'installments' : 'expenses', invest:'investments'}[state.tab]; if (col) openForm(col);
 }
 const ARCH_MSG = 'Este lançamento está no arquivo de anos antigos e não pode ser editado. Para editar, traga os anos de volta em Configurações > Dados e ajustes.';
@@ -413,16 +439,18 @@ function onToast(text){ toast(text); }
 
 // preset (opcional): {title, vals, asset, id} para abrir um formulário novo já preenchido.
 function openForm(col, item, preset = {}){
+  // Lançamento num vale (gasto pago com vale ou crédito de vale): formulário enxuto, só com o que importa para vales.
+  formVale = !!preset.vale || !!item && (col === 'expenses' ? valeGasto(item) : col === 'incomes' && valeGanho(item));
   const cfg = FORMS[col], fields = typeof cfg.fields === 'function' ? cfg.fields() : cfg.fields;
   const vals = Object.assign(cfg.defaults ? cfg.defaults() : {}, preset.vals);
   if (item) for (const f of fields){ const v = item[f.k]; vals[f.k] = f.type === 'money' ? moneyStr(v) : f.k === 'fixed' ? (v === 'y' ? 'y' : v ? '1' : '') : v == null ? '' : String(v).replace('.', f.type === 'num' ? ',' : '.'); }
   if (item && cfg.load) cfg.load(vals, item);
   settingsOpen = false;
-  F = {col, cfg, fields, id:preset.id || (item && item.id), vals, touched:{}, asset:preset.asset || null};
+  F = {col, cfg, fields, id:preset.id || (item && item.id), vals, touched:{}, asset:preset.asset || null, vale:formVale};
   // Lançamento rápido: num registro novo, os campos "more" começam recolhidos.
   const hasMore = fields.some(f => f.more);
   F.more = !hasMore || !!F.id || !!preset.more;
-  showSheet(`<h3>${preset.title || cfg.fullTitle || (item ? 'Editar ' : cfg.fem ? 'Nova ' : 'Novo ') + cfg.title}</h3>` +
+  showSheet(`<h3>${preset.title || cfg.fullTitle || (item ? 'Editar ' : cfg.fem ? 'Nova ' : 'Novo ') + (formVale ? (col === 'incomes' ? 'crédito de vale' : 'gasto no vale') : cfg.title)}</h3>` +
     (!F.id && cfg.top ? cfg.top() : '') +
     fields.map(f => `<div id="w_${f.k}"><label for="f_${f.k}"></label>${fieldHtml(f)}</div>`).join('') +
     (cfg.before ? `<div id="w__before">${cfg.before()}</div>` : '') +

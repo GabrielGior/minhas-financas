@@ -17,7 +17,7 @@ function logErr(onde, e){
 }
 addEventListener('error', e => logErr('erro na tela', (e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0)));
 addEventListener('unhandledrejection', e => logErr('promessa', e.reason));
-const APP_VERSION = '1.47'; // manter igual ao versionName do build.gradle
+const APP_VERSION = '1.48'; // manter igual ao versionName do build.gradle
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 // Ícones do app: desenhos em dois tons (traço + preenchimento translúcido nas partes com class="d"),
 // todos numa grade de 24×24. I('nome', tamanho) devolve o <svg>; a cor vem do texto ao redor (currentColor).
@@ -143,7 +143,7 @@ const CAT_GASTO = {
 };
 const CAT_GANHO = {
   salario:['briefcase','Salário','#059669'], freelance:['laptop','Freelance / extra','#0ea5e9'], rendimentos:['trend','Rendimentos','#8b5cf6'],
-  va:['bag','Vale-alimentação','#16a34a'], vr:['food','Vale-refeição','#ea580c'],
+  va:['bag','Vale-alimentação','#16a34a'], vr:['food','Vale-refeição','#ea580c'], vt:['bus','Vale-transporte','#0ea5e9'], vt:['bus','Vale-transporte','#0ea5e9'], vt:['bus','Vale-transporte','#0ea5e9'],
   vendas:['tag','Vendas','#f59e0b'], outros:['wallet','Outros','#64748b']
 };
 const CAT_INV = {
@@ -151,7 +151,7 @@ const CAT_INV = {
   acoes:['chart','Ações','#059669'], fiis:['building','Fundos imobiliários','#f59e0b'], moeda:['exchange','Moedas (dólar, euro…)','#0d9488'], cripto:['coin','Cripto','#eab308'],
   previdencia:['umbrella','Previdência','#8b5cf6'], outros:['diamond','Outros','#64748b']
 };
-const PAY = {credito:'Crédito', debito:'Débito', pix:'Pix', dinheiro:'Dinheiro', boleto:'Boleto', va:'Vale-alimentação', vr:'Vale-refeição', outro:'Outro'};
+const PAY = {credito:'Crédito', debito:'Débito', pix:'Pix', dinheiro:'Dinheiro', boleto:'Boleto', va:'Vale-alimentação', vr:'Vale-refeição', vt:'Vale-transporte', outro:'Outro'};
 const BANKS = ['Nubank','Itaú','Bradesco','Banco do Brasil','Caixa','Santander','Inter','C6 Bank','PicPay','Mercado Pago',
   'Alelo','Pluxee (Sodexo)','Ticket','VR','Flash','Caju','iFood Benefícios','Swile','Ben Visa Vale']; // os últimos são cartões de vale-alimentação/refeição
 // Sugestões do campo "Banco / conta": os que você já usou primeiro, depois os mais comuns.
@@ -515,7 +515,11 @@ const archBanner = y => !db.archUntil || String(y) > db.archUntil ? '' : `<div c
 // Vale-alimentação e vale-refeição ficam separados do resto: não entram nos ganhos, nos gastos nem no saldo do mês.
 // Crédito de vale = ganho com a categoria va ou vr; gasto no vale = gasto (ou parcela) com a forma de pagamento va ou vr.
 // incomesOf/expensesOf devolvem o mês SEM os vales; incomesAll/expensesAll, com eles; valeIn/valeOut, só eles.
-const VALES = {va:'Vale-alimentação', vr:'Vale-refeição'};
+const VALES = {va:'Vale-alimentação', vr:'Vale-refeição', vt:'Vale-transporte'};
+// Empresas de vale mais comuns no Brasil (campo "Empresa do vale"); a última usada em cada vale já vem escolhida.
+const VALE_EMPRESAS = ['Alelo', 'Pluxee', 'Sodexo', 'Ticket', 'VR', 'iFood Benefícios', 'Ben', 'Flash', 'Caju', 'Swile', 'Up Brasil', 'Greencard', 'Outra'];
+const valeEmp = k => ([...db.incomes.filter(x => x.cat === k && x.emp), ...db.expenses.filter(x => x.pay === k && x.emp)].sort((a, b) => (b.u || 0) - (a.u || 0))[0] || {}).emp || '';
+const temVales = () => Object.keys(VALES).some(temVale);
 const valeGanho = x => !!VALES[x.cat], valeGasto = x => !!VALES[x.pay];
 const incomesAll = ym => cached('I' + ym, () => [...db.incomes, ...archRecs('incomes', ym)].filter(x => activeIn(x, ym)));
 const incomesOf = ym => cached('i' + ym, () => incomesAll(ym).filter(x => !valeGanho(x)));
@@ -939,7 +943,7 @@ function widgetLines(){
     invest:() => db.investments.length && ['Investido', fmt(sum(db.investments, x => x.value)), ''],
     fatura:() => { const v = sum(invoices(curYM), i => i[1]); return v > 0 && ['Faturas do cartão', fmt(v), 'out']; },
     orcamento:() => { const b = budgetStatus(curYM), lim = sum(b, x => x.lim); return lim > 0 && ['Orçamento usado', Math.round(sum(b, x => x.used) / lim * 100) + '%', '']; },
-    vales:() => (temVale('va') || temVale('vr')) && ['Saldo dos vales', fmt(valeSaldo('va') + valeSaldo('vr')), ''],
+    vales:() => temVales() && ['Saldo dos vales', fmt(sum(Object.keys(VALES), k => valeSaldo(k))), ''],
     parcelas:() => { const v = sum(expensesOf(curYM).filter(x => x.kind === 'installment'), x => x.value); return v > 0 && ['Parcelas do mês', fmt(v), 'out']; },
     previsao:() => { const n = addMonths(curYM, 1), s = totalIn(n) - totalOut(n); return [(s < 0 ? 'Falta em ' : 'Sobra em ') + monthName(n).split(' ')[0], fmt(Math.abs(s)), s < 0 ? 'out' : 'in']; }};
   return db.prefs.layout.widget.filter(b => b.on).map(b => itens[b.k]()).filter(Boolean).map(([t, v, c]) => ({t, v, c}));
