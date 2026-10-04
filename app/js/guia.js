@@ -50,7 +50,7 @@ const GUIA = [
     ['Notícias (só no Android)', 'Aba Notícias', 'Manchetes de economia; tocar abre a notícia no navegador.']]],
   ['Conta e segurança', [
     ['Sincronização com a conta Google', 'Configurações › Conta e sincronização', 'Os dados ficam na pasta privada do app no seu Google Drive e sincronizam entre os aparelhos. "Versões salvas" restaura uma cópia dos últimos 30 dias.'],
-    ['Conta compartilhada (casal ou família)', 'Configurações › Conta compartilhada', '"Convidar alguém" cria a conta e manda o convite; a outra pessoa usa "Tenho um convite". Cada lançamento mostra quem fez.'],
+    ['Conta compartilhada (casal ou família)', 'Configurações › Conta compartilhada', 'Três formas de começar: compartilhar os seus lançamentos, criar uma conta do zero (vazia) ou entrar com um código de convite. Cada lançamento mostra quem fez. Sair encerra a conta para todos: a outra pessoa volta para a conta individual, a planilha é apagada e cada um pode ficar com uma cópia.'],
     ['Bloqueio por senha ou biometria (só no Android)', 'Configurações › Ícone e bloqueio', 'Ligue para o app pedir a digital, o rosto ou a senha do celular ao abrir.'],
     ['Backup em arquivo', 'Configurações › Dados e ajustes › Backup em arquivo', '"Exportar" salva um arquivo com tudo; "Importar" troca os dados pelos do arquivo.'],
     ['Lixeira', 'Configurações › Dados e ajustes › Lixeira', 'Restaure lançamentos excluídos nos últimos 30 dias.'],

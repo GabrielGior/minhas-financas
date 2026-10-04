@@ -793,8 +793,15 @@ let PEDACO = 40000;
 const fam = (method, url, body, ctype, interactive) => new Promise(res => { const id = ++driveSeq; drivePending[id] = res; Android.driveFamilia(id, method, url, body || '', ctype || '', !!interactive); });
 const shared = () => sync.shared && sync.shared.id;
 const rng = r => encodeURIComponent(r);
+// Além dos dados (aba "dados"), a aba "leia-me" guarda dois avisos: A4 = "LIMPA" (conta criada do zero: quem entra não
+// leva os próprios lançamentos) e A5 = "ENCERRADA|quem|quando" (alguém saiu: a conta acabou para todos). sharedInfo
+// guarda o que a última leitura encontrou. Uma conta encerrada vira o erro {status:-4, por}.
+let sharedInfo = {limpa:false};
 async function sharedRead(id, interactive){
-  const v = JSON.parse(ok(await fam('GET', `${SHEETS}/${id}/values/${rng('dados!A:A')}?majorDimension=COLUMNS&valueRenderOption=UNFORMATTED_VALUE`, '', '', interactive)).text).values;
+  const r = JSON.parse(ok(await fam('GET', `${SHEETS}/${id}/values:batchGet?ranges=${rng('dados!A:A')}&ranges=${rng('leia-me!A4:A5')}&majorDimension=COLUMNS&valueRenderOption=UNFORMATTED_VALUE`, '', '', interactive)).text).valueRanges || [];
+  const v = r[0] && r[0].values, av = (r[1] && r[1].values && r[1].values[0]) || [];
+  sharedInfo = {limpa:String(av[0] || '') === 'LIMPA'};
+  if (String(av[1] || '').startsWith('ENCERRADA')) throw {status:-4, por:String(av[1]).split('|')[1] || '', text:'encerrada'};
   const txt = v && v[0] ? v[0].join('') : '';
   return txt ? JSON.parse(txt) : null;
 }
@@ -812,21 +819,32 @@ const codeOf = s => (String(s).match(/\/d\/([\w-]{20,})/) || String(s).trim().ma
 const inviteText = id => `Te convidei para a nossa conta compartilhada no app Minhas Finanças. No app, abra Configurações > Conta compartilhada > Tenho um convite e cole este código:\n${id}`;
 // Quem lançou: registros antigos (sem by) passam a ser desta pessoa ao entrar numa conta compartilhada.
 function claimMine(){ const me = myName(); if (me) for (const c of COLS) for (const r of db[c]) if (!r.by){ r.by = me; r.u = Date.now(); } }
+// Tudo numa tela só: sem conta, as três formas de começar (cada uma com uma linha explicando); com conta, o estado,
+// o código do convite à vista e as ações.
+// sync.limpaProx = a conta que está sendo criada é "do zero" (fica em sync para sobreviver à ida ao Google na versão web).
 function shareHtml(){
   const s = sync.shared;
-  if (!s) return `<label>Conta compartilhada (casal ou família)</label>
-    <div class="hint" style="margin-top:0">Duas contas Google vendo e lançando nos mesmos ganhos, gastos, investimentos e contas. Cada pessoa usa o app no próprio celular, com o próprio nome e a própria aparência; cada lançamento mostra quem fez.</div>
-    ${!canSync() ? '<div class="hint warn">Prévia no PC: a conta compartilhada só funciona no app instalado no celular.</div>' : `<div class="btns"><button class="btn" onclick="openShare('convidar')">${I('people')}Convidar alguém</button><button class="btn" onclick="openShare('entrar')">Tenho um convite</button></div>`}`;
-  return `<label>Conta compartilhada (casal ou família)</label>
-    <div class="hint in" style="margin-top:0">${I('people', 14)} Ligada${s.owner && s.with && s.with.length ? ': compartilhada com ' + s.with.map(esc).join(', ') : ''}.</div>
-    <div class="hint">Os lançamentos ficam numa planilha do Google compartilhada entre vocês (não edite a planilha à mão). Nome, aparência, cópias diárias e comprovantes continuam de cada um.</div>
-    <div class="btns"><button class="btn" onclick="shareCopy()">Copiar convite</button>${s.owner ? `<button class="btn" onclick="openShare('convidar')">Convidar mais alguém</button>` : ''}</div>
-    <div class="btns"><button class="btn danger" style="flex:1" onclick="shareLeave()">Sair da conta compartilhada</button></div>`;
+  const opcao = (ic, t, d, acao) => `<button class="setTile" style="width:100%;text-align:left;margin-bottom:8px" onclick="${acao}"><span>${I(ic, 22)}</span><b>${t}</b><small>${d}</small></button>`;
+  if (!s) return `<div class="hint" style="margin-top:0">Duas contas Google vendo e lançando nos mesmos dados, cada pessoa no próprio celular. Cada lançamento mostra quem fez; nome e aparência continuam de cada um.</div>
+    ${!canSync() ? '<div class="hint warn">Prévia no PC: a conta compartilhada só funciona no app instalado no celular.</div>' : `
+    <label>Como você quer começar?</label>
+    ${opcao('people', 'Compartilhar os meus lançamentos', 'A outra pessoa passa a ver e lançar nos dados que você já tem.', "openShare('convidar')")}
+    ${opcao('sparkle', 'Criar uma conta compartilhada do zero', 'Começa vazia, sem os lançamentos de ninguém. Os seus ficam guardados na sua conta.', "openShare('zero')")}
+    ${opcao('download', 'Tenho um código de convite', 'Entre na conta que outra pessoa criou.', "openShare('entrar')")}`}`;
+  return `<div class="hint in" style="margin-top:0">${I('people', 14)} Conta compartilhada ligada${s.limpa ? ' (criada do zero)' : ''}. ${s.owner ? (s.with && s.with.length ? 'Você criou e convidou ' + s.with.map(esc).join(', ') + '.' : 'Você criou; falta convidar alguém.') : 'Você entrou por convite.'}</div>
+    <label>Código do convite</label>
+    <div class="btns" style="margin-top:0"><input readonly value="${esc(s.id)}" style="flex:3;min-width:0;font-size:12px" onclick="this.select()"><button class="btn" style="flex:1" onclick="shareCopy()">Copiar</button></div>
+    ${s.owner ? `<div class="btns"><button class="btn" onclick="openShare('convidar')">${I('people')}Convidar mais alguém</button></div>` : ''}
+    <div class="hint">Os lançamentos ficam numa planilha do Google compartilhada entre vocês (não edite a planilha à mão). Cópias diárias e comprovantes continuam de cada um.</div>
+    <div class="btns"><button class="btn danger" style="flex:1" onclick="shareLeave()">Sair e encerrar a conta compartilhada</button></div>
+    <div class="hint">Sair encerra a conta para todos: a outra pessoa também volta para a conta individual e a planilha é apagada. Cada um pode ficar com uma cópia dos lançamentos.</div>`;
 }
 function openShare(modo){
   settingsOpen = false; F = null;
-  showSheet(modo === 'convidar' ? `<h3>Convidar para a conta compartilhada</h3>
-    <div class="hint" style="margin-top:0">${sync.shared ? 'A pessoa recebe um e-mail do Google com o convite.' : 'O app cria uma planilha na sua conta Google com os seus lançamentos e a compartilha com a outra pessoa, que recebe um e-mail do Google. Depois, ela abre o app, entra com a conta convidada e cola o código do convite.'}</div>
+  if (modo === 'zero' || modo === 'convidar'){ sync.limpaProx = modo === 'zero'; saveSync(); }
+  const shareLimpa = !!sync.limpaProx;
+  showSheet(modo !== 'entrar' ? `<h3>${sync.shared ? 'Convidar para a conta compartilhada' : shareLimpa ? 'Conta compartilhada do zero' : 'Compartilhar os meus lançamentos'}</h3>
+    <div class="hint" style="margin-top:0">${sync.shared ? 'A pessoa recebe um e-mail do Google com o convite.' : shareLimpa ? 'O app cria uma planilha vazia na sua conta Google e a compartilha com a outra pessoa. Os seus lançamentos de hoje não entram: continuam guardados na sua conta. Depois, ela abre o app e cola o código do convite.' : 'O app cria uma planilha na sua conta Google com os seus lançamentos e a compartilha com a outra pessoa, que recebe um e-mail do Google. Depois, ela abre o app, entra com a conta convidada e cola o código do convite.'}</div>
     <label for="shEmail">E-mail da conta Google da outra pessoa</label>
     <input id="shEmail" type="email" autocomplete="off" placeholder="nome@gmail.com">
     <div class="hint">O Google vai pedir sua autorização para o app criar e compartilhar a planilha.</div>
@@ -867,21 +885,29 @@ const shareInvite = umaVez(async function(email, quieto){
   return true;
 });
 // Cria a conta compartilhada com os dados deste aparelho e convida a outra pessoa.
-const shareStart = umaVez(async function(email, semPerguntar){
+// limpa = conta criada do zero: começa vazia, sem os lançamentos de ninguém (os pessoais continuam guardados na conta
+// de cada um e voltam ao sair).
+const shareStart = umaVez(async function(email, semPerguntar, limpa = !!sync.limpaProx){
   email = String(email).trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return shErr('Digite um e-mail válido.');
-  if (db.archUntil) return shErr('Antes de compartilhar, traga de volta os anos arquivados (Configurações > Dados e ajustes > Anos antigos).');
-  if (!semPerguntar && !await ask(`Criar a conta compartilhada com ${email}?\n\nOs seus lançamentos vão para uma planilha na sua conta Google, que ${email} poderá ver e editar pelo app.`, 'Criar e convidar')) return;
+  if (!limpa && db.archUntil) return shErr('Antes de compartilhar, traga de volta os anos arquivados (Configurações > Dados e ajustes > Anos antigos).');
+  if (!semPerguntar && !await ask(limpa ? `Criar uma conta compartilhada do zero com ${email}?\n\nEla começa vazia, numa planilha na sua conta Google que ${email} poderá ver e editar pelo app. Os seus lançamentos de hoje continuam guardados na sua conta e voltam se a conta compartilhada for encerrada.`
+    : `Criar a conta compartilhada com ${email}?\n\nOs seus lançamentos vão para uma planilha na sua conta Google, que ${email} poderá ver e editar pelo app.`, 'Criar e convidar')) return;
   if (!semPerguntar && !await famPrepare()) return;
   try {
     await syncNow(); // os dados pessoais ficam em dia na sua conta antes de passar a usar a planilha
+    if (limpa && sync.err) return shErr('Não consegui guardar os seus dados pessoais na sua conta antes de criar a conta do zero. Confira a internet e tente de novo.');
     const corpo = {properties:{title:'Minhas Finanças (conta compartilhada)'}, sheets:[{properties:{title:'leia-me'}}, {properties:{title:'dados'}}]};
     const id = JSON.parse(ok(await fam('POST', SHEETS, JSON.stringify(corpo), 'application/json', true)).text).spreadsheetId;
     sync.famOk = true;
     await fam('PUT', `${SHEETS}/${id}/values/${rng('leia-me!A1:A3')}?valueInputOption=RAW`, JSON.stringify({values:[['Esta planilha guarda os dados do app Minhas Finanças compartilhados entre contas Google.'], ['Não edite nem apague: o app lê e grava a aba "dados".'], ['Para parar de compartilhar, use "Sair da conta compartilhada" no app.']]}), 'application/json');
-    claimMine(); save(false);
-    await sharedWrite(id, JSON.stringify(db));
-    sync.shared = {id, owner:true, with:[]}; saveSync();
+    const vazio = limpa ? {...fixDb({}), prefs:db.prefs} : null;
+    if (limpa) ok(await fam('PUT', `${SHEETS}/${id}/values/${rng('leia-me!A4')}?valueInputOption=RAW`, JSON.stringify({values:[['LIMPA']]}), 'application/json'));
+    else { claimMine(); save(false); }
+    await sharedWrite(id, JSON.stringify(vazio || db));
+    sync.shared = {id, owner:true, with:[], limpa:!!limpa}; saveSync();
+    // Só depois de a planilha estar gravada o aparelho passa a mostrar a conta vazia (os dados pessoais já estão na conta).
+    if (vazio){ loadDb(vazio); rollover(); save(false); render(); }
     const convidou = await shareInvite(email, true);
     await syncNow();
     showSheet(`<h3>Conta compartilhada criada</h3>
@@ -917,18 +943,19 @@ const shareJoin = umaVez(async function(code, escolha){
     if (e.status === undefined) throw e;
     logErr('entrar compartilhada', e.status + ' ' + String(e.text).slice(0, 300));
     if (e.status === -1) return famNegado();
+    if (e.status === -4) return shErr('Esta conta compartilhada já foi encerrada. Peça para a outra pessoa criar uma nova e mandar o novo código.');
     return shErr(sharedMsg(e) || (e.status === 0 ? 'Sem conexão com a internet.' : 'Não foi possível abrir a conta compartilhada (' + e.status + ').'));
   }
   if (!escolha){
     const temMeus = COLS.some(c => db[c].length);
-    if (!temMeus) escolha = 'so';
+    if (!temMeus || sharedInfo.limpa) escolha = 'so'; // conta criada do zero: ninguém leva os próprios lançamentos
     else return pickList('E os lançamentos que já estão neste app?', [['juntar', 'Juntar aos da conta compartilhada'], ['so', 'Usar só os da conta compartilhada (os meus continuam guardados na minha conta)']], '', v => shareJoin(id, v));
   }
   const prefs = db.prefs;
   if (escolha === 'juntar'){ claimMine(); loadDb({...mergeDb(db, remote), prefs}); }
   else loadDb({...remote, prefs});
   rollover(); save(false);
-  sync.shared = {id, owner:false}; saveSync();
+  sync.shared = {id, owner:false, limpa:sharedInfo.limpa}; saveSync();
   await syncNow();
   closeForm(); render();
   toast(comNome('Pronto, {nome}! Agora vocês veem os mesmos lançamentos.'));
@@ -951,20 +978,45 @@ function askShareAns(modo){
   if (!modo){ closeForm(); return startSheets(); }
   shareFromStart = true; openShare(modo);
 }
-// Volta a usar só a sua conta: os dados deste aparelho passam a ser os da sua conta pessoal (como antes de compartilhar).
-const shareLeave = umaVez(async function(semPerguntar){
-  if (!semPerguntar && !await ask('Sair da conta compartilhada?\n\nEste aparelho volta a mostrar só os seus dados pessoais, como estavam antes de compartilhar. Os dados compartilhados continuam na planilha para a outra pessoa.', 'Sair', true)) return;
-  await syncNow();
-  // Primeiro baixa os dados pessoais; sem eles (sem internet), não sai: senão os compartilhados iriam para a conta pessoal.
-  let pessoal;
-  try { const file = (await driveList("name='financas.json'", true))[0]; pessoal = file ? fixDb(await driveGet(file.id)) : fixDb({}); }
-  catch(e){ logErr('sair compartilhada', e.status || e); return tell('Não consegui baixar os seus dados pessoais (sem internet?). Tente de novo.'); }
+// Sair encerra a conta compartilhada para todos: a planilha recebe o aviso "ENCERRADA", a outra pessoa é desligada na
+// próxima sincronização dela (shareEnded) e a planilha é apagada (por quem a criou: só o dono consegue apagar o arquivo).
+// escolha: 'copia' = este aparelho fica com uma cópia dos lançamentos compartilhados, juntada aos dados pessoais;
+// 'so' = volta só aos dados pessoais, como estavam antes de compartilhar.
+const apagarPlanilha = id => fam('DELETE', `${DRIVE}/drive/v3/files/${id}`).catch(() => ({status:0}));
+const shareLeave = umaVez(async function(escolha){
+  if (!escolha){
+    if (!await ask('Sair e ENCERRAR a conta compartilhada?\n\nIsto vale para todos: a outra pessoa também é desligada e volta para a conta individual dela, e a planilha compartilhada é apagada. Não dá para desfazer.\n\nNinguém perde os lançamentos: cada pessoa pode ficar com uma cópia na própria conta.', 'Encerrar para todos', true)) return;
+    return pickList('O que fazer com os lançamentos compartilhados neste aparelho?', [['copia', 'Ficar com uma cópia, junto com os meus dados'], ['so', 'Não ficar: voltar só aos meus dados de antes']], '', v => shareLeave(v));
+  }
+  const id = shared(), dono = sync.shared.owner;
+  toast('Encerrando a conta compartilhada…');
+  await syncNow(); // as últimas alterações deste aparelho vão para a planilha antes do aviso
+  let pessoal = null;
+  try {
+    // 'so': primeiro baixa os dados pessoais; sem eles (sem internet), não sai: senão os compartilhados iriam para a conta pessoal.
+    if (escolha === 'so'){ const file = (await driveList("name='financas.json'", true))[0]; pessoal = file ? fixDb(await driveGet(file.id)) : fixDb({}); }
+    ok(await fam('PUT', `${SHEETS}/${id}/values/${rng('leia-me!A5')}?valueInputOption=RAW`, JSON.stringify({values:[[`ENCERRADA|${myName() || (Android.conta && Android.conta()) || ''}|${Date.now()}`]]}), 'application/json', true));
+  } catch(e){
+    // A planilha já não existe ou já foi encerrada: segue saindo. Outro erro (sem internet): não sai, para a outra pessoa não ficar numa conta que só um lado abandonou.
+    if (e.status !== 404 && e.status !== -4){ logErr('sair compartilhada', e.status ? e.status + ' ' + String(e.text).slice(0, 200) : e); return tell('Não consegui encerrar a conta compartilhada agora (sem internet?). Tente de novo.'); }
+  }
+  if (dono) await apagarPlanilha(id);
   sync.shared = null; saveSync();
-  loadDb({...pessoal, prefs:db.prefs}); rollover(); save(false);
+  if (pessoal){ loadDb({...pessoal, prefs:db.prefs}); rollover(); save(false); }
   await syncNow();
   closeForm(); render();
-  toast('Você saiu da conta compartilhada.');
+  tell(`Conta compartilhada encerrada. ${escolha === 'so' ? 'Este aparelho voltou aos seus dados pessoais.' : 'Você ficou com uma cópia dos lançamentos na sua conta.'}\n\nA outra pessoa será desligada assim que o app dela sincronizar.`);
 });
+// A conta compartilhada foi encerrada por outra pessoa (ou a planilha sumiu): este aparelho volta à conta individual,
+// guardando os lançamentos compartilhados como uma cópia junto aos dados pessoais. Quem criou a planilha a apaga.
+async function shareEnded(por){
+  const s = sync.shared; if (!s) return;
+  sync.shared = null; sync.err = ''; saveSync();
+  if (s.owner) await apagarPlanilha(s.id);
+  if (!sheetOpen()) render(); else if (settingsShown()) openSettings();
+  tell(`A conta compartilhada foi encerrada${por ? ' por ' + por : ''}.\n\nVocê voltou para a sua conta individual e ficou com uma cópia dos lançamentos compartilhados.`);
+  setTimeout(syncNow, 300); // junta a cópia com os dados pessoais da sua conta
+}
 
 // Junta os dados deste aparelho (a) com os da conta (b):
 // - lançamentos: um a um pelo id, valendo a versão alterada por último (u); excluídos (tomb) não voltam;
@@ -1057,6 +1109,9 @@ async function syncNow(interactive){
     await syncPhotos().catch(() => {});  // comprovantes pendentes: se falhar, ficam na fila para a próxima vez
     await sheetSync().catch(() => {});   // planilha do Google ligada ao app (se houver)
   } catch(e){
+    // Conta compartilhada encerrada pela outra pessoa (aviso na planilha) ou planilha apagada: este aparelho volta sozinho
+    // para a conta individual, ficando com uma cópia dos lançamentos.
+    if (shared() && (e.status === -4 || e.status === 404)){ shareEnded(e.por || ''); return; }
     if (e.status !== 0 && e.status !== -1) logErr('sincronizar', e.status ? e.status + ' ' + String(e.text).slice(0, 300) : e);
     sync.err = e.status === -3 ? 'Os dados da conta foram gravados por uma versão mais nova do app. Atualize o app neste aparelho.'
       : shared() && sharedMsg(e) ? sharedMsg(e)
