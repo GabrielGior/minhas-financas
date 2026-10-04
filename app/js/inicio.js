@@ -47,7 +47,8 @@ document.addEventListener('visibilitychange', () => {
 });
 // Conta compartilhada com o app aberto: confere a cada minuto o que as outras pessoas lançaram (sem isso, só ao abrir e
 // ao alterar algo). Com o app fechado, quem confere é o lado nativo (ShareReceiver).
-if (!window.TESTE) setInterval(() => { if (!document.hidden && navigator.onLine !== false && shared() && !needGate()) syncNow(); }, 60e3);
+// Na conta pessoal de quem tem conta compartilhada, só espia a planilha (espiarComp), sem misturar os dados.
+if (!window.TESTE) setInterval(() => { if (document.hidden || navigator.onLine === false || needGate()) return; if (shared()) syncNow(); else espiarComp(); }, 60e3);
 if (window.Android && Android.webOk) Android.webOk(); // APK: as telas abriram sem erro (confirma uma atualização recém-aplicada)
 if (window.webResume) webResume(); // versão web: continua o que estava sendo feito antes de ir ao login do Google
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});

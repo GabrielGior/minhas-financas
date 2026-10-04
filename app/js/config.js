@@ -648,6 +648,7 @@ function diagText(){
     `Sincronização: ${canSync() ? (sync.on ? 'ligada' : 'desligada') : 'indisponível'} · última: ${sync.at ? new Date(sync.at).toLocaleString('pt-BR') : 'nunca'} · erro: ${sync.err || 'nenhum'}`,
     `Fotos na fila: ${sync.up.length} para enviar, ${sync.del.length} para apagar`,
     `Preferências: tema ${db.prefs.mode}/${db.prefs.color}, animações ${db.prefs.anim ? 'sim' : 'não'}, modo divertido ${db.prefs.fun ? 'sim' : 'não'}, abas escondidas ${db.prefs.tabsOff.join(',') || 'nenhuma'}`,
+    `Último fechamento por erro: ${(() => { const e = window.Android && Android.ultimoErro ? String(Android.ultimoErro()) : ''; return e ? new Date(+e.split('|')[0]).toLocaleString('pt-BR') + ' — ' + e.slice(e.indexOf('|') + 1, 1500) : 'nenhum registrado'; })()}`,
     '', `Erros registrados (${errs.length}):`,
     ...errs.slice().reverse().map(e => `[${new Date(e.t).toLocaleString('pt-BR')} · v${e.v}] ${e.onde}: ${e.msg}`)].join('\n');
 }
@@ -855,10 +856,10 @@ function ativAvisar(novas){
   if (!novas.length) return;
   ativGuardar([...ativLista(), ...novas]);
   if (db.prefs.avisoComp === false) return;
-  toast(novas.length === 1 ? `${novas[0].quem} ${novas[0].txt}` : `${novas.length} novidades na conta compartilhada. Veja no Resumo.`);
+  toast(novas.length === 1 ? `${sync.pessoal ? 'Conta compartilhada: ' : ''}${novas[0].quem} ${novas[0].txt}` : `${novas.length} novidades na conta compartilhada. Veja no Resumo.`);
 }
 // Faixa no topo do Resumo enquanto houver novidades não vistas; tocar abre a lista.
-const ativHtml = () => { const n = shared() && db.prefs.avisoComp !== false ? ativNovas() : 0, u = n && ativLista().pop();
+const ativHtml = () => { const n = sync.shared && db.prefs.avisoComp !== false ? ativNovas() : 0, u = n && ativLista().pop();
   return n ? `<div class="card avisoComp" onclick="openAtividade()"><span>${I('bell', 20)}</span><div><b>${n === 1 ? '1 novidade' : n + ' novidades'} na conta compartilhada</b><small>${esc(u.quem)} ${esc(u.txt)}</small></div>${I('chev', 18)}</div>` : ''; };
 const quando = t => new Date(t).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
 function openAtividade(){
@@ -868,16 +869,41 @@ function openAtividade(){
     ${l.length ? l.map(x => `<div class="item" style="cursor:default"><span class="${x.visto ? 'muted' : 'in'}">${I(/entrou/.test(x.txt) ? 'people' : 'bell', 20)}</span><div class="mid"><b style="white-space:normal">${esc(x.quem)} ${esc(x.txt)}</b><small>${quando(x.t)}</small></div></div>`).join('')
       : '<div class="hint" style="margin-top:0">Nada por aqui ainda. Quando outra pessoa entrar na conta ou lançar algo, aparece nesta lista.</div>'}
     <div class="hint">O app confere as novidades sempre que sincroniza (ao abrir e a cada alteração) e, com ele fechado, mais ou menos de hora em hora.</div>
-    <div class="btns foot"><button class="btn primary" onclick="closeForm();render()">Pronto</button></div>`);
+    <div class="btns foot">${sync.pessoal ? `<button class="btn" onclick="closeForm();render();trocarConta()">${I('people')}Ir para a compartilhada</button>` : ''}<button class="btn primary" onclick="closeForm();render()">Pronto</button></div>`);
   ativGuardar(ativLista().map(x => ({...x, visto:1})));
 }
 // Entrega ao lado nativo o que ele precisa para avisar com o app fechado ('' desliga).
-function compNativo(){
-  if (!(window.Android && Android.compart) || (sync.shared && sync.pessoal)) return; // na conta pessoal, o lado nativo segue com o último estado da compartilhada
-  const ligado = shared() && db.prefs.avisoComp !== false;
+// d = os dados da conta compartilhada: os do app ou, na conta pessoal, os que espiarComp acabou de ler da planilha.
+function compNativo(d){
+  if (!(window.Android && Android.compart) || (sync.shared && sync.pessoal && !d)) return; // na conta pessoal, só espiarComp atualiza o lado nativo
+  d = d || db;
+  const ligado = sync.shared && db.prefs.avisoComp !== false;
   // Sem a permissão de notificações do Android nada aparece com o app fechado: pede uma vez a quem já estava na conta.
   if (ligado && !sync.notifPedida && Android.pedirNotificacao && !window.TESTE){ sync.notifPedida = true; saveSync(); Android.pedirNotificacao(); }
-  Android.compart(ligado ? JSON.stringify({id:shared(), eu:myName(), t:Math.max(0, ...Object.keys(ATIV_COLS).flatMap(c => db[c].map(r => r.u || 0))), membros:Object.keys(db.membros)}) : '');
+  Android.compart(ligado ? JSON.stringify({id:sync.shared.id, eu:myName(), t:Math.max(0, ...Object.keys(ATIV_COLS).flatMap(c => d[c].map(r => r.u || 0))), membros:Object.keys(d.membros)}) : '');
+}
+// ---------- Na conta pessoal: espiar a conta compartilhada ----------
+// Quem trocou para a conta pessoal continua sabendo o que acontece na compartilhada: a cada minuto (e a cada
+// sincronização) o app lê a planilha, só para leitura, e compara com o que já tinha visto (VISTO_KEY: ids e datas de
+// alteração, guardados a cada sincronização na conta compartilhada). As novidades viram o mesmo aviso e a mesma faixa
+// do Resumo; nada da planilha entra nos dados pessoais.
+const VISTO_KEY = 'financas-comp-visto';
+const vistoDe = d => ({membros:Object.fromEntries(Object.keys(d.membros || {}).map(k => [k, 1])), ...Object.fromEntries(Object.keys(ATIV_COLS).map(c => [c, d[c].map(r => ({id:r.id, u:r.u || 0}))]))});
+function vistoGuardar(d){ try { localStorage.setItem(VISTO_KEY, JSON.stringify(vistoDe(d))); } catch(e){} }
+let espiando = false;
+async function espiarComp(){
+  if (!sync.shared || !sync.pessoal || espiando || trocando || !canSync()) return;
+  espiando = true;
+  try {
+    const bruto = await sharedRead(sync.shared.id), remoto = bruto && fixDb(bruto);
+    if (!remoto || !sync.shared || !sync.pessoal) return;
+    let visto = null;
+    try { visto = JSON.parse(localStorage.getItem(VISTO_KEY)); } catch(e){}
+    if (visto){ const novas = atividade(visto, remoto); if (novas.length){ ativAvisar(novas); if (!sheetOpen()) render(); } }
+    vistoGuardar(remoto); compNativo(remoto);
+  } catch(e){
+    if (e && (e.status === -4 || e.status === 404)) shareEnded(e.por || ''); // a conta foi encerrada por outra pessoa
+  } finally { espiando = false; }
 }
 // Estado dos avisos com o app fechado (só no app instalado): o que falta liberar no Android, quando foi a última
 // conferência e o que ela achou, e os botões para testar.
@@ -893,7 +919,7 @@ function avisoNativoHtml(){
 }
 function conferirNativo(){ Android.compartConferir(); comCarga('Conferindo a conta compartilhada…', () => new Promise(r => setTimeout(r, 6000))).then(() => { if (settingsShown()) openSettings(); }); }
 // Fim da conta compartilhada neste aparelho: a lista de pessoas e os avisos dela deixam de valer.
-function compFim(){ sync.pessoal = false; saveSync(); db.membros = {}; try { localStorage.removeItem(ATIV_KEY); } catch(e){} compNativo(); }
+function compFim(){ sync.pessoal = false; saveSync(); db.membros = {}; try { localStorage.removeItem(ATIV_KEY); localStorage.removeItem(VISTO_KEY); } catch(e){} compNativo(); }
 function setAvisoComp(on){
   if (on && window.Android && Android.pedirNotificacao) Android.pedirNotificacao();
   setPref('avisoComp', on); compNativo();
@@ -1257,6 +1283,7 @@ async function syncNow(interactive){
       }
     }
     compNativo();
+    if (sid) vistoGuardar(db); else espiarComp(); // na conta pessoal, aproveita para espiar a compartilhada
     if (!remote || canonS(db) !== canonS(remote)) await (sid ? sharedWrite(sid, JSON.stringify(db)) : driveWrite(file && file.id, 'financas.json', JSON.stringify(db)));
     Object.assign(sync, {linked:true, at:Date.now(), err:'', retry:0});
     clearTimeout(retryTimer);
