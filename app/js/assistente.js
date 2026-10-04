@@ -256,7 +256,7 @@ function sendChat(text){
 }
 function viewChat(){
   return `
-  <h1><span class="volta"><button class="iconbtn" onclick="sairChat()" aria-label="Voltar">‹</button>Assistente</span></h1>
+  <h1><span class="volta"><button class="iconbtn" onclick="sairChat()" aria-label="Voltar">‹</button>Assistente</span></h1>${contaPill()}
   <div id="chatLog">${chatHtml()}</div>
   <div style="height:70px"></div>
   <form class="chatbar" onsubmit="sendChat();return false">

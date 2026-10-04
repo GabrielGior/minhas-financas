@@ -17,7 +17,7 @@ function logErr(onde, e){
 }
 addEventListener('error', e => logErr('erro na tela', (e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0)));
 addEventListener('unhandledrejection', e => logErr('promessa', e.reason));
-const APP_VERSION = '1.55'; // manter igual ao versionName do build.gradle
+const APP_VERSION = '1.56'; // manter igual ao versionName do build.gradle
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 // Ícones do app: desenhos em dois tons (traço + preenchimento translúcido nas partes com class="d"),
 // todos numa grade de 24×24. I('nome', tamanho) devolve o <svg>; a cor vem do texto ao redor (currentColor).
@@ -297,7 +297,7 @@ const newerDb = d => (d && d.ver || 1) > DB_VER;
 // Marca o registro como alterado agora. Registro novo (ainda sem u) guarda quem o criou (by), para a conta compartilhada.
 const myName = () => (db.prefs && db.prefs.name) || '';
 // Conta compartilhada: by = quem lançou; ed = quem alterou por último (usado nos avisos "fulano editou…").
-const touch = r => { if (!r.u && !r.by && myName()) r.by = myName(); else if (r.u && typeof sync === 'object' && sync.shared && myName()) r.ed = myName(); r.u = Date.now(); return r; };
+const touch = r => { if (!r.u && !r.by && myName()) r.by = myName(); else if (r.u && typeof shared === 'function' && shared() && myName()) r.ed = myName(); r.u = Date.now(); return r; };
 // Cópia de segurança automática em arquivo, uma vez por semana, na pasta do app no celular (só no APK).
 function autoFile(){
   if (!(window.Android && Android.backupArquivo) || Date.now() - (sync.fileAt || 0) < 7*864e5) return;

@@ -754,3 +754,11 @@ html[data-troca=gira] #app.enter{animation:trGira .38s ease-out;transform-origin
 .avisoComp>div{flex:1;min-width:0}
 .avisoComp b{display:block}
 .avisoComp small{display:block;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 1.56: qual conta está em uso (pessoal ou compartilhada) e o botão de troca do Resumo */
+.contaPill{display:flex;align-items:center;gap:6px;margin:0 0 12px;padding:8px 12px;border-radius:12px;font-size:13px;cursor:pointer;border:1px solid color-mix(in srgb,var(--brand) 40%,var(--line));background:color-mix(in srgb,var(--brand) 12%,var(--card))}
+.contaPill.pes{border-color:var(--line);background:var(--card)}
+.contaPill .ic{flex:none;color:var(--brand)}
+.contaPill span{margin-left:auto;color:var(--brand);font-weight:700;font-size:12.5px}
+.trocaConta{display:flex;gap:4px;padding:4px;margin:0 0 12px;border-radius:16px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
+.trocaConta button{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 6px;border-radius:12px;font-weight:600;font-size:14px;color:var(--muted)}
+.trocaConta button.on{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff}

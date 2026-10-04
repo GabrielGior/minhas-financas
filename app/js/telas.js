@@ -16,8 +16,8 @@ const catName = (c, color = 'var(--brand)') => `<span style="color:${color}">${I
 const head = (title, tab) => `<h1>${title} <span>${eyeBtn()}${LAYOUT[tab] ? `<button class="iconbtn" onclick="openLayoutEdit('${tab}')" aria-label="Personalizar esta tela">${I('sliders', 24)}</button>` : ''}<button class="iconbtn" onclick="openSettings('')" aria-label="Configurações">${I('gear', 24)}</button></span></h1>${offlinePill()}`;
 const empty = (icon, t) => `<div class="card empty"><span>${I(icon, 40)}</span>${t}</div>`;
 // Conta compartilhada: quem lançou o registro (by), como etiqueta na linha. Fora dela não aparece.
-const byTag = x => sync.shared && x.by ? `<span class="tag">${I('user', 11)} ${esc(x.by)}</span>` : '';
-const bySmall = x => sync.shared && x.by ? ` · por ${esc(x.by)}` : '';
+const byTag = x => shared() && x.by ? `<span class="tag">${I('user', 11)} ${esc(x.by)}</span>` : '';
+const bySmall = x => shared() && x.by ? ` · por ${esc(x.by)}` : '';
 // Saudação do topo do Resumo, com o nome escolhido (db.prefs.greet: 'o' bem-vindo, 'a' bem-vinda, 'e' boas-vindas).
 const greeting = () => { const n = db.prefs.name; return n ? `${{o:'Bem-vindo', a:'Bem-vinda'}[db.prefs.greet] || 'Boas-vindas'}, ${esc(n)}!` : ''; };
 // Ordem dos grupos da lista de lançamentos (Gastos): ▲▼ como no "Personalizar".
@@ -189,7 +189,7 @@ function viewResumo(){
   };
   return `${greeting() ? `<div class="hello">${greeting()}</div>` : ''}
   <h1 style="margin-bottom:0">Resumo <span>${eyeBtn()}<button class="iconbtn" onclick="openResumoEdit()" aria-label="Personalizar o Resumo">${I('sliders', 24)}</button><button class="iconbtn" onclick="openSettings('')" aria-label="Configurações">${I('gear', 24)}</button></span></h1>
-  <div class="muted" style="margin:0 2px 14px;font-size:13.5px">Hoje é ${todayLabel()}</div>${offlinePill()}
+  <div class="muted" style="margin:0 2px 14px;font-size:13.5px">Hoje é ${todayLabel()}</div>${offlinePill()}${trocaContaHtml()}
   <div class="nav periodo"><button onclick="resMes(-1)" aria-label="Mês anterior">‹</button><b onclick="pickResumo()"><span>${nomeM}</span><small>${y} ▾</small></b><button onclick="resMes(1)" aria-label="Próximo mês">›</button></div>
   ${archBanner(y)}${ativHtml()}${bankNotesHtml()}${blocks('resumo', B)}
   <div class="btns" style="margin-bottom:12px"><button class="btn" onclick="openResumoEdit()">${I('sliders')}Personalizar o Resumo</button></div>`;

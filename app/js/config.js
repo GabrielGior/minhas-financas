@@ -792,7 +792,9 @@ async function driveWrite(id, name, json){
 const SHEETS = 'https://sheets.googleapis.com/v4/spreadsheets';
 let PEDACO = 40000;
 const fam = (method, url, body, ctype, interactive) => espera(new Promise(res => { const id = ++driveSeq; drivePending[id] = res; Android.driveFamilia(id, method, url, body || '', ctype || '', !!interactive); }));
-const shared = () => sync.shared && sync.shared.id;
+// sync.pessoal = a pessoa está numa conta compartilhada mas escolheu ver, por enquanto, a conta pessoal (trocarConta):
+// nesse modo tudo funciona como sem conta compartilhada (os dados vêm do arquivo da conta Google dela).
+const shared = () => sync.shared && !sync.pessoal && sync.shared.id;
 const rng = r => encodeURIComponent(r);
 // Além dos dados (aba "dados"), a aba "leia-me" guarda dois avisos: A4 = "LIMPA" (conta criada do zero: quem entra não
 // leva os próprios lançamentos) e A5 = "ENCERRADA|quem|quando" (alguém saiu: a conta acabou para todos). sharedInfo
@@ -856,7 +858,7 @@ function ativAvisar(novas){
   toast(novas.length === 1 ? `${novas[0].quem} ${novas[0].txt}` : `${novas.length} novidades na conta compartilhada. Veja no Resumo.`);
 }
 // Faixa no topo do Resumo enquanto houver novidades não vistas; tocar abre a lista.
-const ativHtml = () => { const n = sync.shared && db.prefs.avisoComp !== false ? ativNovas() : 0, u = n && ativLista().pop();
+const ativHtml = () => { const n = shared() && db.prefs.avisoComp !== false ? ativNovas() : 0, u = n && ativLista().pop();
   return n ? `<div class="card avisoComp" onclick="openAtividade()"><span>${I('bell', 20)}</span><div><b>${n === 1 ? '1 novidade' : n + ' novidades'} na conta compartilhada</b><small>${esc(u.quem)} ${esc(u.txt)}</small></div>${I('chev', 18)}</div>` : ''; };
 const quando = t => new Date(t).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
 function openAtividade(){
@@ -871,12 +873,12 @@ function openAtividade(){
 }
 // Entrega ao lado nativo o que ele precisa para avisar com o app fechado ('' desliga).
 function compNativo(){
-  if (!(window.Android && Android.compart)) return;
+  if (!(window.Android && Android.compart) || (sync.shared && sync.pessoal)) return; // na conta pessoal, o lado nativo segue com o último estado da compartilhada
   const ligado = shared() && db.prefs.avisoComp !== false;
   Android.compart(ligado ? JSON.stringify({id:shared(), eu:myName(), t:Math.max(0, ...Object.keys(ATIV_COLS).flatMap(c => db[c].map(r => r.u || 0))), membros:Object.keys(db.membros)}) : '');
 }
 // Fim da conta compartilhada neste aparelho: a lista de pessoas e os avisos dela deixam de valer.
-function compFim(){ db.membros = {}; try { localStorage.removeItem(ATIV_KEY); } catch(e){} compNativo(); }
+function compFim(){ sync.pessoal = false; saveSync(); db.membros = {}; try { localStorage.removeItem(ATIV_KEY); } catch(e){} compNativo(); }
 function setAvisoComp(on){
   if (on && window.Android && Android.pedirNotificacao) Android.pedirNotificacao();
   setPref('avisoComp', on); compNativo();
@@ -887,11 +889,64 @@ const membrosHtml = s => { const eu = membroChave(), ms = Object.entries(db.memb
     ${ms.map(([k, m]) => `<div class="item" style="cursor:default">${tile('user')}<div class="mid"><b>${esc(m.nome)}${k === eu ? ' (você)' : ''}</b><small>${m.email ? esc(m.email) + ' · ' : ''}desde ${new Date(m.desde).toLocaleDateString('pt-BR')}</small></div></div>`).join('')}
     ${falta.map(e => `<div class="item" style="cursor:default;opacity:.65">${tile('user')}<div class="mid"><b>${esc(e)}</b><small>convite enviado, ainda não entrou</small></div></div>`).join('')}
     ${ms.length ? '' : '<div class="hint" style="margin:0">A lista aparece depois da próxima sincronização.</div>'}</div>`; };
+// ---------- Trocar entre a conta pessoal e a compartilhada ----------
+// Quem está numa conta compartilhada continua tendo os dados pessoais guardados na própria conta Google. trocarConta()
+// alterna o que este aparelho mostra: envia o que falta da conta atual, baixa os dados da outra e marca sync.pessoal.
+// Enquanto troca (trocando), nenhuma sincronização roda: senão os dados de uma conta poderiam ser gravados na outra.
+let trocando = false;
+// Faixa no topo de todas as telas (só para quem tem conta compartilhada): diz qual conta está em uso; tocar troca.
+const contaPill = () => !sync.shared ? '' : `<div class="contaPill ${sync.pessoal ? 'pes' : 'comp'}" onclick="trocarConta()">${I(sync.pessoal ? 'user' : 'people', 14)}Você está na <b>conta ${sync.pessoal ? 'pessoal' : 'compartilhada'}</b><span>Trocar</span></div>`;
+// Botão do Resumo: as duas contas lado a lado, com a atual marcada.
+const trocaContaHtml = () => !sync.shared ? '' : `<div class="trocaConta">${[[true, 'user', 'Pessoal'], [false, 'people', 'Compartilhada']].map(([p, ic, t]) =>
+  `<button class="${!!sync.pessoal === p ? 'on' : ''}" onclick="${!!sync.pessoal === p ? '' : 'trocarConta()'}">${I(ic, 16)}${t}</button>`).join('')}</div>`;
+let trocaOcupada = false; // toque duplo não troca duas vezes
+async function trocarConta(semPerguntar){
+  if (!sync.shared || !canSync() || trocaOcupada) return;
+  trocaOcupada = true;
+  try { await trocarContaJa(semPerguntar); } finally { trocaOcupada = false; }
+}
+async function trocarContaJa(semPerguntar){
+  const paraPessoal = !sync.pessoal, destino = paraPessoal ? 'pessoal' : 'compartilhada';
+  if (!semPerguntar && !await ask(paraPessoal ? 'Trocar para a sua conta pessoal?\n\nVocê passa a ver e lançar só nos seus dados. A conta compartilhada continua ligada e dá para voltar quando quiser.'
+    : 'Trocar para a conta compartilhada?\n\nVocê volta a ver e lançar nos dados que divide com as outras pessoas.', 'Trocar')) return;
+  await comCarga(`Abrindo a conta ${destino}…`, async () => {
+    clearTimeout(syncTimer);
+    while (syncing) await new Promise(r => setTimeout(r, 100));
+    await syncNow(); // o que foi lançado na conta atual precisa estar guardado antes de sair dela
+    if (!sync.shared) return; // a conta compartilhada foi encerrada enquanto isso (shareEnded já avisou)
+    if (sync.err) return tell(`Não consegui guardar os dados da conta atual (${sync.err})\n\nSem isso não dá para trocar de conta agora. Confira a internet e tente de novo.`);
+    trocando = true;
+    const antes = canonS(db);
+    try {
+      let novo;
+      if (paraPessoal){ const file = (await driveList("name='financas.json'", true))[0]; novo = file ? fixDb(await driveGet(file.id)) : fixDb({}); }
+      else novo = await sharedReadDireto(sync.shared.id);
+      if (!novo) throw {status:404, text:'vazia'};
+      if (newerDb(novo)) return tell('Os dados dessa conta foram gravados por uma versão mais nova do app. Atualize o app neste aparelho.');
+      if (canonS(db) !== antes) return tell('Você lançou ou alterou algo enquanto a troca acontecia. Para não perder nada, a troca foi cancelada: tente de novo.');
+      loadDb({...novo, prefs:db.prefs}); // nome e aparência continuam os deste aparelho
+      sync.pessoal = paraPessoal; saveSync();
+      rollover(); save(false); state.dia = 0;
+    } catch(e){
+      if (e.status === undefined) throw e;
+      logErr('trocar conta', e.status + ' ' + String(e.text).slice(0, 200));
+      if (!paraPessoal && (e.status === -4 || e.status === 404)){ trocando = false; sync.pessoal = false; return shareEnded(e.por || ''); }
+      return tell(e.status === 0 ? 'Sem conexão com a internet: não deu para abrir a outra conta.' : `Não foi possível abrir a conta ${destino} agora (${e.status}).`);
+    } finally { trocando = false; }
+    closeForm(); render(); scrollTo(0, 0);
+    toast(`Agora você está na conta ${destino}.`);
+    syncNow();
+  });
+}
+// Lê a planilha compartilhada mesmo com sync.pessoal ligado (shared() devolve vazio nesse modo).
+const sharedReadDireto = async id => { const d = await sharedRead(id, true); return d && fixDb(d); };
 // Tudo numa tela só: sem conta, as três formas de começar (cada uma com uma linha explicando); com conta, o estado,
 // o código do convite à vista e as ações.
 // sync.limpaProx = a conta que está sendo criada é "do zero" (fica em sync para sobreviver à ida ao Google na versão web).
 function shareHtml(){
   const s = sync.shared;
+  if (s && sync.pessoal) return `<div class="hint" style="margin-top:0">${I('user', 14)} Você está vendo a sua <b>conta pessoal</b>. A conta compartilhada continua ligada: troque para ela para ver as pessoas, os avisos e as outras opções.</div>
+    <div class="btns"><button class="btn primary" onclick="trocarConta()">${I('people')}Trocar para a conta compartilhada</button></div>`;
   const opcao = (ic, t, d, acao) => `<button class="setTile" style="width:100%;text-align:left;margin-bottom:8px" onclick="${acao}"><span>${I(ic, 22)}</span><b>${t}</b><small>${d}</small></button>`;
   if (!s) return `<div class="hint" style="margin-top:0">Duas contas Google vendo e lançando nos mesmos dados, cada pessoa no próprio celular. Cada lançamento mostra quem fez; nome e aparência continuam de cada um.</div>
     ${!canSync() ? '<div class="hint warn">Prévia no PC: a conta compartilhada só funciona no app instalado no celular.</div>' : `
@@ -1158,12 +1213,12 @@ function applySnapshot(snap){
 }
 // Sem conexão: aviso discreto no topo das telas. As alterações ficam salvas no aparelho e sobem depois.
 const offline = () => navigator.onLine === false || (canSync() && sync.on && sync.err === 'Sem conexão com a internet.');
-const offlinePill = () => offline() ? `<div class="offline">${I('signal', 14)}Sem conexão: o que você lançar fica salvo e sincroniza depois.</div>` : '';
+const offlinePill = () => contaPill() + (offline() ? `<div class="offline">${I('signal', 14)}Sem conexão: o que você lançar fica salvo e sincroniza depois.</div>` : '');
 addEventListener('online', () => { render(); syncNow(); });
 addEventListener('offline', () => render());
 function scheduleSync(){ if (!canSync() || !sync.on) return; clearTimeout(syncTimer); syncTimer = setTimeout(syncNow, 3000); }
 async function syncNow(interactive){
-  if (!canSync() || !sync.on) return;
+  if (!canSync() || !sync.on || trocando) return;
   if (syncing){ syncAgain = true; return; } // houve alteração durante a sincronização: repete ao terminar
   syncing = true;
   try {
@@ -1434,7 +1489,7 @@ function nameSave(daConfig){
   const n = document.getElementById('nmIn').value.trim().replace(/\s+/g, ' ');
   if (!n) return document.getElementById('nmErr').textContent = 'Digite o seu nome (ou um apelido).';
   Object.assign(db.prefs, {name:n, greet:nameGreet}); db.cfgMod = Date.now();
-  if (sync.shared) claimMine(); // na conta compartilhada, o que foi lançado sem nome passa a ser seu
+  if (shared()) claimMine(); // na conta compartilhada, o que foi lançado sem nome passa a ser seu
   save(); render();
   if (daConfig) openSettings('perfil'); else { closeForm(); startSheets(); }
 }
