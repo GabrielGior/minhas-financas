@@ -203,24 +203,33 @@ function parseBankNote(n){
 }
 function bankNotesHtml(){
   const list = bankNotes().map((n, i) => ({i, n, p:parseBankNote(n)})).filter(x => x.p).slice(-5).reverse();
+  const hist = `<div class="btns" style="margin:${list.length ? '10px 0 0' : '0 0 12px'}"><button class="btn" onclick="openSugestoes()">${I('doc')}Histórico de sugestões</button></div>`;
+  // Sem sugestão nova, fica só o botão do histórico (para quem tem a leitura das notificações ligada ou já teve sugestões).
+  if (!list.length) return (window.Android && Android.avisosLigado && Android.avisosLigado()) || sugLog().length ? hist : '';
   return list.length ? `<div class="card"><b>${I('sparkle')} Sugestões pelas notificações do banco</b>${list.map(({i, n, p}) => `
     <div class="item" style="cursor:default"><div class="mid">${p.hidden
       ? `<b>Novo aviso do ${esc(p.app)}</b><small style="white-space:normal">${p.title ? esc(p.title) + ' · ' : ''}${new Date(n.t).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'})}. Não deu para ler o valor (o Android esconde avisos com números parecidos com código); confira no app do banco.</small>`
       : `<b>${esc(p.desc)}</b><small style="white-space:normal">${esc(String(n.texto).slice(0, 90))}</small>`}</div>
       <div style="flex:none;text-align:right"><div class="val ${p.income ? 'in' : 'out'}">${p.hidden ? 'R$ ?' : fmt(p.value)}</div>
-      <button class="btn primary" style="padding:7px 10px;margin-top:4px" onclick="noteUse(${+n.t})">Lançar</button> <button class="btn" style="padding:7px 10px;margin-top:4px" onclick="noteDrop(${+n.t})">Ignorar</button></div></div>`).join('')}</div>` : '';
+      <button class="btn primary" style="padding:7px 10px;margin-top:4px" onclick="noteUse(${+n.t})">Lançar</button> <button class="btn" style="padding:7px 10px;margin-top:4px" onclick="noteDrop(${+n.t})">Ignorar</button></div></div>`).join('')}${hist}</div>` : '';
 }
 // Os botões levam a hora do aviso (t), não a posição: a lista pode mudar se chegar um aviso novo com a tela aberta.
-function noteDrop(t){ Android.avisosGuardar(JSON.stringify(bankNotes().filter(n => n.t !== t))); render(); }
+// Uma sugestão que sai da lista (lançada ou ignorada) vai para o histórico (ver openSugestoes, em js/exporta.js).
+function noteDrop(t, st = 'ignorada'){
+  const n = bankNotes().find(n => n.t === t);
+  if (n){ sugGuardar(n, st); Android.avisosGuardar(JSON.stringify(bankNotes().filter(n => n.t !== t))); }
+  else if (st === 'lancada') sugGuardar(sugLog().find(n => n.t === t), st); // relançada a partir do histórico
+  render();
+}
 function noteUse(t){
-  const n = bankNotes().find(n => n.t === t), p = n && parseBankNote(n);
+  const nova = bankNotes().find(n => n.t === t), n = nova || sugLog().find(n => n.t === t), p = n && parseBankNote(n);
   if (!p) return render(); // já lançado ou ignorado (toque duplo)
   const value = p.hidden ? '' : moneyStr(p.value); // aviso escondido: o valor fica para a pessoa digitar
-  if (p.income){ noteDrop(t); return openForm('incomes', null, {vals:{desc:p.desc, value, fixed:'', bank:p.bank, start:p.date.slice(0, 7), day:String(+p.date.slice(8))}, more:true}); }
+  if (p.income){ noteDrop(t, 'lancada'); return openForm('incomes', null, {vals:{desc:p.desc, value, fixed:'', bank:p.bank, start:p.date.slice(0, 7), day:String(+p.date.slice(8))}, more:true}); }
   // Gasto: antes de abrir, pergunta se saiu do dinheiro normal ou de um vale (os vales ficam separados).
   pickList('Esse gasto foi pago com…', [['', 'Dinheiro normal (conta, cartão, Pix)'], ...Object.entries(VALES)], null, pay => {
-    if (!bankNotes().some(n => n.t === t)) return; // já lançado ou ignorado
-    noteDrop(t);
+    if (nova && !bankNotes().some(n => n.t === t)) return; // já lançado ou ignorado
+    noteDrop(t, 'lancada');
     if (pay) return openForm('expenses', null, {vale:true, vals:{desc:p.desc, value, pay, emp:valeEmp(pay), fixed:'', start:p.date.slice(0, 7), day:String(+p.date.slice(8))}, more:true});
     openForm('expenses', null, {vals:{desc:p.desc, value, ...(p.desc ? {cat:guessCat(p.desc)} : {}), bank:p.bank, start:p.date.slice(0, 7), day:String(+p.date.slice(8))}, more:true});
   });
@@ -324,7 +333,8 @@ function viewGanhos(){
   avulsos: () => `<h2>Ganhos avulsos</h2>
   ${once.length ? `<div class="card">${once.map(row).join('')}</div>` : empty('wallet','Nenhum ganho avulso cadastrado.')}`
   };
-  return head('Ganhos', 'ganhos') + ganhosSeg() + blocks('ganhos', B);
+  return head('Ganhos', 'ganhos') + ganhosSeg() + blocks('ganhos', B)
+    + `<div class="btns" style="margin-bottom:12px"><button class="btn danger" onclick="openApagar('ganhos')">${I('trash')}Apagar ganhos por dia, mês ou ano</button></div>`;
 }
 
 // Comparativo: gasto de cada categoria no mês m, no mês anterior e na média dos 6 meses antes de m.
@@ -409,9 +419,10 @@ function viewGastos(){
     <button type="button" class="moreBtn" style="margin-top:10px;padding:10px" onclick="openSearch()">${I('search', 16)}Buscar em todos os meses</button>
   </div>
   <div id="expList">${expListHtml()}</div>`,
-  acoes: () => `<div class="btns"><button class="btn" onclick="document.getElementById('stmt').click()">${I('upload')}Importar extrato</button><button class="btn" onclick="shown(printReport)">${I('doc')}Relatório (PDF)</button></div>
+  acoes: () => `<div class="btns"><button class="btn" onclick="openStatementHelp()">${I('upload')}Importar extrato</button><button class="btn" onclick="shown(printReport)">${I('doc')}Relatório (PDF)</button></div>
   <div class="btns"><button class="btn" onclick="openSheetLink()">${I('doc')}${sheetId() ? 'Planilha do Google (ligada)' : 'Exportar para uma planilha do Google ligada ao app'}</button></div>
-  <div class="btns" style="margin-bottom:12px"><button class="btn" onclick="exportCsv()">${I('download')}Exportar planilha de ${m.slice(0,4)} (CSV)</button></div>`
+  <div class="btns"><button class="btn" onclick="shown(exportPlanilha)">${I('download')}Exportar planilha de ${m.slice(0,4)} (Excel)</button></div>
+  <div class="btns" style="margin-bottom:12px"><button class="btn danger" onclick="openApagar('gastos')">${I('trash')}Apagar gastos por dia, mês ou ano</button></div>`
   };
   return `${head('Gastos', 'gastos')}${gastosSeg()}
   <div class="nav"><button onclick="state.month=addMonths(state.month,-1);renderIn()">‹</button><b onclick="pickMonth()">${monthName(m)} ▾</b><button onclick="state.month=addMonths(state.month,1);renderIn()">›</button></div>
@@ -574,7 +585,8 @@ function viewInvest(){
     <a href="#" onclick="openRates();return false" style="color:var(--brand)">Ver taxas</a>
     ${vs.some(v => v.ticker) ? '<br>Ações e moedas entram pelo valor atual, sem projeção. As cotações podem ter alguns minutos de atraso.' : ''}</div>`
   };
-  return head('Investimentos', 'invest') + blocks('invest', B);
+  return head('Investimentos', 'invest') + blocks('invest', B)
+    + (vs.length ? `<div class="btns" style="margin-bottom:12px"><button class="btn danger" onclick="openApagar('invest')">${I('trash')}Apagar investimentos por dia, mês ou ano</button></div>` : '');
 }
 function openDiv(id){ const v = db.investments.find(x => x.id === id); openForm('div', null, {id, title:'Provento de ' + v.ticker}); }
 function buyMore(id){

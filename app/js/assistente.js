@@ -413,16 +413,17 @@ function printReport(){
   const cats = topBy(outs, x => (CAT_GASTO[x.cat] || CAT_GASTO.outros)[1], 99), budgets = budgetStatus(m), inv = invoices(m);
   const title = monthName(m);
   document.getElementById('report').innerHTML = `
-    <h1>Relatório de ${title.replace(' ', ' de ')}</h1>
-    <small>Minhas Finanças · gerado em ${now.toLocaleDateString('pt-BR')}</small>
-    <div class="boxes"><div><small>Ganhos</small><b>${fmt(tin)}</b></div><div><small>Gastos</small><b>${fmt(tout)}</b></div><div><small>Saldo</small><b>${fmt(tin - tout)}</b></div></div>
+    <div class="capa"><h1>Relatório de ${title.replace(' ', ' de ')}</h1>
+    <small>Minhas Finanças${myName() ? ' · ' + esc(myName()) : ''} · gerado em ${now.toLocaleDateString('pt-BR')}</small></div>
+    <div class="boxes"><div class="in"><small>Ganhos</small><b>${fmt(tin)}</b></div><div class="out"><small>Gastos</small><b>${fmt(tout)}</b></div><div class="${tin - tout < 0 ? 'out' : 'in'}"><small>Saldo</small><b>${fmt(tin - tout)}</b></div></div>
     <h2>Gastos por categoria</h2>${cats.length ? table(['Categoria', '% do total', 'Valor'], cats.map(([n, v]) => [esc(n), Math.round(v / tout * 100) + '%', fmt(v)]), tout) : '<small>Nenhum gasto.</small>'}
     ${budgets.length ? `<h2>Orçamento</h2>${table(['Categoria', 'Limite', 'Usado'], budgets.map(b => [(CAT_GASTO[b.cat] || CAT_GASTO.outros)[1], fmt(b.lim), `${fmt(b.used)} (${Math.round(b.pct)}%)`]))}` : ''}
     ${inv.length ? `<h2>Faturas do cartão</h2>${table(['Banco', 'Valor'], inv.map(([b, v]) => [esc(b), fmt(v)]), sum(inv, x => x[1]))}` : ''}
     <h2>Ganhos</h2>${ins.length ? table(['Descrição', 'Categoria', 'Valor'], ins.map(x => [esc(x.desc), (CAT_GANHO[x.cat] || CAT_GANHO.outros)[1], fmt(x.value)]), tin) : '<small>Nenhum ganho.</small>'}
     <h2>Gastos</h2>${outs.length ? table(['Descrição', 'Categoria', 'Banco / pagamento', 'Tipo', 'Valor'], outs.map(x => [esc(x.desc), (CAT_GASTO[x.cat] || CAT_GASTO.outros)[1], [x.bank && esc(x.bank), PAY[x.pay]].filter(Boolean).join(' · '), kind(x), fmt(x.value)]), tout) : '<small>Nenhum gasto.</small>'}
     ${db.accounts.length && m === curYM ? `<h2>Saldo das contas hoje</h2>${table(['Conta', 'Saldo'], db.accounts.map(a => [esc(a.name), fmt(accountBalance(a))]), sum(db.accounts, accountBalance))}` : ''}
-    ${db.investments.length && m === curYM ? `<h2>Investimentos hoje</h2>${table(['Investimento', 'Valor'], db.investments.map(v => [esc(v.name), fmt(v.value)]), sum(db.investments, v => v.value))}` : ''}`;
+    ${db.investments.length && m === curYM ? `<h2>Investimentos hoje</h2>${table(['Investimento', 'Valor'], db.investments.map(v => [esc(v.name), fmt(v.value)]), sum(db.investments, v => v.value))}` : ''}
+    <div class="rodape">Relatório gerado pelo app Minhas Finanças</div>`;
   const name = 'relatorio-' + m;
   if (window.Android && Android.imprimir) Android.imprimir(name); else window.print();
 }

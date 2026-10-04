@@ -120,17 +120,28 @@ input:focus,select:focus{border-color:var(--brand)}
 @media print{
   html,body{height:auto;background:#fff}
   body>*:not(#report){display:none!important}
-  #report{display:block;color:#000;font:12px/1.45 system-ui,sans-serif;padding:8px}
-  #report h1{display:block;font-size:20px;margin:0 0 2px}
-  #report h2{display:block;font-size:13px;color:#000;letter-spacing:0;text-transform:none;margin:18px 0 6px;border-bottom:1.5px solid #000;padding-bottom:3px}
+  /* Relatório com cara de documento: faixa de título na cor do app, cabeçalhos coloridos, linhas alternadas e totais
+     em destaque. As cores saem na impressão e no PDF (print-color-adjust). */
+  #report{display:block;color:#111827;font:12px/1.45 system-ui,sans-serif;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #report .capa{background:#4f46e5;color:#fff;border-radius:10px;padding:14px 16px;margin-bottom:12px}
+  #report h1{display:block;font-size:21px;margin:0 0 2px;color:#fff;text-transform:none}
+  #report .capa small{color:#e0e7ff}
+  #report h2{display:block;font-size:13px;color:#312e81;letter-spacing:0;text-transform:none;margin:18px 0 6px;border-left:4px solid #4f46e5;padding:1px 0 1px 8px;break-after:avoid}
   #report table{width:100%;border-collapse:collapse}
-  #report td,#report th{padding:4px 6px;border-bottom:1px solid #ccc;text-align:left;vertical-align:top}
+  #report th{background:#4f46e5;color:#fff;font-weight:600;padding:6px 8px;text-align:left}
+  #report th:first-child{border-radius:6px 0 0 0}#report th:last-child{border-radius:0 6px 0 0}
+  #report td{padding:5px 8px;border-bottom:1px solid #e5e7eb;text-align:left;vertical-align:top}
+  #report tr:nth-child(odd) td{background:#f5f6fd}
   #report td:last-child,#report th:last-child{text-align:right;white-space:nowrap}
-  #report .sum td{font-weight:700;border-top:1.5px solid #000;border-bottom:0}
+  #report .sum td{font-weight:700;background:#e0e7ff!important;color:#312e81;border-top:2px solid #4f46e5;border-bottom:0}
+  #report tr{break-inside:avoid}
   #report .boxes{display:flex;gap:10px;margin:12px 0}
-  #report .boxes div{flex:1;border:1px solid #999;border-radius:6px;padding:8px}
-  #report .boxes b{display:block;font-size:16px}
-  #report small{color:#555}
+  #report .boxes div{flex:1;border-radius:10px;padding:10px 12px;background:#f5f6fd;border:1px solid #e0e7ff}
+  #report .boxes div.in{background:#ecfdf5;border-color:#a7f3d0}#report .boxes div.out{background:#fef2f2;border-color:#fecaca}
+  #report .boxes b{display:block;font-size:17px}
+  #report .boxes .in b{color:#047857}#report .boxes .out b{color:#b91c1c}
+  #report small{color:#6b7280}
+  #report .rodape{margin-top:18px;text-align:center;color:#9ca3af;font-size:10.5px}
 }
 /* Animações: rápidas (até 0,25 s). Desligadas por data-anim="off" (Configurações) ou se o sistema pedir menos movimento. */
 .btn,.iconbtn,.fab,.sw,.tabs button,.nav button,.nav b,h2 button,#gate button{transition:transform .12s ease-out,background-color .15s,opacity .15s,color .15s}

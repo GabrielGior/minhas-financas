@@ -14,7 +14,7 @@ const GUIA = [
     ['Comprovante por foto', 'Novo gasto › Mais opções › Comprovante', 'Tire uma foto ou escolha da galeria. No Android, o app tenta ler o valor e a data da foto.'],
     ['Lançar escrevendo ou falando', 'Botão redondo do assistente, em qualquer tela', 'Escreva "mercado 45 nubank crédito" ou toque no microfone (só no Android). O app mostra o que entendeu e pede confirmação.'],
     ['Sugestões pelos avisos do banco (só no Android)', 'Configurações › Lançamento automático', 'Ligue e autorize o acesso às notificações. Compras e Pix avisados pelo banco viram sugestões no Resumo.'],
-    ['Importar extrato', 'Aba Gastos › Importar extrato', 'Escolha um arquivo OFX ou CSV do banco, confira os lançamentos e importe.'],
+    ['Importar extrato', 'Aba Gastos › Importar extrato', 'O app mostra primeiro o formato esperado (OFX, ou CSV com as colunas Data e Valor, e Descrição se houver). Depois você escolhe o arquivo, confere os lançamentos e importa.'],
     ['Editar, excluir e desfazer', 'Toque num lançamento; ou deslize para a esquerda', 'Depois de excluir ou salvar uma alteração aparece "Desfazer" por alguns segundos. O que foi excluído fica 30 dias na Lixeira.']]],
   ['Resumo', [
     ['Saldo do ano e gráfico', 'Aba Resumo', 'Troque o ano nas setas. Toque num mês do gráfico para ver ganhos, gastos e saldo.'],
@@ -34,7 +34,9 @@ const GUIA = [
     ['Orçamento por categoria', 'Aba Gastos › Orçamento do mês', 'Defina um limite mensal por categoria. O app avisa a partir de 80% do limite.'],
     ['Faturas e limite do cartão', 'Aba Gastos › Faturas do cartão › Configurar cartões', 'Informe o dia de fechamento, o limite e a conta que paga cada cartão.'],
     ['Comparativo', 'Aba Gastos › Comparativo por categoria', 'Compara o mês com o anterior e com a média de 6 meses.'],
-    ['Relatório em PDF e planilha', 'Aba Gastos (fim da tela)', '"Relatório (PDF)" abre a impressão; "Exportar planilha (CSV)" gera um arquivo para Excel.'],
+    ['Relatório em PDF e planilha', 'Aba Gastos (fim da tela)', '"Relatório (PDF)" abre a impressão com o relatório do mês formatado; "Exportar planilha (Excel)" gera o arquivo do ano com três abas (resumo, gastos e ganhos), cabeçalho colorido e totais.'],
+    ['Apagar por dia, mês ou ano', 'Fim das abas Gastos, Ganhos e Investir', 'Apaga todos os lançamentos de um dia, de um mês, de um ano ou tudo. Vai para a lixeira e dá para desfazer em seguida.'],
+    ['Histórico de sugestões do banco', 'Aba Resumo › Histórico de sugestões', 'Lista o que o app leu das notificações do banco, inclusive o que já foi lançado ou ignorado, com um botão para lançar o gasto.'],
     ['Vales: refeição, alimentação e transporte', 'Aba Gastos › Vales e aba Ganhos › Vales', 'Use "+ Crédito deste vale" para o que entra (de preferência todo mês) e "+ Gasto neste vale" para o que sai. O formulário pede só valor, vale, empresa e descrição. Os vales ficam fora dos totais do mês; toque num vale para ver o saldo e o histórico completo dele.'],
     ['Planilha do Google ligada ao app', 'Aba Gastos (fim da tela) ou Configurações › Dados e ajustes', 'O app cria uma planilha na sua conta. O que você lançar no app aparece nela, e o que escrever nela aparece no app.']]],
   ['Investimentos e metas', [
