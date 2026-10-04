@@ -57,6 +57,17 @@ function donut(parts, total, rotulo = 'Total'){
     <text x="21" y="24.2" text-anchor="middle" font-size="3.6" font-weight="700" fill="var(--text)">${hideVals ? MASK : 'R$ ' + total.toLocaleString('pt-BR', {notation:'compact', maximumFractionDigits:1})}</text></svg>`;
 }
 
+// Cartão com a rosca de gastos por categoria: total no centro e, ao lado, as cinco maiores categorias (o resto vira
+// "Outras") com valor e percentual. lista = [[categoria, valor], ...]; rotulo = o que vai no centro (mês ou ano).
+function roscaCats(lista, rotulo, vazio){
+  const cs = [...lista].sort((a, b) => b[1] - a[1]), tot = sum(cs, c => c[1]), top = cs.slice(0, 5), resto = sum(cs.slice(5), c => c[1]);
+  if (!cs.length) return `<div class="hint" style="margin:0 4px 12px">${vazio}</div>`;
+  const cor = (k, i) => (CAT_GASTO[k] || CAT_GASTO.outros)[2] || shade(i, top.length);
+  const linhas = [...top.map(([k, v], i) => [cor(k, i), (CAT_GASTO[k] || CAT_GASTO.outros)[1], v]), ...(resto ? [['var(--muted)', 'Outras', resto]] : [])];
+  return `<div class="card rosca">${donut(linhas.map(([c, , v]) => [c, v]), tot, rotulo)}
+    <div>${linhas.map(([c, nome, v]) => `<div class="leg duas"><i class="dot" style="background:${c}"></i><span>${nome}<small>${fmtCurto(v)}</small></span><b>${Math.round(v / tot * 100)}%</b></div>`).join('')}</div></div>`;
+}
+
 function viewResumo(){
   // rm = mês escolhido no Resumo (state.rmes), sempre dentro do ano escolhido (state.year).
   const y = state.year, rm = resumoMes(), nomeM = monthName(rm).split(' ')[0], months = [...Array(12)].map((_,i) => ymOf(y,i));
@@ -92,19 +103,13 @@ function viewResumo(){
       ${dif == null || hideVals ? '' : `<span class="selo">${dif > 0 ? '▲' : dif < 0 ? '▼' : '='} ${Math.abs(dif)}% que no mês anterior</span>`}</div>
     <div class="hero ano"><small>Gastos de ${y}</small><div class="big">${fmtCurto(tout)}</div>${uso(tin, tout)}
       ${tin || tout ? `<span class="selo">${tin - tout < 0 ? 'faltou' : 'sobrou'} ${fmtCurto(Math.abs(tin - tout))}</span>` : ''}</div></div>`; },
-  // Rosca do mês atual por categoria, com o total no centro e as maiores categorias ao lado.
-  rosca: () => { const g = {}, lista = expensesOf(rm); lista.forEach(e => g[e.cat] = (g[e.cat] || 0) + e.value);
-    const cs = Object.entries(g).sort((a, b) => b[1] - a[1]), tot = sum(lista, x => x.value), top = cs.slice(0, 5), resto = sum(cs.slice(5), c => c[1]);
-    const cor = (k, i) => (CAT_GASTO[k] || CAT_GASTO.outros)[2] || shade(i, top.length);
-    return `<h2>Para onde foi o dinheiro <button onclick="goMonth('${rm}')">Ver gastos</button></h2>${cs.length ? `<div class="card rosca">
-      ${donut([...top.map(([k, v], i) => [cor(k, i), v]), ...(resto ? [['var(--muted)', resto]] : [])], tot, cap(monthName(rm).split(' ')[0]))}
-      <div>${[...top.map(([k, v], i) => [cor(k, i), (CAT_GASTO[k] || CAT_GASTO.outros)[1], v]), ...(resto ? [['var(--muted)', 'Outras', resto]] : [])].map(([c, nome, v]) =>
-        `<div class="leg duas"><i class="dot" style="background:${c}"></i><span>${nome}<small>${fmtCurto(v)}</small></span><b>${Math.round(v / tot * 100)}%</b></div>`).join('')}</div></div>`
-    : `<div class="hint" style="margin:0 4px 12px">Nenhum gasto em ${monthName(rm)}.</div>`}`; },
+  // Gastos por categoria do mês escolhido: rosca com o total no centro e as maiores categorias ao lado.
+  rosca: () => { const g = {}; expensesOf(rm).forEach(e => g[e.cat] = (g[e.cat] || 0) + e.value);
+    return `<h2>Gastos por categoria em ${nomeM} <button onclick="goMonth('${rm}')">Ver gastos</button></h2>${roscaCats(Object.entries(g), cap(nomeM), `Nenhum gasto em ${monthName(rm)}.`)}`; },
   // Calendário do mês atual: cada dia fica mais escuro quanto mais se gastou nele. Tocar num dia mostra o que saiu.
   dias: () => { const por = gastosPorDia(rm), max = Math.max(...por.slice(1).map(d => d.v)), n = daysIn(rm), [ay, am] = rm.split('-').map(Number), vazio = new Date(ay, am - 1, 1).getDay();
     const sel = state.dia && state.dia <= n ? por[state.dia] : null;
-    return `<h2>Dias de ${monthName(rm).split(' ')[0]}</h2><div class="card">
+    return `<h2>Calendário de gastos de ${nomeM}</h2><div class="card">
       <div class="cal">${['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map(d => `<small>${d}</small>`).join('')}${'<span></span>'.repeat(vazio)}
       ${[...Array(n)].map((_, i) => { const d = i + 1, v = por[d].v, nivel = !v || !max ? 0 : Math.max(1, Math.ceil(v / max * 4));
         return `<button class="n${nivel}${rm === curYM && d === now.getDate() ? ' hoje' : ''}${state.dia === d ? ' sel' : ''}" onclick="state.dia=${state.dia === d ? 0 : d};render()" aria-label="Dia ${d}: ${hideVals ? MASK : fmt(v)}">${d}</button>`; }).join('')}</div>
@@ -119,7 +124,7 @@ function viewResumo(){
     <div class="hint" style="color:${budgetColor(b.pct)}">${c[1]}:${Math.round(b.pct)}% usado (${fmt(b.used)} de ${fmt(b.lim)})</div>`; }).join('')}</div>` : ''}${oddHtml(odd)}`,
   planejar: () => planHtml(),
   saldo: () => `<div class="hero"><small>Saldo de ${y}</small><div class="big">${fmt(tin - tout)}</div>
-    <div class="row"><div><small>Ganho total</small><b>${fmt(tin)}</b></div><div><small>Gasto total</small><b>${fmt(tout)}</b></div></div></div>`,
+    <div class="row cores"><div><small>Ganho total</small><b class="hIn">${fmt(tin)}</b></div><div><small>Gasto total</small><b class="hOut">${fmt(tout)}</b></div></div></div>`,
   // Ganhos e gastos mês a mês: totais do ano no topo, barras arredondadas (mês atual em destaque, meses futuros mais
   // claros) e, ao tocar num mês, os números dele.
   grafico: () => `<h2>Ganhos e gastos de ${y}</h2><div class="card graf">
@@ -155,12 +160,8 @@ function viewResumo(){
     ${db.transfers.length ? `<div class="card"><b>Transferências</b>${[...db.transfers].sort((a,b) => b.month.localeCompare(a.month)).slice(0, 5).map(t => `
     <div class="item" onclick="edit('transfers','${t.id}')"><div class="mid"><b style="font-weight:500">${esc(t.from)} → ${esc(t.to)}</b><small>${monthName(t.month)}${bySmall(t)}</small></div><div class="val">${fmt(t.value)}</div></div>`).join('')}</div>` : ''}`
   : '<div class="hint" style="margin:0 4px 12px">Cadastre suas contas para acompanhar o saldo de cada uma. O saldo considera os ganhos e gastos em que você informar o mesmo nome no campo de banco/conta.</div>'}`,
-  categorias: () => `<h2>Gastos por categoria em ${y}</h2>
-  ${catList.length ? `<div class="card">${donut(catList.map(([k,v], i) => [shade(i, catList.length), v]), tout)}
-    ${catList.map(([k,v], i) => { const c = CAT_GASTO[k] || CAT_GASTO.outros; return `
-    <div class="catrow"><div class="top"><span><i class="dot" style="background:${shade(i, catList.length)}"></i>${catName(c)}</span><b>${fmt(v)} · ${Math.round(v/tout*100)}%</b></div>
-      <div class="bar"><i style="width:${v/tout*100}%;background:${shade(i, catList.length)}"></i></div></div>`; }).join('')}</div>`
-  : empty('receipt','Nenhum gasto cadastrado neste ano.')}`,
+  // Gastos por categoria do ano: a mesma rosca do mês.
+  categorias: () => `<h2>Gastos por categoria em ${y}</h2>${roscaCats(Object.entries(cats), y, 'Nenhum gasto cadastrado neste ano.')}`,
   bancos: () => catList.length ? `<h2>Gastos por banco em ${y}</h2>${breakdown(banks)}` : '',
   pagamentos: () => catList.length ? `<h2>Gastos por forma de pagamento em ${y}</h2>${breakdown(pays)}` : '',
   // Previsão: mês atual e os três seguintes. "Sobra" = ganhos − gastos previstos do mês; com contas cadastradas,
@@ -179,7 +180,7 @@ function viewResumo(){
       <div class="hint">Considera ganhos e gastos fixos, anuais, parcelas e o que já está lançado em cada mês.</div></div>`; },
   // Resumo do mês: o mesmo cartão de destaque do saldo do ano. Tocar leva aos gastos do mês.
   mes: () => { const a = totalIn(rm), b = totalOut(rm); return `<div class="hero" style="cursor:pointer" onclick="goMonth('${rm}')"><small>Saldo de ${monthName(rm)}</small><div class="big">${fmt(a - b)}</div>
-    <div class="row"><div><small>Ganhos</small><b>${fmt(a)}</b></div><div><small>Gastos</small><b>${fmt(b)}</b></div><div style="margin-left:auto;align-self:flex-end"><small>Ver gastos ›</small></div></div></div>`; },
+    <div class="row cores"><div><small>Ganhos</small><b class="hIn">${fmt(a)}</b></div><div><small>Gastos</small><b class="hOut">${fmt(b)}</b></div><div style="margin-left:auto;align-self:flex-end"><small>Ver gastos ›</small></div></div></div>`; },
   faturas: () => `<h2>Faturas de ${monthName(rm)}</h2>${inv.length ? `<div class="card">${inv.map(([bank, v]) => `<div class="item" style="cursor:default">${tile('card')}<div class="mid"><b>${esc(bank)}</b></div><div class="val out">${fmt(v)}</div></div>`).join('')}</div>`
     : '<div class="hint" style="margin:0 4px 12px">Nenhuma compra no crédito neste mês.</div>'}`,
   parcelas: () => `<h2>Compras parceladas <button onclick="state.gsub='parc';go('gastos')">Ver todas</button></h2>${open.length ? `<div class="card grid2">

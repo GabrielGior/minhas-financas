@@ -17,7 +17,7 @@ function logErr(onde, e){
 }
 addEventListener('error', e => logErr('erro na tela', (e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0)));
 addEventListener('unhandledrejection', e => logErr('promessa', e.reason));
-const APP_VERSION = '1.58'; // manter igual ao versionName do build.gradle
+const APP_VERSION = '1.59'; // manter igual ao versionName do build.gradle
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 // Ícones do app: desenhos em dois tons (traço + preenchimento translúcido nas partes com class="d"),
 // todos numa grade de 24×24. I('nome', tamanho) devolve o <svg>; a cor vem do texto ao redor (currentColor).
@@ -365,7 +365,7 @@ const shade = (i, n) => hslHex(theme.h, theme.s * .9, theme.dark ? 76 - i * 44 /
 const MODES = {auto:'Automático', light:'Claro', dark:'Escuro'};
 // Blocos disponíveis na aba Resumo: [nome, aparece por padrão]. O conteúdo de cada um está em viewResumo.
 const RESUMO = {mascote:['Porquinho (modo divertido)', 1, 1], atalhos:['Atalhos para adicionar', 1, 1],
-  destaque:['Gastos do mês e do ano', 1, 1], rosca:['Para onde foi o dinheiro no mês', 1, 1], dias:['Dias do mês (quanto mais gasto, mais escuro)', 1, 1], alertas:['Contas a vencer e avisos de orçamento', 1], saldo:['Saldo do ano', 1], grafico:['Gráfico de ganhos e gastos', 1],
+  destaque:['Gastos do mês e do ano', 1, 1], rosca:['Gastos por categoria no mês', 1, 1], dias:['Calendário de gastos do mês', 1, 1], alertas:['Contas a vencer e avisos de orçamento', 1], saldo:['Saldo do ano', 1], grafico:['Gráfico de ganhos e gastos', 1],
   numeros:['Média de gastos e total investido', 1], previsao:['Previsão dos próximos meses', 1], contas:['Contas bancárias', 1], planejar:['Planejamento (reserva, assinaturas, dívidas)', 1], categorias:['Gastos por categoria', 1], bancos:['Gastos por banco', 1],
   pagamentos:['Gastos por forma de pagamento', 1], mes:['Resumo do mês atual', 0], faturas:['Faturas do cartão do mês', 0], parcelas:['Compras parceladas', 0],
   metas:['Metas', 0], invest:['Investimentos', 0], vales:['Vale-refeição e alimentação', 1], conquistas:['Conquistas (modo divertido)', 1]};

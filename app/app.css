@@ -801,3 +801,9 @@ html[data-troca=gira] #app.enter{animation:trGira .38s ease-out;transform-origin
 .prevNum b.out{color:var(--out)}
 .prevNum .ic{vertical-align:-2px}
 .prev>.hint{margin:8px 4px 0}
+/* 1.59: nos cartões de saldo, ganhos em verde e gastos em vermelho em qualquer tema (fundo escuro atrás para dar leitura) */
+.hero .row.cores>div:not([style]){background:rgba(0,0,0,.34);border-radius:12px;padding:7px 11px}
+.hero .row.cores{gap:8px}
+.hero b.hIn{color:#4ade80}
+.hero b.hOut{color:#f87171}
+.hero .big{color:#fff}
