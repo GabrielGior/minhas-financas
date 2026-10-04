@@ -807,3 +807,17 @@ html[data-troca=gira] #app.enter{animation:trGira .38s ease-out;transform-origin
 .hero b.hIn{color:#4ade80}
 .hero b.hOut{color:#f87171}
 .hero .big{color:#fff}
+/* 1.60: ganhos e gastos do ano em gráfico de linha */
+.graf .chart.linha{height:190px;gap:0;align-items:stretch}
+.graf .chart.linha svg{position:absolute;left:0;top:0;width:100%;height:calc(100% - 24px);overflow:visible;pointer-events:none}
+.graf .chart.linha .grid{top:0;bottom:24px}
+.graf .chart.linha .col{padding:0;gap:0;border-radius:10px}
+.graf .chart.linha .bars{display:block;position:relative;flex:1;width:100%}
+.graf .chart.linha .bars>i.pt{position:absolute;left:50%;width:10px;height:10px;max-width:none;min-height:0;border-radius:50%;transform:translate(-50%,50%);border:2px solid var(--card);box-sizing:border-box}
+.graf .chart.linha .pt.gan{background:var(--in)}
+.graf .chart.linha .pt.gas{background:var(--out)}
+.graf .chart.linha .col.fut .bars{opacity:.55}
+.graf .chart.linha .col.sel .pt{width:13px;height:13px}
+.graf .chart.linha small{height:24px;line-height:24px}
+.graf .chart.linha .col.atual::after{display:none}
+.graf .chart.linha .col.atual small{color:var(--brand)}

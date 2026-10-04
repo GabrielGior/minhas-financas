@@ -125,18 +125,23 @@ function viewResumo(){
   planejar: () => planHtml(),
   saldo: () => `<div class="hero"><small>Saldo de ${y}</small><div class="big">${fmt(tin - tout)}</div>
     <div class="row cores"><div><small>Ganho total</small><b class="hIn">${fmt(tin)}</b></div><div><small>Gasto total</small><b class="hOut">${fmt(tout)}</b></div></div></div>`,
-  // Ganhos e gastos mês a mês: totais do ano no topo, barras arredondadas (mês atual em destaque, meses futuros mais
-  // claros) e, ao tocar num mês, os números dele.
-  grafico: () => `<h2>Ganhos e gastos de ${y}</h2><div class="card graf">
+  // Ganhos e gastos mês a mês, em gráfico de linha: totais do ano no topo, uma linha para os ganhos (com o rendimento
+  // dos investimentos) e outra para os gastos, um ponto por mês; os meses futuros ficam tracejados. Tocar num mês
+  // mostra os números dele. O desenho das linhas é um SVG esticado atrás das colunas (que continuam recebendo o toque).
+  grafico: () => { const ci = months.includes(curYM) ? months.indexOf(curYM) : y < now.getFullYear() ? 11 : 0, gan = ins.map((v, i) => v + yields[i]);
+    const linha = (vals, cor) => { const p = vals.map((v, i) => `${i * 10 + 5},${(100 - v / max * 100).toFixed(2)}`), tr = 'fill="none" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"';
+      return `<polygon points="5,100 ${p.join(' ')} 115,100" fill="${cor}" opacity=".1"/><polyline points="${p.slice(0, ci + 1).join(' ')}" stroke="${cor}" stroke-width="2.6" ${tr}/>`
+        + (ci < 11 ? `<polyline points="${p.slice(ci).join(' ')}" stroke="${cor}" stroke-width="2" stroke-dasharray="5 5" opacity=".55" ${tr}/>` : ''); };
+    return `<h2>Ganhos e gastos de ${y}</h2><div class="card graf">
     <div class="grafTopo">
       <div><small><i class="dot" style="background:var(--in)"></i>Ganhos</small><b class="in">${fmtCurto(tin)}</b></div>
       <div><small><i class="dot" style="background:var(--out)"></i>Gastos</small><b class="out">${fmtCurto(tout)}</b></div>
       <div><small>${tin - tout < 0 ? 'Faltou' : 'Sobrou'}</small><b class="${tin - tout < 0 ? 'out' : ''}">${fmtCurto(Math.abs(tin - tout))}</b></div></div>
-    <div class="chart">${chartGrid(max)}${months.map((m,i) => `<div class="col ${i === si ? 'sel' : ''}${m === curYM ? ' atual' : ''}${m > curYM ? ' fut' : ''}" onclick="state.sel='${state.sel === m ? '' : m}';render()"><div class="bars">
-      <span class="stk" style="height:${(ins[i] + yields[i])/max*100}%"><i class="rend" style="flex:${yields[i]}"></i><i class="gan" style="flex:${ins[i]}"></i></span>
-      <i class="gas" style="height:${outs[i]/max*100}%"></i></div>
+    <div class="chart linha">${chartGrid(max)}<svg viewBox="0 0 120 100" preserveAspectRatio="none" aria-hidden="true">${linha(gan, 'var(--in)')}${linha(outs, 'var(--out)')}</svg>
+      ${months.map((m,i) => `<div class="col ${i === si ? 'sel' : ''}${m === curYM ? ' atual' : ''}${m > curYM ? ' fut' : ''}" onclick="state.sel='${state.sel === m ? '' : m}';render()"><div class="bars">
+        <i class="pt gan" style="bottom:${gan[i] / max * 100}%"></i><i class="pt gas" style="bottom:${outs[i] / max * 100}%"></i></div>
       <small>${MESES[i].slice(0,3)}</small></div>`).join('')}</div>
-    ${tyield ? '<div class="legend" style="margin-top:10px"><span><i class="dot" style="background:var(--brand)"></i>Rendimento de investimentos (em cima dos ganhos)</span></div>' : ''}
+    <div class="legend" style="margin-top:10px"><span><i class="dot" style="background:var(--in)"></i>Ganhos${tyield ? ' (com rendimento)' : ''}</span><span><i class="dot" style="background:var(--out)"></i>Gastos</span>${ci < 11 ? '<span>- - -  previsto</span>' : ''}</div>
     ${si < 0 ? '<div class="hint">Toque em um mês para ver os valores.</div>' : `
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)"><b style="text-transform:capitalize">${monthName(months[si])}</b>
       <div class="grid2" style="margin-top:8px;row-gap:8px">
@@ -147,7 +152,7 @@ function viewResumo(){
       </div>
       <div class="btns"><button class="btn" onclick="goMonth('${months[si]}')">Ver gastos do mês</button></div></div>`}
     ${tyield ? `<div class="hint">Rendimento estimado dos investimentos em ${y}: <b style="color:var(--brand)">${fmt(tyield)}</b>. Meses passados usam o valor registrado pelo app; os futuros são projeção. Não entra no saldo do ano.</div>` : ''}
-  </div>`,
+  </div>`; },
   numeros: () => `<div class="grid2">
     <div class="card stat"><small>Média mensal de gastos em ${y}</small><b class="out">${fmt(tout/12)}</b></div>
     <div class="card stat" style="cursor:pointer" onclick="go('invest')"><small>Investido hoje ›</small><b>${fmt(invNow)}</b></div>
