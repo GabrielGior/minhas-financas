@@ -785,3 +785,19 @@ html[data-troca=gira] #app.enter{animation:trGira .38s ease-out;transform-origin
 .graf .chart .col.atual::after{content:"";width:5px;height:5px;border-radius:50%;background:var(--brand);margin-top:-3px}
 .graf .chart .col.sel{background:color-mix(in srgb,var(--brand) 14%,transparent)}
 .graf .chart small{font-size:10.5px;text-transform:capitalize}
+/* 1.58: previsão dos próximos meses em cartões */
+.prev{padding:12px}
+.prevM{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:12px;margin-bottom:8px}
+.prevCab{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.prevCab b{font-size:15px}
+.prevCab em{font-style:normal;font-weight:600;font-size:11px;margin-left:6px;padding:2px 7px;border-radius:99px;background:color-mix(in srgb,var(--brand) 18%,transparent);color:var(--brand)}
+.prevCab span{font-weight:700;font-size:13.5px;padding:4px 10px;border-radius:99px;white-space:nowrap;background:color-mix(in srgb,var(--in) 14%,transparent);font-variant-numeric:tabular-nums}
+.prevCab span.out{background:color-mix(in srgb,var(--out) 14%,transparent)}
+.prevBar{height:8px;border-radius:99px;overflow:hidden;margin:10px 0 8px;background:color-mix(in srgb,var(--in) 55%,var(--card))}
+.prevBar i{display:block;height:100%;border-radius:99px 0 0 99px;background:var(--out)}
+.prevM.neg .prevBar i{border-radius:99px}
+.prevNum{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--muted);margin-top:4px}
+.prevNum b{color:var(--text);font-variant-numeric:tabular-nums}
+.prevNum b.out{color:var(--out)}
+.prevNum .ic{vertical-align:-2px}
+.prev>.hint{margin:8px 4px 0}

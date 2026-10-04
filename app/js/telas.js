@@ -168,16 +168,18 @@ function viewResumo(){
   previsao: () => { const rows = [...Array(4)].map((_,i) => addMonths(curYM, i)), hasAcc = db.accounts.length > 0;
     const pendIn = sum(incomesOf(curYM).filter(x => x.day > now.getDate()), x => x.value);
     const pendOut = sum(expensesOf(curYM).filter(x => x.kind === 'expense' && (x.fixed ? x.due : x.day) > now.getDate()), x => x.value);
-    return `<h2>Previsão</h2><div class="card">${rows.map(m => { const net = totalIn(m) - totalOut(m), end = hasAcc ? sum(db.accounts, a => accountBalance(a, monthEnd(m))) : 0; return `
-      <div class="catrow"><div class="top"><span style="text-transform:capitalize">${monthName(m)}</span><b class="${net < 0 ? 'out' : 'in'}">${net < 0 ? 'falta' : 'sobra'} ${fmt(Math.abs(net))}</b></div>
-      ${hasAcc ? `<div class="hint" style="margin-top:3px">Saldo das contas no fim do mês: <b class="${end < 0 ? 'out' : ''}">${fmt(end)}</b></div>` : ''}</div>`; }).join('')}
+    // Um cartão por mês: selo de sobra/falta, barra de quanto dos ganhos os gastos consomem e os dois valores.
+    return `<h2>Previsão dos próximos meses</h2><div class="card prev">${rows.map((m, i) => { const tin = totalIn(m), tout = totalOut(m), net = tin - tout, end = hasAcc ? sum(db.accounts, a => accountBalance(a, monthEnd(m))) : 0; return `
+      <div class="prevM ${net < 0 ? 'neg' : ''}">
+        <div class="prevCab"><b>${cap(monthName(m).split(' ')[0])}${i ? '' : '<em>este mês</em>'}</b><span class="${net < 0 ? 'out' : 'in'}">${net < 0 ? 'falta' : 'sobra'} ${fmt(Math.abs(net))}</span></div>
+        <div class="prevBar"><i style="width:${tin ? Math.min(100, tout / tin * 100) : tout ? 100 : 0}%"></i></div>
+        <div class="prevNum"><span>${I('income', 13)} entra <b>${fmt(tin)}</b></span><span>${I('receipt', 13)} sai <b>${fmt(tout)}</b></span></div>
+        ${hasAcc ? `<div class="prevNum"><span>Saldo das contas no fim do mês</span><b class="${end < 0 ? 'out' : ''}">${fmt(end)}</b></div>` : ''}</div>`; }).join('')}
       ${pendIn || pendOut ? `<div class="hint">Até o fim de ${monthName(curYM).split(' ')[0]} ainda entram ${fmt(pendIn)} e saem ${fmt(pendOut)} (lançamentos com dia depois de hoje).</div>` : ''}
       <div class="hint">Considera ganhos e gastos fixos, anuais, parcelas e o que já está lançado em cada mês.</div></div>`; },
-  mes: () => { const a = totalIn(rm), b = totalOut(rm); return `<h2 style="text-transform:none;letter-spacing:0"><span style="text-transform:uppercase;letter-spacing:.06em">${monthName(rm)}</span><button onclick="goMonth('${rm}')">Ver gastos</button></h2>
-    <div class="card grid3">
-      <div class="stat"><small>Ganhos</small><b class="in" style="font-size:14px">${fmt(a)}</b></div>
-      <div class="stat"><small>Gastos</small><b class="out" style="font-size:14px">${fmt(b)}</b></div>
-      <div class="stat"><small>Saldo</small><b class="${a - b < 0 ? 'out' : ''}" style="font-size:14px">${fmt(a - b)}</b></div></div>`; },
+  // Resumo do mês: o mesmo cartão de destaque do saldo do ano. Tocar leva aos gastos do mês.
+  mes: () => { const a = totalIn(rm), b = totalOut(rm); return `<div class="hero" style="cursor:pointer" onclick="goMonth('${rm}')"><small>Saldo de ${monthName(rm)}</small><div class="big">${fmt(a - b)}</div>
+    <div class="row"><div><small>Ganhos</small><b>${fmt(a)}</b></div><div><small>Gastos</small><b>${fmt(b)}</b></div><div style="margin-left:auto;align-self:flex-end"><small>Ver gastos ›</small></div></div></div>`; },
   faturas: () => `<h2>Faturas de ${monthName(rm)}</h2>${inv.length ? `<div class="card">${inv.map(([bank, v]) => `<div class="item" style="cursor:default">${tile('card')}<div class="mid"><b>${esc(bank)}</b></div><div class="val out">${fmt(v)}</div></div>`).join('')}</div>`
     : '<div class="hint" style="margin:0 4px 12px">Nenhuma compra no crédito neste mês.</div>'}`,
   parcelas: () => `<h2>Compras parceladas <button onclick="state.gsub='parc';go('gastos')">Ver todas</button></h2>${open.length ? `<div class="card grid2">
