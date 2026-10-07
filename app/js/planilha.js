@@ -1,5 +1,5 @@
 // Cofrim — Planilha do Google ligada ao app.
-// Carregado pelo index.html depois do config.js (usa fam(), SHEETS e a sincronização de lá).
+// Carregado pelo index.html depois do sincronizacao.js (usa fam(), SHEETS e a sincronização de lá).
 // A pessoa cria, pelo app, uma planilha na própria conta Google com as abas Gastos e Ganhos. A cada sincronização
 // (sheetSync, chamada pelo syncNow) o app lê a planilha, traz para o app o que foi mexido nela e regrava as abas com
 // o estado do app. Assim dá para lançar no app ou na planilha, e o lançamento aparece nos dois lugares.
@@ -187,10 +187,10 @@ function openSheetLink(){
     <div class="hint in" style="margin-top:0">${I('check', 14)} Ligada ao app${sync.sheetAt ? ' · sincronizada em ' + new Date(sync.sheetAt).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'}) : ''}.</div>
     ${sync.sheetErr ? `<div class="hint warn">${I('alert', 13)} ${esc(sync.sheetErr)}</div>` : ''}
     <div class="hint">Lance, edite ou apague gastos e ganhos na planilha ou no app: aparece nos dois. A planilha é atualizada a cada sincronização do app (ao abrir e depois de cada lançamento); o que você escrever nela chega ao app quando ele for aberto ou em "Sincronizar com a planilha".</div>
-    <div class="btns"><button class="btn primary" onclick="sheetOpenUrl()">${I('doc')}Abrir a planilha</button><button class="btn" onclick="sheetNow()">${I('refresh')}Sincronizar com a planilha</button></div>
-    <div class="btns"><button class="btn danger" style="flex:1" onclick="sheetUnlink()">Desligar a planilha</button></div>` : `
+    <div class="btns"><button class="btn primary" data-onclick="sheetOpenUrl()">${I('doc')}Abrir a planilha</button><button class="btn" data-onclick="sheetNow()">${I('refresh')}Sincronizar com a planilha</button></div>
+    <div class="btns"><button class="btn danger" style="flex:1" data-onclick="sheetUnlink()">Desligar a planilha</button></div>` : `
     <div class="hint" style="margin-top:0">O app cria uma planilha na sua conta Google com as abas Gastos e Ganhos e a mantém ligada: o que você lançar no app aparece na planilha, e o que escrever na planilha aparece no app.</div>
     <div class="hint">Compras parceladas, investimentos e contas ficam só no app. O Google vai pedir sua autorização para o app criar e editar a planilha.</div>
-    <div class="btns"><button class="btn primary" id="shCreate" onclick="sheetCreate()">${I('doc')}Criar a planilha ligada</button></div>`}
-    <div class="btns foot"><button class="btn" onclick="closeForm()">Fechar</button></div>`);
+    <div class="btns"><button class="btn primary" id="shCreate" data-onclick="sheetCreate()">${I('doc')}Criar a planilha ligada</button></div>`}
+    <div class="btns foot"><button class="btn" data-onclick="closeForm()">Fechar</button></div>`);
 }

@@ -1,5 +1,5 @@
 // Cofrim — idiomas (português, inglês e espanhol).
-// Carregado pelo index.html, nesta ordem: dados.js, telas.js, assistente.js, formularios.js, config.js, idioma.js, inicio.js.
+// Carregado pelo index.html, nesta ordem: dados.js, telas.js, assistente.js, formularios.js, divertido.js, config.js, sincronizacao.js, entrada.js, idioma.js, inicio.js.
 //
 // O app é escrito em português. Em inglês ou espanhol, depois que uma tela é desenhada, tr() troca os trechos de texto
 // conhecidos (tabela T) pelos do idioma escolhido. Os valores continuam em reais, no formato brasileiro. O assistente

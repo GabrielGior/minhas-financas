@@ -172,7 +172,7 @@ async function instalarApp(){
     : `<div class="hint" style="margin-top:0">Este navegador não abriu a instalação sozinho. Faça pelo menu dele:</div>
       <ol class="passos"><li>Toque no menu do navegador (<b>⋮</b> ou <b>☰</b>).</li><li>Toque em <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.</li><li>Confirme. O Cofrim aparece na tela inicial como um app.</li></ol>
       <div class="hint">No Chrome do Android a instalação abre direto pelo botão. Para o app completo, com widgets e lembretes, há o app para Android na página do Cofrim.</div>`}
-    <div class="btns foot"><button class="btn primary" onclick="closeForm()">Entendi</button></div>`);
+    <div class="btns foot"><button class="btn primary" data-onclick="closeForm()">Entendi</button></div>`);
 }
 // Aviso no topo do Resumo, enquanto o app não estiver instalado (some ao instalar ou ao tocar no X).
 const INST_AVISO = 'financas-instalar-fechado';
@@ -180,7 +180,7 @@ function avisoInstalar(){
   if (!podeInstalar()) return '';
   try { if (localStorage.getItem(INST_AVISO)) return ''; } catch(e){}
   return `<div class="card instAviso"><div class="mid"><b>Instale o Cofrim</b><small>Abre direto da tela inicial, como um app.</small></div>
-    <button class="btn primary" onclick="instalarApp()">${I('download')}Instalar</button><button class="iconbtn" aria-label="Fechar" onclick="fecharAvisoInstalar()">${I('close')}</button></div>`;
+    <button class="btn primary" data-onclick="instalarApp()">${I('download')}Instalar</button><button class="iconbtn" aria-label="Fechar" data-onclick="fecharAvisoInstalar()">${I('close')}</button></div>`;
 }
 function fecharAvisoInstalar(){ try { localStorage.setItem(INST_AVISO, '1'); } catch(e){} renderIn(); }
 

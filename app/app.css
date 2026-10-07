@@ -14,7 +14,7 @@
 html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--text);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 #app{max-width:520px;margin:0 auto;padding:16px 16px calc(96px + env(safe-area-inset-bottom))}
-#app.hasFab{padding-bottom:calc(170px + env(safe-area-inset-bottom))} /* espaço para rolar o fim da página acima do botão + */
+#app.hasFab{padding-bottom:calc(160px + env(safe-area-inset-bottom))} /* espaço para rolar o fim da página acima dos botões flutuantes */
 h1{font-size:22px;margin:4px 0 14px;display:flex;justify-content:space-between;align-items:center}
 h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:22px 4px 8px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
 h2 button{font-size:12.5px;color:var(--brand);font-weight:700;text-transform:none;letter-spacing:0;white-space:nowrap;flex:none;margin-left:10px}
@@ -589,13 +589,14 @@ html[data-fun=on] .ico:active,html[data-fun=on] .item:active .ico{animation:pigP
 .cal .hoje{outline:2px solid var(--brand);outline-offset:1px}
 .cal .sel{outline:2px solid var(--text);outline-offset:1px}
 .calSel{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
-/* Assistente: botão flutuante redondo; sobe quando a tela também tem o "+". */
+/* Assistente: botão flutuante redondo; quando a tela também tem o "+", fica ao lado dele, na mesma faixa de baixo (um em
+   cima do outro cobriam os valores à direita das listas). */
 .fab.chat{border-radius:50%;width:52px;height:52px;display:flex;align-items:center;justify-content:center;background:var(--card);color:var(--brand);border:1.5px solid var(--line);box-shadow:var(--shadow);right:max(21px,calc(50% - 239px))}
-.fab.chat.alto{bottom:calc(156px + env(safe-area-inset-bottom))}
+.fab.chat.alto{bottom:calc(89px + env(safe-area-inset-bottom));right:calc(max(18px,calc(50% - 242px)) + 70px)}
 .fab.chat[hidden]{display:none}
 h1 .volta{display:flex;align-items:center;gap:4px}
 html[data-fun=on] .fab.chat{animation:none}
-@media (min-width:700px){.fab.chat{right:max(21px,calc(50% - 479px))}}
+@media (min-width:700px){.fab.chat{right:max(21px,calc(50% - 479px))}.fab.chat.alto{right:calc(max(18px,calc(50% - 482px)) + 70px)}}
 /* Puxar para atualizar: o círculo fica escondido acima da tela e desce com o dedo. */
 #ptr{position:fixed;left:50%;top:calc(8px + env(safe-area-inset-top));width:42px;height:42px;border-radius:50%;background:var(--card);color:var(--muted);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.28);transform:translate(-50%,-60px);opacity:0;z-index:60;pointer-events:none}
 #ptr.pronto{color:var(--brand)}

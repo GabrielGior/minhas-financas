@@ -1,5 +1,5 @@
 // Cofrim — Desenhos do ícone do app e a animação de abertura.
-// Carregado pelo index.html depois de config.js (usa pigSvg, MASCOTES, ICONES e SKINS).
+// Carregado pelo index.html depois de divertido.js e config.js (usa pigSvg, MASCOTES, ICONES e SKINS).
 // Os mesmos desenhos viram os arquivos do Android (android/res) pelo arte.ps1, para o ícone e os widgets do
 // celular ficarem iguais ao que o app mostra.
 

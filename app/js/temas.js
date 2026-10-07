@@ -1,6 +1,6 @@
 // Cofrim — Temas especiais por categoria (os da versão 1.46 em diante).
 // Carregado antes de dados.js: aqui ficam só dados. dados.js monta as cores completas de cada tema (SKINS) e
-// config.js junta os mascotes (MASCOTES) e as falas (FUN_TEMA).
+// divertido.js junta os mascotes (MASCOTES) e as falas (FUN_TEMA).
 // Os temas são "inspirados em": os nomes são neutros (descrevem o assunto, sem citar nem imitar marcas) e os
 // personagens são próprios, não os de filmes, desenhos ou jogos.
 
@@ -99,7 +99,7 @@ const PECA = {
   olhao:(c, r = 12) => `<circle cx="43" cy="55" r="${r}" fill="${c}"/><circle cx="77" cy="55" r="${r}" fill="${c}"/>`
 };
 const SO = {semFenda:true, semRabo:true}, OBJ = {semFenda:true, semRabo:true, pes:' ', focinho:' '}; // bicho sem rabo de porco; objeto com rosto
-// Mesmo formato de MASCOTES (js/config.js): [claro, médio, forte, fenda, bochecha, olhos, boca, partes].
+// Mesmo formato de MASCOTES (js/divertido.js): [claro, médio, forte, fenda, bochecha, olhos, boca, partes].
 const MASCOTES_NOVOS = {
   // Diário rosa com coração.
   colegio:['#fbcfe8', '#f472b6', '#db2777', '#9d174d', '#ff5f95', '#500724', '#9d174d', {...OBJ, orelhas:' ',

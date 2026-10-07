@@ -761,7 +761,7 @@ const FALAS_MAIS = {
   basquete:[['Enterrada: {v} na reserva!', 'Vitória no último segundo, {nome}.'], ['Tempo técnico. Tudo calmo.', 'Próximo quarto começa empatado.'], ['Perdemos o rebote: faltam {v}.', 'Falta técnica do cartão, {nome}.']],
   futebol:[['Golaço: {v} guardados!', 'Vitória em casa, {nome}.'], ['Bola no meio de campo.', 'Intervalo: vestiário tranquilo.'], ['Gol contra: faltam {v}.', 'Cartão vermelho para o cartão, {nome}.']],
   detetive:[['Pista certa: {v} guardados.', 'Elementar, {nome}: mês fechado no positivo.'], ['Lupa na mão, tudo em ordem.', 'Anote os gastos: toda pista conta.'], ['O culpado é o cartão: {v}.', 'Caso em aberto, {nome}.']],
-  // Estilos e corridas já têm seis falas próprias por humor em config.js.
+  // Estilos e corridas já têm seis falas próprias por humor em divertido.js.
 };
 // Quarta e quinta falas próprias de cada tema, por humor (mesmo formato de FALAS_MAIS). Com elas, todo tema especial tem
 // pelo menos cinco falas por humor, e nenhuma fala se repete entre temas.

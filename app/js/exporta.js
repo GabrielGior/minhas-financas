@@ -109,7 +109,7 @@ function openStatementHelp(){
       <div class="leg"><span><b style="color:var(--text)">Descrição</b> (opcional)</span><b>também Histórico ou Título</b></div></div>
     <div class="hint" style="margin-top:0">Exemplo:<br><code>Data;Descrição;Valor<br>05/10/2026;Mercado;-182,40<br>06/10/2026;Salário;3500,00</code></div>
     <div class="hint">Valores negativos entram como gastos e positivos como ganhos (numa fatura de cartão é o contrário; você escolhe na próxima tela). Antes de gravar, o app mostra a lista para você conferir e desmarca o que já existe.</div>
-    <div class="btns foot"><button class="btn" onclick="closeForm()">Cancelar</button><button class="btn primary" onclick="closeForm();document.getElementById('stmt').click()">${I('upload')}Escolher o arquivo</button></div>`);
+    <div class="btns foot"><button class="btn" data-onclick="closeForm()">Cancelar</button><button class="btn primary" data-onclick="closeForm();document.getElementById('stmt').click()">${I('upload')}Escolher o arquivo</button></div>`);
 }
 
 // ---------- Apagar por período ----------
@@ -132,14 +132,14 @@ function openApagar(aba){
   showSheet(`<h3>Apagar ${nome}</h3>
     <div class="hint" style="margin-top:0">Escolha o que apagar. Os lançamentos vão para a lixeira (Configurações › Dados e ajustes) e dá para desfazer logo depois.</div>
     <label>Apagar</label>
-    <div class="btns" style="margin-top:0;flex-wrap:wrap">${[['dia', 'Um dia'], ['mes', 'Um mês'], ['ano', 'Um ano'], ['tudo', 'Tudo']].map(([k, t]) => `<button class="btn ${a.modo === k ? 'primary' : ''}" style="padding:11px 6px" onclick="apaga.modo='${k}';openApagar()">${t}</button>`).join('')}</div>
-    ${a.modo === 'ano' ? `<label>Ano</label><div class="nav" style="margin:0"><button onclick="apaga.ano--;openApagar()">‹</button><b>${a.ano}</b><button onclick="apaga.ano++;openApagar()">›</button></div>` : ''}
-    ${a.modo === 'mes' ? `<label>Mês</label><button type="button" class="pickBtn" onclick="pickMonthP('Mês a apagar',apaga.mes,false,v=>{apaga.mes=v;openApagar()})"><span style="text-transform:capitalize">${monthName(a.mes)}</span>${I('chev')}</button>` : ''}
-    ${a.modo === 'dia' ? `<label>Dia</label><button type="button" class="pickBtn" onclick="pickDateP('Dia a apagar',apaga.dia,v=>{apaga.dia=v;openApagar()})"><span>${fmtDate(a.dia)}</span>${I('chev')}</button>` : ''}
+    <div class="btns" style="margin-top:0;flex-wrap:wrap">${[['dia', 'Um dia'], ['mes', 'Um mês'], ['ano', 'Um ano'], ['tudo', 'Tudo']].map(([k, t]) => `<button class="btn ${a.modo === k ? 'primary' : ''}" style="padding:11px 6px" data-onclick="apaga.modo='${k}';openApagar()">${t}</button>`).join('')}</div>
+    ${a.modo === 'ano' ? `<label>Ano</label><div class="nav" style="margin:0"><button data-onclick="apaga.ano--;openApagar()">‹</button><b>${a.ano}</b><button data-onclick="apaga.ano++;openApagar()">›</button></div>` : ''}
+    ${a.modo === 'mes' ? `<label>Mês</label><button type="button" class="pickBtn" data-onclick="pickMonthP('Mês a apagar',apaga.mes,false,v=>{apaga.mes=v;openApagar()})"><span style="text-transform:capitalize">${monthName(a.mes)}</span>${I('chev')}</button>` : ''}
+    ${a.modo === 'dia' ? `<label>Dia</label><button type="button" class="pickBtn" data-onclick="pickDateP('Dia a apagar',apaga.dia,v=>{apaga.dia=v;openApagar()})"><span>${fmtDate(a.dia)}</span>${I('chev')}</button>` : ''}
     <div class="card" style="box-shadow:none;background:var(--bg);margin:14px 0 0;text-align:center"><b style="font-size:20px" class="${n ? 'out' : ''}">${n} ${n === 1 ? 'lançamento' : 'lançamentos'}</b>
       <div class="hint" style="margin-top:2px">${n ? 'somando ' + fmt(total) : 'Nada para apagar neste período.'}</div></div>
     ${a.aba !== 'invest' && a.modo !== 'tudo' ? '<div class="hint">Um lançamento fixo conta pelo mês em que começou: os que começaram antes do período continuam.</div>' : ''}
-    <div class="btns foot"><button class="btn" onclick="closeForm()">Cancelar</button><button class="btn danger" style="flex:1" ${n ? '' : 'disabled'} onclick="apagarAgora()">${I('trash')}Apagar ${n || ''}</button></div>`);
+    <div class="btns foot"><button class="btn" data-onclick="closeForm()">Cancelar</button><button class="btn danger" style="flex:1" ${n ? '' : 'disabled'} data-onclick="apagarAgora()">${I('trash')}Apagar ${n || ''}</button></div>`);
 }
 async function apagarAgora(){
   const lista = apagaLista(), n = lista.length, a = apaga;
@@ -173,9 +173,9 @@ function openSugestoes(){
       <small style="white-space:normal">${new Date(n.t).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'})} · ${esc(p.app || p.bank || '')}<span class="tag ${ROT[n.st][1]}">${ROT[n.st][0]}</span></small>
       ${p.hidden ? '' : `<small style="white-space:normal">${esc(String(n.texto).slice(0, 110))}</small>`}</div>
       <div style="flex:none;text-align:right"><div class="val ${p.income ? 'in' : 'out'}">${p.hidden ? 'R$ ?' : fmt(p.value)}</div>
-      <button class="btn ${n.st === 'nova' ? 'primary' : ''}" style="padding:7px 10px;margin-top:4px" onclick="noteUse(${+n.t})">${p.income ? 'Lançar ganho' : 'Lançar gasto'}</button></div></div>`).join('')
+      <button class="btn ${n.st === 'nova' ? 'primary' : ''}" style="padding:7px 10px;margin-top:4px" data-onclick="noteUse(${+n.t})">${p.income ? 'Lançar ganho' : 'Lançar gasto'}</button></div></div>`).join('')
     : '<div class="card empty" style="box-shadow:none">Nenhuma sugestão por enquanto.<br>Elas aparecem quando o banco avisa uma compra ou um Pix.</div>'}
-    <div class="btns foot">${sugLog().length ? '<button class="btn" onclick="localStorage.removeItem(SUG_KEY);openSugestoes()">Limpar histórico</button>' : ''}<button class="btn primary" onclick="closeForm()">Fechar</button></div>`);
+    <div class="btns foot">${sugLog().length ? '<button class="btn" data-onclick="localStorage.removeItem(SUG_KEY);openSugestoes()">Limpar histórico</button>' : ''}<button class="btn primary" data-onclick="closeForm()">Fechar</button></div>`);
 }
 
 // ---------- Puxar para atualizar ----------

@@ -1,5 +1,5 @@
 // Cofrim — As telas de cada aba (Resumo, Ganhos, Gastos, Investir) e as notícias.
-// Carregado pelo index.html, nesta ordem: dados.js, telas.js, assistente.js, formularios.js, config.js, inicio.js.
+// Carregado pelo index.html, nesta ordem: dados.js, telas.js, assistente.js, formularios.js, divertido.js, config.js, sincronizacao.js, entrada.js, inicio.js.
 // ---------- Telas ----------
 // Bloco com o ícone, na cor do tema; c = [ícone, nome, cor própria (não usada na tela: tudo segue o tema)].
 const tile = (icon, color) => `<div class="ico" style="background:linear-gradient(135deg,${color ? color + ',' + color + 'cc' : 'var(--hero1),var(--hero2)'})">${I(icon, 22)}</div>`;
@@ -13,7 +13,7 @@ const skel = n => `<div class="sk skHero"></div><div class="card">${'<div class=
 // Nome da categoria com o ícone pequeno, para textos corridos.
 const catName = (c, color = 'var(--brand)') => `<span style="color:${esc(color)}">${I(c[0], 16)}</span> ${esc(c[1])}`;
 // Título da aba com os botões de personalizar a tela e de configurações.
-const head = (title, tab) => `<h1>${title} <span>${eyeBtn()}${LAYOUT[tab] ? `<button class="iconbtn" onclick="openLayoutEdit('${tab}')" aria-label="Personalizar esta tela">${I('sliders', 24)}</button>` : ''}<button class="iconbtn" onclick="openSettings('')" aria-label="Configurações">${I('gear', 24)}</button></span></h1>${offlinePill()}`;
+const head = (title, tab) => `<h1>${title} <span>${eyeBtn()}${LAYOUT[tab] ? `<button class="iconbtn" data-onclick="openLayoutEdit('${tab}')" aria-label="Personalizar esta tela">${I('sliders', 24)}</button>` : ''}<button class="iconbtn" data-onclick="openSettings('')" aria-label="Configurações">${I('gear', 24)}</button></span></h1>${offlinePill()}`;
 const empty = (icon, t) => `<div class="card empty"><span>${I(icon, 40)}</span>${t}</div>`;
 // Conta compartilhada: quem lançou o registro (by), como etiqueta na linha. Fora dela não aparece.
 const byTag = x => shared() && x.by ? `<span class="tag">${I('user', 11)} ${esc(x.by)}</span>` : '';
@@ -25,9 +25,9 @@ function openGrpOrder(){
   const o = db.prefs.grpOrder;
   showSheet(`<h3>Ordem dos grupos</h3><div class="hint" style="margin-top:0">Use as setas para escolher a ordem dos grupos na lista de lançamentos.</div>
     ${o.map((k, i) => `<div class="item" style="cursor:default;padding:6px 0"><div class="mid"><b>${GRUPOS[k][0]}</b></div>
-      <button class="iconbtn" onclick="grpMove(${i},-1)" ${i ? '' : 'disabled style="opacity:.25"'} aria-label="Subir">▲</button>
-      <button class="iconbtn" onclick="grpMove(${i},1)" ${i < o.length - 1 ? '' : 'disabled style="opacity:.25"'} aria-label="Descer">▼</button></div>`).join('')}
-    <div class="btns"><button class="btn" onclick="db.prefs.grpOrder=Object.keys(GRUPOS);db.cfgMod=Date.now();save();render();openGrpOrder()">Restaurar padrão</button><button class="btn primary" onclick="closeForm()">Pronto</button></div>`);
+      <button class="iconbtn" data-onclick="grpMove(${i},-1)" ${i ? '' : 'disabled style="opacity:.25"'} aria-label="Subir">▲</button>
+      <button class="iconbtn" data-onclick="grpMove(${i},1)" ${i < o.length - 1 ? '' : 'disabled style="opacity:.25"'} aria-label="Descer">▼</button></div>`).join('')}
+    <div class="btns"><button class="btn" data-onclick="db.prefs.grpOrder=Object.keys(GRUPOS);db.cfgMod=Date.now();save();render();openGrpOrder()">Restaurar padrão</button><button class="btn primary" data-onclick="closeForm()">Pronto</button></div>`);
 }
 function grpMove(i, d){ const o = db.prefs.grpOrder; [o[i], o[i + d]] = [o[i + d], o[i]]; db.cfgMod = Date.now(); save(); render(); openGrpOrder(); }
 // Gráfico de rosca. parts = [[cor, valor], ...]
@@ -94,34 +94,34 @@ function viewResumo(){
   const B = {
   mascote: () => db.prefs.fun ? funMascot() : '',
   conquistas: () => db.prefs.fun ? funBadges() : '',
-  atalhos: () => `<div class="quick">${[['expenses','receipt','Gasto'],['incomes','income','Ganho'],['investments','trend','Investir']].map(([col, ic, t]) => `<button onclick="openForm('${col}')"><span>${I(ic, 20)}</span>+ ${t}</button>`).join('')}</div>`,
+  atalhos: () => `<div class="quick">${[['expenses','receipt','Gasto'],['incomes','income','Ganho'],['investments','trend','Investir']].map(([col, ic, t]) => `<button data-onclick="openForm('${col}')"><span>${I(ic, 20)}</span>+ ${t}</button>`).join('')}</div>`,
   // Mês e ano lado a lado, no mesmo cartão de destaque: o gasto em cima, os ganhos embaixo. Tocar leva aos gastos do mês.
   // Em cada um: barra de quanto dos ganhos já foi gasto e um selo (mês: comparação com o mês anterior; ano: sobra ou falta).
   // O selo fala do mês anterior pelo nome curto ("set."): o cartão é estreito e o texto longo saía do cartão.
   destaque: () => { const mi = totalIn(rm), mo = totalOut(rm), ant = totalOut(addMonths(rm, -1)), dif = ant ? Math.round((mo - ant) / ant * 100) : null;
     const uso = (g, t) => `<div class="uso"><i style="width:${g ? Math.min(100, t / g * 100) : 0}%"></i></div><small>${g ? `${hideVals ? '••' : Math.round(t / g * 100)}% dos ganhos (${fmtCurto(g)})` : 'sem ganhos lançados'}</small>`;
     return `<div class="hero2">
-    <div class="hero" onclick="goMonth('${rm}')"><small>Gastos de ${nomeM}</small><div class="big">${fmtCurto(mo)}</div>${uso(mi, mo)}
+    <div class="hero" data-onclick="goMonth('${rm}')"><small>Gastos de ${nomeM}</small><div class="big">${fmtCurto(mo)}</div>${uso(mi, mo)}
       ${dif == null || hideVals ? '' : `<span class="selo">${dif ? `${dif > 0 ? '▲' : '▼'} ${Math.abs(dif)}% sobre ${mesCurto(addMonths(rm, -1))}` : `= igual a ${mesCurto(addMonths(rm, -1))}`}</span>`}</div>
     <div class="hero ano"><small>Gastos de ${y}</small><div class="big">${fmtCurto(tout)}</div>${uso(tin, tout)}
       ${tin || tout ? `<span class="selo">${tin - tout < 0 ? 'faltou' : 'sobrou'} ${fmtCurto(Math.abs(tin - tout))}</span>` : ''}</div></div>`; },
   // Gastos por categoria do mês escolhido: rosca com o total no centro e as maiores categorias ao lado.
   rosca: () => { const g = {}; expensesOf(rm).forEach(e => g[e.cat] = (g[e.cat] || 0) + e.value);
-    return `<h2>Gastos por categoria em ${nomeM} <button onclick="goMonth('${rm}')">Ver gastos</button></h2>${roscaCats(Object.entries(g), cap(nomeM), `Nenhum gasto em ${monthName(rm)}.`)}`; },
+    return `<h2>Gastos por categoria em ${nomeM} <button data-onclick="goMonth('${rm}')">Ver gastos</button></h2>${roscaCats(Object.entries(g), cap(nomeM), `Nenhum gasto em ${monthName(rm)}.`)}`; },
   // Calendário do mês atual: cada dia fica mais escuro quanto mais se gastou nele. Tocar num dia mostra o que saiu.
   dias: () => { const por = gastosPorDia(rm), max = Math.max(...por.slice(1).map(d => d.v)), n = daysIn(rm), [ay, am] = rm.split('-').map(Number), vazio = new Date(ay, am - 1, 1).getDay();
     const sel = state.dia && state.dia <= n ? por[state.dia] : null;
     return `<h2>Calendário de gastos de ${nomeM}</h2><div class="card">
       <div class="cal">${['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map(d => `<small>${d}</small>`).join('')}${'<span></span>'.repeat(vazio)}
       ${[...Array(n)].map((_, i) => { const d = i + 1, v = por[d].v, nivel = !v || !max ? 0 : Math.max(1, Math.ceil(v / max * 4));
-        return `<button class="n${nivel}${rm === curYM && d === now.getDate() ? ' hoje' : ''}${state.dia === d ? ' sel' : ''}" onclick="state.dia=${state.dia === d ? 0 : d};render()" aria-label="Dia ${d}: ${hideVals ? MASK : fmt(v)}">${d}</button>`; }).join('')}</div>
+        return `<button class="n${nivel}${rm === curYM && d === now.getDate() ? ' hoje' : ''}${state.dia === d ? ' sel' : ''}" data-onclick="state.dia=${state.dia === d ? 0 : d};render()" aria-label="Dia ${d}: ${hideVals ? MASK : fmt(v)}">${d}</button>`; }).join('')}</div>
       ${sel ? `<div class="calSel"><b>Dia ${state.dia}: ${fmt(sel.v)}</b>${sel.itens.length ? sel.itens.map(x => `<div class="leg"><span>${esc(x.desc)}</span><b>${fmt(x.value)}</b></div>`).join('') : '<div class="hint" style="margin:2px 0 0">Nenhum gasto neste dia.</div>'}</div>`
       : `<div class="escala"><span>menos</span>${[0, 1, 2, 3, 4].map(i => `<i class="n${i}"></i>`).join('')}<span>mais</span></div>
         <div class="hint">Quanto mais forte a cor, mais gasto no dia. Toque num dia para ver o que saiu. Gasto sem dia informado entra no dia do mês em que foi cadastrado.${por[0].v ? ` Sem dia informado: ${fmt(por[0].v)}.` : ''}</div>`}</div>`; },
   alertas: () => `${bills.length ? `<div class="card"><b>${I('calendar')} Contas a vencer</b>${bills.map(({x, diff}) => `
     <div class="item" style="cursor:default"><div class="mid"><b>${esc(x.desc)}</b>
       <small class="${diff < 0 ? 'out' : diff <= 2 ? 'warn' : ''}">${diff < 0 ? `venceu há ${-diff} dia${diff < -1 ? 's' : ''}` : diff === 0 ? 'vence hoje' : `vence em ${diff} dia${diff > 1 ? 's' : ''}`} · dia ${dueDay(x, curYM)}</small></div>
-      <div class="val">${fmt(x.value)}</div><button class="btn" style="flex:none;padding:8px 10px" onclick="togglePaid('${x.id}','${curYM}')">${I('check', 15)}Pago</button></div>`).join('')}</div>` : ''}
+      <div class="val">${fmt(x.value)}</div><button class="btn" style="flex:none;padding:8px 10px" data-onclick="togglePaid('${x.id}','${curYM}')">${I('check', 15)}Pago</button></div>`).join('')}</div>` : ''}
   ${over.length ? `<div class="card"><b><span class="warn">${I('alert')}</span> Orçamento de ${monthName(curYM)}</b>${over.map(b => { const c = CAT_GASTO[b.cat] || CAT_GASTO.outros; return `
     <div class="hint" style="color:${budgetColor(b.pct)}">${esc(c[1])}:${Math.round(b.pct)}% usado (${fmt(b.used)} de ${fmt(b.lim)})</div>`; }).join('')}</div>` : ''}${oddHtml(odd)}`,
   planejar: () => planHtml(),
@@ -142,7 +142,7 @@ function viewResumo(){
         ${[25, 50, 75].map(g => `<line x1="0" x2="120" y1="${g}" y2="${g}" stroke="var(--line)" stroke-width="1" vector-effect="non-scaling-stroke"/>`).join('')}
         <path d="${cg}L115,100L5,100Z" fill="url(#grafDeg)"/><path d="${cg}" stroke="var(--brand)" stroke-width="3.5" ${tr}/>
         <path d="${curva(outs)}" stroke="var(--out)" stroke-width="3.5" stroke-dasharray="0.1 8" ${tr}/></svg>
-      ${months.map((m,i) => `<div class="col ${i === si ? 'sel' : ''}${m === curYM ? ' atual' : ''}" onclick="state.sel='${state.sel === m ? '' : m}';render()"><div class="bars">
+      ${months.map((m,i) => `<div class="col ${i === si ? 'sel' : ''}${m === curYM ? ' atual' : ''}" data-onclick="state.sel='${state.sel === m ? '' : m}';render()"><div class="bars">
         ${i === mi ? `<i class="anel" style="bottom:${alt(gan[i])}%"></i><span class="dica${alt(gan[i]) > 62 ? ' baixo' : ''}${i < 2 ? ' esq' : i > 9 ? ' dir' : ''}" style="bottom:${alt(gan[i])}%">${MESES[i].slice(0,3)} · ${fmtCurto(gan[i])}</span>` : ''}</div>
       <small>${[0, 3, 6, 9, 11].includes(i) || i === mi ? MESES[i].slice(0,3) : ''}</small></div>`).join('')}</div>
     <div class="legend" style="margin-top:8px"><span><i class="dot" style="background:var(--brand)"></i>Ganhos${tyield ? ' (com rendimento)' : ''}</span><span><i class="dot" style="background:var(--out)"></i>Gastos</span></div>
@@ -154,20 +154,20 @@ function viewResumo(){
         <div class="stat"><small>Saldo</small><b class="${ins[si] - outs[si] < 0 ? 'out' : ''}">${fmt(ins[si] - outs[si])}</b></div>
         <div class="stat"><small>Rendimento estimado</small><b style="color:var(--brand)">${fmt(yields[si])}</b></div>
       </div>
-      <div class="btns"><button class="btn" onclick="goMonth('${months[si]}')">Ver gastos do mês</button></div></div>`}
+      <div class="btns"><button class="btn" data-onclick="goMonth('${months[si]}')">Ver gastos do mês</button></div></div>`}
     ${tyield ? `<div class="hint">Rendimento estimado dos investimentos em ${y}: <b style="color:var(--brand)">${fmt(tyield)}</b>. Meses passados usam o valor registrado pelo app; os futuros são projeção. Não entra no saldo do ano.</div>` : ''}
   </div>`; },
   numeros: () => `<div class="grid2">
     <div class="card stat"><small>Média mensal de gastos em ${y}</small><b class="out">${fmt(tout/12)}</b></div>
-    <div class="card stat" style="cursor:pointer" onclick="go('invest')"><small>Investido hoje ›</small><b>${fmt(invNow)}</b></div>
+    <div class="card stat" style="cursor:pointer" data-onclick="go('invest')"><small>Investido hoje ›</small><b>${fmt(invNow)}</b></div>
   </div>`,
-  contas: () => `<h2>Contas <span>${db.accounts.length > 1 ? `<button onclick="openForm('transfers')">Transferir</button> · ` : ''}<button onclick="openForm('accounts')">+ Conta</button></span></h2>
+  contas: () => `<h2>Contas <span>${db.accounts.length > 1 ? `<button data-onclick="openForm('transfers')">Transferir</button> · ` : ''}<button data-onclick="openForm('accounts')">+ Conta</button></span></h2>
   ${db.accounts.length ? `<div class="card">${db.accounts.map(a => { const b = accountBalance(a); return `
-    <div class="item" onclick="edit('accounts','${a.id}')">${tile('bank')}<div class="mid"><b>${esc(a.name)}</b><small>saldo de hoje · fim do mês: ${fmt(accountBalance(a, monthEnd(curYM)))}${bySmall(a)}</small></div>
+    <div class="item" data-onclick="edit('accounts','${a.id}')">${tile('bank')}<div class="mid"><b>${esc(a.name)}</b><small>saldo de hoje · fim do mês: ${fmt(accountBalance(a, monthEnd(curYM)))}${bySmall(a)}</small></div>
       <div class="val ${b < 0 ? 'out' : ''}">${fmt(b)}</div></div>`; }).join('')}
     <div class="item" style="cursor:default"><div class="mid"><b>Total nas contas</b></div><div class="val">${fmt(sum(db.accounts, accountBalance))}</div></div></div>
     ${db.transfers.length ? `<div class="card"><b>Transferências</b>${[...db.transfers].sort((a,b) => b.month.localeCompare(a.month)).slice(0, 5).map(t => `
-    <div class="item" onclick="edit('transfers','${t.id}')"><div class="mid"><b style="font-weight:500">${esc(t.from)} → ${esc(t.to)}</b><small>${monthName(t.month)}${bySmall(t)}</small></div><div class="val">${fmt(t.value)}</div></div>`).join('')}</div>` : ''}`
+    <div class="item" data-onclick="edit('transfers','${t.id}')"><div class="mid"><b style="font-weight:500">${esc(t.from)} → ${esc(t.to)}</b><small>${monthName(t.month)}${bySmall(t)}</small></div><div class="val">${fmt(t.value)}</div></div>`).join('')}</div>` : ''}`
   : '<div class="hint" style="margin:0 4px 12px">Cadastre suas contas para acompanhar o saldo de cada uma. O saldo considera os ganhos e gastos em que você informar o mesmo nome no campo de banco/conta.</div>'}`,
   // Gastos por categoria do ano: a mesma rosca do mês.
   categorias: () => `<h2>Gastos por categoria em ${y}</h2>${roscaCats(Object.entries(cats), y, 'Nenhum gasto cadastrado neste ano.')}`,
@@ -188,34 +188,34 @@ function viewResumo(){
       ${pendIn || pendOut ? `<div class="hint">Até o fim de ${monthName(curYM).split(' ')[0]} ainda entram ${fmt(pendIn)} e saem ${fmt(pendOut)} (lançamentos com dia depois de hoje).</div>` : ''}
       <div class="hint">Considera ganhos e gastos fixos, anuais, parcelas e o que já está lançado em cada mês.</div></div>`; },
   // Resumo do mês: o mesmo cartão de destaque do saldo do ano. Tocar leva aos gastos do mês.
-  mes: () => { const a = totalIn(rm), b = totalOut(rm); return `<div class="hero" style="cursor:pointer" onclick="goMonth('${rm}')"><small>Saldo de ${monthName(rm)}</small><div class="big">${fmt(a - b)}</div>
+  mes: () => { const a = totalIn(rm), b = totalOut(rm); return `<div class="hero" style="cursor:pointer" data-onclick="goMonth('${rm}')"><small>Saldo de ${monthName(rm)}</small><div class="big">${fmt(a - b)}</div>
     <div class="row cores"><div><small>Ganhos</small><b class="hIn">${fmt(a)}</b></div><div><small>Gastos</small><b class="hOut">${fmt(b)}</b></div><div style="margin-left:auto;align-self:flex-end"><small>Ver gastos ›</small></div></div></div>`; },
   faturas: () => `<h2>Faturas de ${monthName(rm)}</h2>${inv.length ? `<div class="card">${inv.map(([bank, v]) => `<div class="item" style="cursor:default">${tile('card')}<div class="mid"><b>${esc(bank)}</b></div><div class="val out">${fmt(v)}</div></div>`).join('')}</div>`
     : '<div class="hint" style="margin:0 4px 12px">Nenhuma compra no crédito neste mês.</div>'}`,
-  parcelas: () => `<h2>Compras parceladas <button onclick="state.gsub='parc';go('gastos')">Ver todas</button></h2>${open.length ? `<div class="card grid2">
+  parcelas: () => `<h2>Compras parceladas <button data-onclick="state.gsub='parc';go('gastos')">Ver todas</button></h2>${open.length ? `<div class="card grid2">
       <div class="stat"><small>Falta pagar (${open.length})</small><b class="out">${fmt(sum(open, parcFalta))}</b></div>
       <div class="stat"><small>Parcelas deste mês</small><b>${fmt(sum(expensesOf(curYM).filter(x => x.kind === 'installment'), x => x.value))}</b></div></div>`
     : '<div class="hint" style="margin:0 4px 12px">Nenhuma compra parcelada em aberto.</div>'}`,
-  vales: () => !temVales() ? '' : `<h2>Vales <button onclick="state.gsub='vale';state.month=curYM;go('gastos')">Ver gastos</button></h2>
-    <div class="card">${Object.keys(VALES).filter(temVale).map(k => { const s = valeSaldo(k); return `<div class="item" onclick="openVale('${k}')">${ico(CAT_GANHO[k])}<div class="mid"><b>${VALES[k]}${valeEmp(k) ? ' · ' + esc(valeEmp(k)) : ''}</b>
+  vales: () => !temVales() ? '' : `<h2>Vales <button data-onclick="state.gsub='vale';state.month=curYM;go('gastos')">Ver gastos</button></h2>
+    <div class="card">${Object.keys(VALES).filter(temVale).map(k => { const s = valeSaldo(k); return `<div class="item" data-onclick="openVale('${k}')">${ico(CAT_GANHO[k])}<div class="mid"><b>${VALES[k]}${valeEmp(k) ? ' · ' + esc(valeEmp(k)) : ''}</b>
       <small>neste mês: entrou ${fmt(sum(valeIn(curYM, k), x => x.value))}, saiu ${fmt(sum(valeOut(curYM, k), x => x.value))}</small></div><div class="val ${s < 0 ? 'out' : ''}">${fmt(s)}</div></div>`; }).join('')}
     <div class="hint">Saldo de cada vale. Fica separado dos ganhos, gastos e do saldo do mês.</div></div>`,
-  metas: () => `<h2>Metas <button onclick="go('invest')">Ver todas</button></h2>${goals.length ? `<div class="card">${goals.map(g => `
+  metas: () => `<h2>Metas <button data-onclick="go('invest')">Ver todas</button></h2>${goals.length ? `<div class="card">${goals.map(g => `
       <div class="catrow"><div class="top"><span>${esc(g.name)}</span><b>${fmt(g.saved)} de ${fmt(g.target)}</b></div>
       <div class="bar"><i style="width:${Math.min(100, g.saved / g.target * 100)}%"></i></div></div>`).join('')}</div>`
     : '<div class="hint" style="margin:0 4px 12px">Nenhuma meta cadastrada.</div>'}`,
-  invest: () => `<h2>Investimentos <button onclick="go('invest')">Ver todos</button></h2>${db.investments.length ? `<div class="card grid2">
+  invest: () => `<h2>Investimentos <button data-onclick="go('invest')">Ver todos</button></h2>${db.investments.length ? `<div class="card grid2">
       <div class="stat"><small>Total hoje</small><b>${fmt(invNow)}</b></div>
       <div class="stat"><small>Projeção em 12 meses</small><b>${fmt(sum(db.investments, projection))}</b></div></div>`
     : '<div class="hint" style="margin:0 4px 12px">Nenhum investimento cadastrado.</div>'}`
   };
   return `${greeting() ? `<div class="hello">${greeting()}</div>` : ''}
-  <h1 style="margin-bottom:0">Resumo <span>${eyeBtn()}<button class="iconbtn" onclick="openResumoEdit()" aria-label="Personalizar o Resumo">${I('sliders', 24)}</button><button class="iconbtn" onclick="openSettings('')" aria-label="Configurações">${I('gear', 24)}</button></span></h1>
+  <h1 style="margin-bottom:0">Resumo <span>${eyeBtn()}<button class="iconbtn" data-onclick="openResumoEdit()" aria-label="Personalizar o Resumo">${I('sliders', 24)}</button><button class="iconbtn" data-onclick="openSettings('')" aria-label="Configurações">${I('gear', 24)}</button></span></h1>
   <div class="muted" style="margin:0 2px 14px;font-size:13.5px">Hoje é ${todayLabel()}</div>${offlinePill(true)}${trocaContaHtml()}${typeof avisoInstalar === 'function' ? avisoInstalar() : ''}
-  <div class="nav periodo"><button onclick="resMes(-1)" aria-label="Mês anterior">‹</button><b onclick="pickResumo()"><span>${nomeM}</span><small>${y} ▾</small></b><button onclick="resMes(1)" aria-label="Próximo mês">›</button></div>
+  <div class="nav periodo"><button data-onclick="resMes(-1)" aria-label="Mês anterior">‹</button><b data-onclick="pickResumo()"><span>${nomeM}</span><small>${y} ▾</small></b><button data-onclick="resMes(1)" aria-label="Próximo mês">›</button></div>
   ${archBanner(y)}${ativHtml()}${bankNotesHtml()}${blocks('resumo', B)}
-  ${db.prefs.resumoEnxuto ? '<div style="text-align:center;margin:2px 0 16px"><button class="linkBtn" onclick="openResumoEdit()">Ver mais informações no resumo</button></div>'
-    : `<div class="btns" style="margin-bottom:12px"><button class="btn" onclick="openResumoEdit()">${I('sliders')}Personalizar o Resumo</button></div>`}`;
+  ${db.prefs.resumoEnxuto ? '<div style="text-align:center;margin:2px 0 16px"><button class="linkBtn" data-onclick="openResumoEdit()">Ver mais informações no resumo</button></div>'
+    : `<div class="btns" style="margin-bottom:12px"><button class="btn" data-onclick="openResumoEdit()">${I('sliders')}Personalizar o Resumo</button></div>`}`;
 }
 // Sugestões de lançamento a partir das notificações de bancos, carteiras digitais e apps de vale (opcional, só no APK;
 // ver BankListener no lado nativo, que marca n.tipo = 'vale' ou 'carteira').
@@ -248,7 +248,7 @@ function parseBankNote(n){
 }
 function bankNotesHtml(){
   const list = bankNotes().map((n, i) => ({i, n, p:parseBankNote(n)})).filter(x => x.p).slice(-5).reverse();
-  const hist = `<div class="btns" style="margin:${list.length ? '10px 0 0' : '0 0 12px'}"><button class="btn" onclick="openSugestoes()">${I('doc')}Histórico de sugestões</button></div>`;
+  const hist = `<div class="btns" style="margin:${list.length ? '10px 0 0' : '0 0 12px'}"><button class="btn" data-onclick="openSugestoes()">${I('doc')}Histórico de sugestões</button></div>`;
   // Sem sugestão nova, fica só o botão do histórico (para quem tem a leitura das notificações ligada ou já teve sugestões).
   if (!list.length) return (window.Android && Android.avisosLigado && Android.avisosLigado()) || sugLog().length ? hist : '';
   return list.length ? `<div class="card"><b>${I('sparkle')} Sugestões pelas notificações do banco</b>${list.map(({i, n, p}) => `
@@ -256,7 +256,7 @@ function bankNotesHtml(){
       ? `<b>Novo aviso do ${esc(p.app)}</b><small style="white-space:normal">${p.title ? esc(p.title) + ' · ' : ''}${new Date(n.t).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'})}. Não deu para ler o valor (o Android esconde avisos com números parecidos com código); confira no app do banco.</small>`
       : `<b>${esc(p.desc)}</b><small style="white-space:normal">${esc(String(n.texto).slice(0, 90))}</small>`}</div>
       <div style="flex:none;text-align:right"><div class="val ${p.income ? 'in' : 'out'}">${p.hidden ? 'R$ ?' : fmt(p.value)}</div>
-      <button class="btn primary" style="padding:7px 10px;margin-top:4px" onclick="noteUse(${+n.t})">Lançar</button> <button class="btn" style="padding:7px 10px;margin-top:4px" onclick="noteDrop(${+n.t})">Ignorar</button></div></div>`).join('')}${hist}</div>` : '';
+      <button class="btn primary" style="padding:7px 10px;margin-top:4px" data-onclick="noteUse(${+n.t})">Lançar</button> <button class="btn" style="padding:7px 10px;margin-top:4px" data-onclick="noteDrop(${+n.t})">Ignorar</button></div></div>`).join('')}${hist}</div>` : '';
 }
 // Os botões levam a hora do aviso (t), não a posição: a lista pode mudar se chegar um aviso novo com a tela aberta.
 // Uma sugestão que sai da lista (lançada ou ignorada) vai para o histórico (ver openSugestoes, em js/exporta.js).
@@ -306,11 +306,11 @@ function openLayoutEdit(tab = state.tab){
   showSheet(`<h3>Personalizar: ${tab === 'widget' ? 'widget Resumo' : TABS[tab][1]}</h3>
     <div class="hint" style="margin-top:0">Toque no círculo para mostrar ou esconder um bloco e use as setas para mudar a ordem.</div>
     ${r.map(({b, i}, n) => `<div class="item" style="cursor:default;padding:6px 0">
-      <button class="iconbtn ${b.on ? 'in' : 'muted'}" onclick="layoutSet('${tab}',${i},'toggle')" aria-label="${b.on ? 'Esconder' : 'Mostrar'}">${I(b.on ? 'checked' : 'unchecked', 24)}</button>
+      <button class="iconbtn ${b.on ? 'in' : 'muted'}" data-onclick="layoutSet('${tab}',${i},'toggle')" aria-label="${b.on ? 'Esconder' : 'Mostrar'}">${I(b.on ? 'checked' : 'unchecked', 24)}</button>
       <div class="mid" style="${b.on ? '' : 'opacity:.5'}"><b style="white-space:normal">${defs[b.k][0]}</b></div>
-      <button class="iconbtn" onclick="layoutSet('${tab}',${i},${n ? r[n - 1].i : i})" ${n ? '' : 'disabled style="opacity:.25"'} aria-label="Subir">▲</button>
-      <button class="iconbtn" onclick="layoutSet('${tab}',${i},${n < r.length - 1 ? r[n + 1].i : i})" ${n < r.length - 1 ? '' : 'disabled style="opacity:.25"'} aria-label="Descer">▼</button></div>`).join('')}
-    <div class="btns"><button class="btn" onclick="layoutSet('${tab}',0,'reset')">Restaurar padrão</button><button class="btn primary" onclick="closeForm()">Pronto</button></div>`);
+      <button class="iconbtn" data-onclick="layoutSet('${tab}',${i},${n ? r[n - 1].i : i})" ${n ? '' : 'disabled style="opacity:.25"'} aria-label="Subir">▲</button>
+      <button class="iconbtn" data-onclick="layoutSet('${tab}',${i},${n < r.length - 1 ? r[n + 1].i : i})" ${n < r.length - 1 ? '' : 'disabled style="opacity:.25"'} aria-label="Descer">▼</button></div>`).join('')}
+    <div class="btns"><button class="btn" data-onclick="layoutSet('${tab}',0,'reset')">Restaurar padrão</button><button class="btn primary" data-onclick="closeForm()">Pronto</button></div>`);
 }
 const openResumoEdit = () => openLayoutEdit('resumo');
 // op: 'toggle', 'reset' ou a posição com a qual o bloco i troca de lugar.
@@ -329,20 +329,20 @@ function layoutSet(tab, i, op){
 function viewVales(lado){
   const m = state.month, gastos = lado === 'gastos', lista = gastos ? valeOut(m) : valeIn(m);
   const novo = k => `event.stopPropagation();novoVale('${lado}','${k}')`;
-  return `<div class="nav"><button onclick="state.month=addMonths(state.month,-1);renderIn()">‹</button><b onclick="pickMonth()">${monthName(m)} ▾</b><button onclick="state.month=addMonths(state.month,1);renderIn()">›</button></div>
+  return `<div class="nav"><button data-onclick="state.month=addMonths(state.month,-1);renderIn()">‹</button><b data-onclick="pickMonth()">${monthName(m)} ▾</b><button data-onclick="state.month=addMonths(state.month,1);renderIn()">›</button></div>
   ${Object.keys(VALES).map(k => { const c = sum(valeIn(m, k), x => x.value), g = sum(valeOut(m, k), x => x.value), s = valeSaldo(k, m); return `
-    <div class="card" style="cursor:pointer" onclick="openVale('${k}')"><b>${I(CAT_GANHO[k][0])} ${VALES[k]}${valeEmp(k) ? ' · ' + esc(valeEmp(k)) : ''}</b>
+    <div class="card" style="cursor:pointer" data-onclick="openVale('${k}')"><b>${I(CAT_GANHO[k][0])} ${VALES[k]}${valeEmp(k) ? ' · ' + esc(valeEmp(k)) : ''}</b>
       <div class="grid3" style="margin-top:10px">
         <div class="stat"><small>Crédito do mês</small><b class="in" style="font-size:14px">${fmt(c)}</b></div>
         <div class="stat"><small>Gasto do mês</small><b class="out" style="font-size:14px">${fmt(g)}</b></div>
         <div class="stat"><small>Saldo do vale</small><b class="${s < 0 ? 'out' : ''}" style="font-size:14px">${fmt(s)}</b></div></div>
-      <div class="btns"><button class="btn" onclick="${novo(k)}">${gastos ? '+ Gasto neste vale' : '+ Crédito deste vale'}</button><button class="btn">${I('doc')}Histórico</button></div></div>`; }).join('')}
+      <div class="btns"><button class="btn" data-onclick="${novo(k)}">${gastos ? '+ Gasto neste vale' : '+ Crédito deste vale'}</button><button class="btn">${I('doc')}Histórico</button></div></div>`; }).join('')}
   <h2>${gastos ? 'Gastos nos vales' : 'Créditos dos vales'}</h2>
   ${lista.length ? `<div class="card">${lista.map(x => gastos ? expRow(x, m) : incRow(x)).join('')}</div>`
     : empty(gastos ? 'receipt' : 'wallet', gastos ? 'Nenhum gasto nos vales em ' + monthName(m) + '.' : 'Nenhum crédito de vale em ' + monthName(m) + '.<br>Cadastre o crédito como fixo para ele entrar todo mês.')}
   <div class="hint" style="text-align:center">Os vales ficam separados: não entram nos ganhos, nos gastos nem no saldo do mês. O saldo do vale é tudo o que entrou menos o que saiu desde o primeiro lançamento. ${gastos ? 'Um gasto vem para cá quando a forma de pagamento é um vale.' : 'Um ganho vem para cá quando a categoria é um vale.'}</div>`;
 }
-const ganhosSeg = () => `<div class="seg">${[['todos','Ganhos'],['vale','Vales']].map(([k,t]) => `<button class="${state.isub === k ? 'on' : ''}" onclick="state.isub='${k}';renderIn()">${t}</button>`).join('')}</div>`;
+const ganhosSeg = () => `<div class="seg">${[['todos','Ganhos'],['vale','Vales']].map(([k,t]) => `<button class="${state.isub === k ? 'on' : ''}" data-onclick="state.isub='${k}';renderIn()">${t}</button>`).join('')}</div>`;
 // Tela de um vale: saldo, totais e o histórico de tudo o que entrou e saiu nele, mês a mês (do mais novo ao mais antigo).
 function openVale(k){
   settingsOpen = false; F = null;
@@ -353,26 +353,26 @@ function openVale(k){
     if (e.length || s.length) meses.push([m, e, s]);
   }
   const tin = sum(meses, ([, e]) => sum(e, x => x.value)), tout = sum(meses, ([, , s]) => sum(s, x => x.value)), saldo = valeSaldo(k), n = sum(meses, ([, e, s]) => e.length + s.length);
-  const linha = (x, entra) => `<div class="item" onclick="edit('${entra ? 'incomes' : x.kind === 'installment' ? 'installments' : 'expenses'}','${x.pid || x.id}')"><div class="mid"><b>${esc(x.desc)}</b>
+  const linha = (x, entra) => `<div class="item" data-onclick="edit('${entra ? 'incomes' : x.kind === 'installment' ? 'installments' : 'expenses'}','${x.pid || x.id}')"><div class="mid"><b>${esc(x.desc)}</b>
     <small>${entra ? 'crédito' : 'gasto'}${x.day ? ' · dia ' + x.day : ''}${x.emp ? `<span class="tag">${esc(x.emp)}</span>` : ''}${byTag(x)}</small></div><div class="val ${entra ? 'in' : 'out'}">${entra ? '+' : '−'} ${fmt(x.value)}</div></div>`;
   showSheet(`<h3>${VALES[k]}${valeEmp(k) ? ' · ' + esc(valeEmp(k)) : ''}</h3>
     <div class="hero" style="margin-bottom:10px"><small>Saldo do vale</small><div class="big">${fmt(saldo)}</div>
       <div class="row"><div><small>Entrou no total</small><b>${fmt(tin)}</b></div><div><small>Saiu no total</small><b>${fmt(tout)}</b></div></div></div>
-    <div class="btns" style="margin-top:0"><button class="btn" onclick="novoVale('ganhos','${k}')">+ Crédito</button><button class="btn primary" onclick="novoVale('gastos','${k}')">+ Gasto</button></div>
+    <div class="btns" style="margin-top:0"><button class="btn" data-onclick="novoVale('ganhos','${k}')">+ Crédito</button><button class="btn primary" data-onclick="novoVale('gastos','${k}')">+ Gasto</button></div>
     <label>Histórico (${n} ${n === 1 ? 'lançamento' : 'lançamentos'})</label>
     ${meses.length ? meses.map(([m, e, s]) => `<div class="grpHead on" style="cursor:default"><b>${cap(monthName(m))}</b><small>${fmt(sum(e, x => x.value) - sum(s, x => x.value))}</small></div>
       <div class="card" style="box-shadow:none;background:var(--bg)">${e.map(x => linha(x, true)).join('')}${[...s].sort((a, b) => (b.day || 0) - (a.day || 0)).map(x => linha(x, false)).join('')}</div>`).join('')
     : '<div class="hint" style="margin-top:0">Nenhum lançamento neste vale ainda.</div>'}
-    <div class="btns foot"><button class="btn primary" onclick="closeForm()">Fechar</button></div>`);
+    <div class="btns foot"><button class="btn primary" data-onclick="closeForm()">Fechar</button></div>`);
 }
 // Uma linha da lista de ganhos.
 function incRow(x){ const c = CAT_GANHO[x.cat] || CAT_GANHO.outros; return `
-    <div class="item" onclick="edit('incomes','${x.id}')">${ico(c)}<div class="mid"><b>${esc(x.desc)}</b>
+    <div class="item" data-onclick="edit('incomes','${x.id}')">${ico(c)}<div class="mid"><b>${esc(x.desc)}</b>
     <small>${esc(c[1])}${x.bank ? ' · ' + esc(x.bank) : ''}${x.emp ? `<span class="tag">${esc(x.emp)}</span>` : ''}<span class="tag">${x.fixed === 'y' ? 'anual, em ' + MESES[+x.start.slice(5) - 1] : x.fixed ? 'fixo' : monthName(x.start) + (x.day ? ', dia ' + x.day : '')}</span>${x.fixed ? `<span class="tag">desde ${x.fixed === 'y' ? x.start.slice(0,4) : monthName(x.start)}${x.end ? ' até ' + monthName(x.end) : ''}</span>` : ''}${byTag(x)}</small></div>
     <div class="val in">${fmt(x.value)}</div></div>`; }
 // Ordem das listas de Gastos e Ganhos: db.prefs.ordem = 'ant' (mais antigo primeiro) ou qualquer outro valor (mais
 // recente primeiro, o padrão). O botão alterna.
-const ordemBtn = () => `<button onclick="setOrdem()">${db.prefs.ordem === 'ant' ? '↑ Mais antigo' : '↓ Mais recente'}</button>`;
+const ordemBtn = () => `<button data-onclick="setOrdem()">${db.prefs.ordem === 'ant' ? '↑ Mais antigo' : '↓ Mais recente'}</button>`;
 function setOrdem(){ db.prefs.ordem = db.prefs.ordem === 'ant' ? 'rec' : 'ant'; db.cfgMod = Date.now(); save(); render(); }
 function viewGanhos(){
   if (state.isub === 'vale') return `${head('Ganhos', 'ganhos')}${ganhosSeg()}${viewVales('ganhos')}`;
@@ -391,7 +391,7 @@ function viewGanhos(){
   ${once.length ? `<div class="card">${once.map(row).join('')}</div>` : empty('wallet','Nenhum ganho avulso cadastrado.')}`
   };
   return head('Ganhos', 'ganhos') + ganhosSeg() + blocks('ganhos', B)
-    + `<div class="btns" style="margin-bottom:12px"><button class="btn danger" style="flex:1" onclick="openApagar('ganhos')">${I('trash')}Apagar ganhos por dia, mês ou ano</button></div>`;
+    + `<div class="btns" style="margin-bottom:12px"><button class="btn danger" style="flex:1" data-onclick="openApagar('ganhos')">${I('trash')}Apagar ganhos por dia, mês ou ano</button></div>`;
 }
 
 // Comparativo: gasto de cada categoria no mês m, no mês anterior e na média dos 6 meses antes de m.
@@ -422,7 +422,7 @@ function settle(id, m){
   showUndo('Marcado como recebido', () => set(false));
 }
 // A aba Gastos tem duas partes: os gastos do mês e as compras parceladas.
-const gastosSeg = () => `<div class="seg">${[['mes','Do mês'],['parc','Parceladas'],['vale','Vales']].map(([k,t]) => `<button class="${state.gsub === k ? 'on' : ''}" onclick="state.gsub='${k}';state.parcDet='';renderIn()">${t}</button>`).join('')}</div>`;
+const gastosSeg = () => `<div class="seg">${[['mes','Do mês'],['parc','Parceladas'],['vale','Vales']].map(([k,t]) => `<button class="${state.gsub === k ? 'on' : ''}" data-onclick="state.gsub='${k}';state.parcDet='';renderIn()">${t}</button>`).join('')}</div>`;
 function viewGastos(){
   if (state.gsub === 'parc') return `${head('Gastos', 'gastos')}${gastosSeg()}${viewParcelas()}`;
   if (state.gsub === 'vale') return `${head('Gastos', 'gastos')}${gastosSeg()}${viewVales('gastos')}`;
@@ -435,12 +435,12 @@ function viewGastos(){
   const tags = [...new Set(list.flatMap(tagsOf))];
   if (state.ftag && !tags.includes(state.ftag)) state.ftag = '';
   const sel = (key, label, options) => { filterOpts[key] = [['', 'Todos'], ...options]; const cur = options.find(o => o[0] === state[key]);
-    return `<button type="button" class="pickBtn sm ${cur ? 'on' : ''}" onclick="pickFilter('${key}','${label}')"><span>${esc(cur ? cur[1] : label)}</span>${I('chev', 14)}</button>`; };
+    return `<button type="button" class="pickBtn sm ${cur ? 'on' : ''}" data-onclick="pickFilter('${key}','${label}')"><span>${esc(cur ? cur[1] : label)}</span>${I('chev', 14)}</button>`; };
   const B = {
   // O mesmo cartão de destaque das outras abas (Ganhos, Investir, Resumo): o total do mês em cima, o resto embaixo.
   mes: () => `<div class="hero"><small>Gastos em ${monthName(m)}</small><div class="big">${fmt(tout)}</div>
     <div class="row"><div><small>Ganhos</small><b>${fmt(tin)}</b></div><div><small>Saldo</small><b>${fmt(tin - tout)}</b></div><div><small>Lançamentos</small><b>${list.length}</b></div></div></div>`,
-  orcamento: () => `<h2>Orçamento do mês <button onclick="openForm('budgets', db.budgets)">${budgets.length ? 'Alterar' : 'Definir'}</button></h2>
+  orcamento: () => `<h2>Orçamento do mês <button data-onclick="openForm('budgets', db.budgets)">${budgets.length ? 'Alterar' : 'Definir'}</button></h2>
   ${budgets.length ? `<div class="card">${budgets.map(b => { const c = CAT_GASTO[b.cat] || CAT_GASTO.outros; return `
     <div class="catrow"><div class="top"><span>${catName(c)}</span><b>${fmt(b.used)} de ${fmt(b.lim)}</b></div>${b.extra ? `<div class="hint" style="margin-top:2px">inclui ${fmt(b.extra)} que sobraram do mês anterior</div>` : ''}
     <div class="bar"><i style="width:${Math.min(b.pct, 100)}%;background:${budgetColor(b.pct)}"></i></div>
@@ -453,34 +453,34 @@ function viewGastos(){
   receber: () => owed.length ? `<h2>A receber de gastos divididos</h2>
   <div class="card">${Object.entries(owed.reduce((g, {x}) => (g[x.who] = (g[x.who] || 0) + x.share, g), {})).map(([who, v]) => `<div class="hint" style="margin:0 0 6px">${esc(who)} te deve <b>${fmt(v)}</b></div>`).join('')}
     ${owed.map(({x, m: om}) => `<div class="item" style="cursor:default"><div class="mid"><b>${esc(x.desc)}</b><small>${esc(x.who)} · ${monthName(om)}</small></div>
-      <div class="val in">${fmt(x.share)}</div><button class="btn" style="flex:none;padding:8px 10px" onclick="settle('${x.id}','${om}')">${I('check', 15)}Recebi</button></div>`).join('')}</div>` : '',
-  faturas: () => inv.length ? `<h2>Faturas do cartão <button onclick="openForm('cardClose', db.cardClose)">Configurar cartões</button></h2>
+      <div class="val in">${fmt(x.share)}</div><button class="btn" style="flex:none;padding:8px 10px" data-onclick="settle('${x.id}','${om}')">${I('check', 15)}Recebi</button></div>`).join('')}</div>` : '',
+  faturas: () => inv.length ? `<h2>Faturas do cartão <button data-onclick="openForm('cardClose', db.cardClose)">Configurar cartões</button></h2>
   <div class="card">${inv.map(([bank, v]) => `<div class="item" style="cursor:default">${tile('card')}<div class="mid"><b>${esc(bank)}</b>
     ${[db.cardClose[bank] ? 'Fecha no dia ' + db.cardClose[bank] : 'Sem dia de fechamento definido',
       db.cardLimit[bank] && 'Limite: ' + fmt(db.cardLimit[bank]),
       db.cardLimit[bank] && `Comprometido: ${fmt(cardUsed(bank))} (${Math.round(cardUsed(bank) / db.cardLimit[bank] * 100)}%)`,
       db.accounts.length && cardAccount(bank) && 'Paga pela conta ' + esc(cardAccount(bank))].filter(Boolean).map(t => `<small style="display:block">${t}</small>`).join('')}
     ${db.accounts.length && !cardAccount(bank) ? `<small class="warn" style="display:block">${I('alert', 13)} Escolha a conta que paga esta fatura; sem isso ela não é descontada de nenhuma conta.</small>` : ''}</div><div class="val out">${fmt(v)}</div></div>`).join('')}
-    ${inv.some(([bank]) => db.accounts.length && !cardAccount(bank)) ? `<div class="btns"><button class="btn primary" onclick="openForm('cardClose', db.cardClose)">Escolher a conta que paga</button></div>` : ''}</div>` : '',
-  lancamentos: () => `<h2>Lançamentos <span>${ordemBtn()} · <button onclick="openGrpOrder()">Grupos</button></span></h2>
+    ${inv.some(([bank]) => db.accounts.length && !cardAccount(bank)) ? `<div class="btns"><button class="btn primary" data-onclick="openForm('cardClose', db.cardClose)">Escolher a conta que paga</button></div>` : ''}</div>` : '',
+  lancamentos: () => `<h2>Lançamentos <span>${ordemBtn()} · <button data-onclick="openGrpOrder()">Grupos</button></span></h2>
   <div class="card" style="padding:12px">
-    <div class="search">${I('search')}<input id="q" type="text" placeholder="Buscar por descrição" value="${esc(state.q)}" autocomplete="off" oninput="state.q=this.value;this.nextElementSibling.hidden=!this.value;drawExpList()"><button type="button" class="iconbtn" ${state.q ? '' : 'hidden'} onclick="clearSearch()" aria-label="Limpar busca">${I('close')}</button></div>
+    <div class="search">${I('search')}<input id="q" type="text" placeholder="Buscar por descrição" value="${esc(state.q)}" autocomplete="off" data-oninput="state.q=this.value;this.nextElementSibling.hidden=!this.value;drawExpList()"><button type="button" class="iconbtn" ${state.q ? '' : 'hidden'} data-onclick="clearSearch()" aria-label="Limpar busca">${I('close')}</button></div>
     <div class="filters">
       ${sel('fcat', 'Categoria', uniq(x => x.cat).map(k => [k, (CAT_GASTO[k] || CAT_GASTO.outros)[1]]))}
       ${sel('fbank', 'Banco', uniq(x => x.bank).map(b => [b, b]))}
       ${sel('fpay', 'Pagamento', uniq(x => x.pay).map(p => [p, PAY[p] || p]))}
       ${tags.length ? sel('ftag', 'Etiqueta', tags.map(t => [t, '#' + t])) : ''}
     </div>
-    <button type="button" class="moreBtn" style="margin-top:10px;padding:10px" onclick="openSearch()">${I('search', 16)}Buscar em todos os meses</button>
+    <button type="button" class="moreBtn" style="margin-top:10px;padding:10px" data-onclick="openSearch()">${I('search', 16)}Buscar em todos os meses</button>
   </div>
   <div id="expList">${expListHtml()}</div>`,
-  acoes: () => `<div class="btns"><button class="btn" onclick="openStatementHelp()">${I('upload')}Importar extrato</button><button class="btn" onclick="shown(printReport)">${I('doc')}Relatório (PDF)</button></div>
-  <div class="btns"><button class="btn" onclick="openSheetLink()">${I('doc')}${sheetId() ? 'Planilha do Google (ligada)' : 'Exportar para uma planilha do Google ligada ao app'}</button></div>
-  <div class="btns"><button class="btn" onclick="shown(exportPlanilha)">${I('download')}Exportar planilha de ${m.slice(0,4)} (Excel)</button></div>
-  <div class="btns" style="margin-bottom:12px"><button class="btn danger" style="flex:1" onclick="openApagar('gastos')">${I('trash')}Apagar gastos por dia, mês ou ano</button></div>`
+  acoes: () => `<div class="btns"><button class="btn" data-onclick="openStatementHelp()">${I('upload')}Importar extrato</button><button class="btn" data-onclick="shown(printReport)">${I('doc')}Relatório (PDF)</button></div>
+  <div class="btns"><button class="btn" data-onclick="openSheetLink()">${I('doc')}${sheetId() ? 'Planilha do Google (ligada)' : 'Exportar para uma planilha do Google ligada ao app'}</button></div>
+  <div class="btns"><button class="btn" data-onclick="shown(exportPlanilha)">${I('download')}Exportar planilha de ${m.slice(0,4)} (Excel)</button></div>
+  <div class="btns" style="margin-bottom:12px"><button class="btn danger" style="flex:1" data-onclick="openApagar('gastos')">${I('trash')}Apagar gastos por dia, mês ou ano</button></div>`
   };
   return `${head('Gastos', 'gastos')}${gastosSeg()}
-  <div class="nav"><button onclick="state.month=addMonths(state.month,-1);renderIn()">‹</button><b onclick="pickMonth()">${monthName(m)} ▾</b><button onclick="state.month=addMonths(state.month,1);renderIn()">›</button></div>
+  <div class="nav"><button data-onclick="state.month=addMonths(state.month,-1);renderIn()">‹</button><b data-onclick="pickMonth()">${monthName(m)} ▾</b><button data-onclick="state.month=addMonths(state.month,1);renderIn()">›</button></div>
   ${archBanner(m.slice(0, 4))}${blocks('gastos', B)}
   <div class="hint" style="text-align:center">Deslize a tela para os lados para trocar de mês. Num lançamento, deslize para a esquerda para excluir e, numa conta com vencimento, para a direita para marcar como paga.</div>`;
 }
@@ -501,16 +501,16 @@ function expListHtml(){
   const gs = db.prefs.grpOrder.map(k => [k, GRUPOS[k][0], porDia(list.filter(GRUPOS[k][1]))]);
   // Todos os grupos começam abertos; tocar no título fecha (fica só o total). Numa busca ou filtro, todo grupo com resultado abre.
   return gs.map(([k, t, g]) => { if (!g.length) return ''; const on = filt ? true : open[k] ?? true; return `
-    <button type="button" class="grpHead ${on ? 'on' : ''}" ${filt ? 'disabled' : `onclick="state.gopen.${k}=${!on};drawExpList()"`} aria-expanded="${on}"><b>${t}</b><small>${g.length} · ${fmt(sum(g, x => x.value))}</small>${filt ? '' : I('chev', 16)}</button>
+    <button type="button" class="grpHead ${on ? 'on' : ''}" ${filt ? 'disabled' : `data-onclick="state.gopen.${k}=${!on};drawExpList()"`} aria-expanded="${on}"><b>${t}</b><small>${g.length} · ${fmt(sum(g, x => x.value))}</small>${filt ? '' : I('chev', 16)}</button>
     ${on ? `<div class="card">${(k === 'avu' ? g.slice(0, state.limit) : g).map(x => expRow(x, m)).join('')}</div>
-    ${k === 'avu' && g.length > state.limit ? `<button type="button" class="moreBtn" style="margin:0 0 12px" onclick="state.limit+=60;drawExpList()">Mostrar mais ${Math.min(60, g.length - state.limit)} de ${g.length - state.limit} restantes</button>` : ''}` : ''}`; }).join('')
+    ${k === 'avu' && g.length > state.limit ? `<button type="button" class="moreBtn" style="margin:0 0 12px" data-onclick="state.limit+=60;drawExpList()">Mostrar mais ${Math.min(60, g.length - state.limit)} de ${g.length - state.limit} restantes</button>` : ''}` : ''}`; }).join('')
     + (list.length < all.length ? `<div class="hint" style="text-align:center;margin-bottom:12px">${list.length} de ${all.length} lançamentos · ${fmt(sum(list, x => x.value))}</div>` : '');
 }
 // Uma linha da lista de lançamentos do mês m.
 function expRow(x, m){ const c = CAT_GASTO[x.cat] || CAT_GASTO.outros, inst = x.kind === 'installment', bill = !inst && x.fixed && x.due, paid = bill && isPaid(x, m); return `
-    <div class="item" ${inst ? '' : `data-sw="${x.id}" data-bill="${bill ? 1 : ''}"`} onclick="edit('${inst ? 'installments' : 'expenses'}','${x.id}')">${ico(c)}<div class="mid"><b>${esc(x.desc)}</b>
+    <div class="item" ${inst ? '' : `data-sw="${x.id}" data-bill="${bill ? 1 : ''}"`} data-onclick="edit('${inst ? 'installments' : 'expenses'}','${x.id}')">${ico(c)}<div class="mid"><b>${esc(x.desc)}</b>
     <small>${esc(c[1])}${whereLabel(x)}${x.emp ? `<span class="tag">${esc(x.emp)}</span>` : ''}${inst ? `<span class="tag">${parcTag(x)}${x.paid ? ' paga' : ''}</span>` : x.fixed ? `<span class="tag">${x.fixed === 'y' ? 'anual' : isSub(x) ? 'assinatura' : 'fixo'}</span>` : x.day ? `<span class="tag">dia ${x.day}</span>` : ''}${bill ? `<span class="tag">${paid ? 'pago' : 'vence dia ' + dueDay(x, m)}</span>` : ''}${tagsOf(x).map(t => `<span class="tag">#${esc(t)}</span>`).join('')}${x.share ? `<span class="tag">dividido com ${esc(x.who)}${x.got ? ', recebido' : ''}</span>` : ''}${x.photo ? `<span class="tag">${I('doc', 11)} comprovante</span>` : ''}${byTag(x)}</small></div>
-    <div class="val out">${fmt(x.value)}</div>${bill ? `<button class="iconbtn ${paid ? 'in' : 'muted'}" onclick="togglePaid('${x.id}','${m}')" aria-label="Marcar como pago">${I(paid ? 'checked' : 'unchecked', 24)}</button>` : ''}</div>`; }
+    <div class="val out">${fmt(x.value)}</div>${bill ? `<button class="iconbtn ${paid ? 'in' : 'muted'}" data-onclick="togglePaid('${x.id}','${m}')" aria-label="Marcar como pago">${I(paid ? 'checked' : 'unchecked', 24)}</button>` : ''}</div>`; }
 // Busca em todos os meses: ganhos, gastos e compras parceladas, pela descrição, etiqueta ou banco.
 let searchHits = [];
 function searchAll(q){
@@ -523,9 +523,9 @@ function searchAll(q){
 function openSearch(){
   settingsOpen = false; F = null;
   showSheet(`<h3>Buscar em todos os meses</h3>
-    <div class="search">${I('search')}<input id="qAll" type="text" placeholder="Descrição, etiqueta ou banco" autocomplete="off" oninput="drawSearch()"></div>
+    <div class="search">${I('search')}<input id="qAll" type="text" placeholder="Descrição, etiqueta ou banco" autocomplete="off" data-oninput="drawSearch()"></div>
     <div id="searchOut"></div>
-    <div class="btns foot"><button class="btn primary" onclick="closeForm()">Fechar</button></div>`);
+    <div class="btns foot"><button class="btn primary" data-onclick="closeForm()">Fechar</button></div>`);
   drawSearch();
   document.getElementById('qAll').focus();
 }
@@ -534,7 +534,7 @@ function drawSearch(){
   searchHits = searchAll(q);
   document.getElementById('searchOut').innerHTML = q.trim().length < 2 ? '<div class="hint">Digite pelo menos duas letras.</div>'
     : !searchHits.length ? '<div class="hint">Nada encontrado.</div>'
-    : searchHits.map(({col, x}, i) => `<div class="item" onclick="openHit(${i})"><div class="mid"><b>${esc(x.desc)}</b>
+    : searchHits.map(({col, x}, i) => `<div class="item" data-onclick="openHit(${i})"><div class="mid"><b>${esc(x.desc)}</b>
         <small>${COL_NAMES[col]} · ${x.fixed ? 'desde ' : ''}${cap(monthName(x.start))}${x.bank ? ' · ' + esc(x.bank) : ''}${tagsOf(x).map(t => ' · #' + esc(t)).join('')}</small></div>
         <div class="val ${col === 'incomes' ? 'in' : 'out'}">${fmt(col === 'installments' ? x.total : x.value)}</div></div>`).join('');
 }
@@ -563,7 +563,7 @@ function viewParcelas(){
 function parcItem(p){
   const c = CAT_GASTO[p.cat] || CAT_GASTO.outros, done = p.paid >= p.n, j = Math.min(p.paid, p.n - 1);
   const onde = isFin(p) ? esc(p.credor || PARC_TIPOS[p.tipo]) : esc(c[1]) + whereLabel(p);
-  return `<div class="item" onclick="abrirParc('${p.id}')">${ico(c)}<div class="mid"><b>${esc(p.desc)}</b>
+  return `<div class="item" data-onclick="abrirParc('${p.id}')">${ico(c)}<div class="mid"><b>${esc(p.desc)}</b>
       <small style="display:block">${onde}${bySmall(p)}</small>
       <small style="display:block">${done ? 'quitado' : `parcela ${p.paid + 1} de ${p.n} · vence ${vencTxt(parcVenc(p, p.paid))}`}</small>
       <div class="bar" style="margin:6px 0 0;height:6px"><i style="width:${p.paid / p.n * 100}%"></i></div></div>
@@ -584,7 +584,7 @@ function viewParcDet(p){
     ...(p.ab || []).map((a, k) => ({ab:a, ord:a.d + 'z' + k}))].sort((a, b) => b.ord.localeCompare(a.ord));
   const quando = l => l.dias < 0 ? `vencida há ${plural(-l.dias, 'dia', 'dias')}` : l.dias === 0 ? 'vence hoje' : `vence em ${plural(l.dias, 'dia', 'dias')}`;
   const linha = l => { const paga = l.st === 'paga', vencida = l.st === 'vencida';
-    return `<div class="item parcRow" onclick="tocarParc('${p.id}',${l.j})"><span class="stIco ${l.st}">${I(paga ? 'check' : vencida ? 'alert' : 'clock', 16)}</span>${ico(c)}
+    return `<div class="item parcRow" data-onclick="tocarParc('${p.id}',${l.j})"><span class="stIco ${l.st}">${I(paga ? 'check' : vencida ? 'alert' : 'clock', 16)}</span>${ico(c)}
       <div class="mid"><b>${esc(p.desc)}</b><small>Parcela ${l.j + 1}/${n}${fin ? (p.conta ? ' · ' + esc(p.conta) : '') : PAY[p.pay] ? ' · ' + PAY[p.pay] : p.bank ? ' · ' + esc(p.bank) : ''}</small></div>
       <div class="val ${paga ? 'in' : 'out'}"><small class="${vencida ? 'out' : ''}">${l.j + 1}/${n} · ${vencTxt(l.v)}</small>${fmt(l.val)}</div></div>`; };
   const linhaAb = a => `<div class="item parcRow" style="cursor:default"><span class="stIco paga">${I('coins', 16)}</span>${ico(c)}
@@ -593,7 +593,7 @@ function viewParcDet(p){
   const verAV = state.parcTodas ? aVencer : aVencer.slice(0, 12), verPg = pagasL.length <= 3 || state.parcPagas;
   const pend = venc.length + aVencer.length, concl = pagasL.length;
   return `
-  <div class="detTop"><button class="btn" onclick="fecharParc()">‹ Parceladas</button><button class="iconbtn" onclick="parcMenu('${p.id}')" aria-label="Opções">⋯</button></div>
+  <div class="detTop"><button class="btn" data-onclick="fecharParc()">‹ Parceladas</button><button class="iconbtn" data-onclick="parcMenu('${p.id}')" aria-label="Opções">⋯</button></div>
   <div class="hero">
     <b style="font-size:19px;display:block">${esc(p.desc)}</b>
     ${onde.filter(Boolean).map(t => `<small>${t}</small>`).join('')}
@@ -605,19 +605,19 @@ function viewParcDet(p){
   <div class="grid2">
     <div class="card" style="margin:0">${prox ? `<small class="muted">Parcela ${prox.j + 1} de ${n}</small><b style="display:block;font-size:18px">${fmt(prox.val)}</b>
       <small class="${prox.dias < 0 ? 'out' : 'muted'}" style="display:block">${vencTxt(prox.v)} · ${quando(prox)}</small>
-      <div class="btns"><button class="btn primary" onclick="pagarParc('${p.id}',1)">${I('check', 16)}Pagar</button></div>`
+      <div class="btns"><button class="btn primary" data-onclick="pagarParc('${p.id}',1)">${I('check', 16)}Pagar</button></div>`
       : `<small class="muted">Próxima parcela</small><b style="display:block;font-size:18px" class="in">Quitado</b>`}</div>
     <div class="card" style="margin:0"><small class="muted">Já pago</small><b style="display:block;font-size:18px" class="in">${fmt(parcPago(p) + abatido(p))}</b>
       <small class="muted" style="display:block">${plural(pagas, 'parcela', 'parcelas')}${p.ab ? ' e ' + plural(p.ab.length, 'abatimento', 'abatimentos') : ''}</small>
-      ${fin && rest ? `<div class="btns"><button class="btn" onclick="openAbater('${p.id}')">${I('coins', 16)}Abater</button></div>` : ''}</div>
+      ${fin && rest ? `<div class="btns"><button class="btn" data-onclick="openAbater('${p.id}')">${I('coins', 16)}Abater</button></div>` : ''}</div>
   </div>
   <h2 style="display:block">Lançamentos<small style="display:block;text-transform:none;letter-spacing:0;font-weight:400;margin-top:2px">${plural(pend, 'pendente', 'pendentes')} · ${plural(concl, 'concluída', 'concluídas')}</small></h2>
   <div class="card">
     ${venc.length ? `<div class="pGrp out">VENCIDAS</div>${venc.map(linha).join('')}` : ''}
     ${aVencer.length ? `<div class="pGrp">A VENCER</div>${verAV.map(linha).join('')}
-      ${aVencer.length > verAV.length ? `<div class="btns"><button class="btn" onclick="state.parcTodas=true;render()">Ver todas (${aVencer.length})</button></div>` : ''}` : ''}
+      ${aVencer.length > verAV.length ? `<div class="btns"><button class="btn" data-onclick="state.parcTodas=true;render()">Ver todas (${aVencer.length})</button></div>` : ''}` : ''}
     ${pagasL.length ? `<div class="pGrp">PAGAS</div>${verPg ? pagasL.map(l => l.ab ? linhaAb(l.ab) : linha(l)).join('')
-      : `<div class="btns"><button class="btn" onclick="state.parcPagas=true;render()">Ver pagas (${pagasL.length})</button></div>`}` : ''}
+      : `<div class="btns"><button class="btn" data-onclick="state.parcPagas=true;render()">Ver pagas (${pagasL.length})</button></div>`}` : ''}
   </div>`;
 }
 // Tocar numa parcela: a próxima pode ser marcada como paga; a última paga pode ser desfeita. Sempre em ordem.
@@ -660,16 +660,16 @@ function openAbater(id){
   showSheet(`<h3>Abater</h3>
     <div class="hint" style="margin-top:0">${esc(p.desc)} · saldo devedor hoje ${fmt(saldoDevedor(p))}${p.taxa ? ' (aproximado)' : ''}.</div>
     <label for="abV">Valor do abatimento</label>
-    <div class="bigVal out"><span>R$</span><input id="abV" type="text" inputmode="numeric" placeholder="0,00" autocomplete="off" oninput="this.value=centsMask(this.value);drawAbater()"></div>
+    <div class="bigVal out"><span>R$</span><input id="abV" type="text" inputmode="numeric" placeholder="0,00" autocomplete="off" data-oninput="this.value=centsMask(this.value);drawAbater()"></div>
     <label>O que diminuir</label><div class="optPick" id="abModo"></div>
     <div class="hint" id="abOut"></div>
-    <div class="btns foot"><button class="btn" onclick="closeForm()">Cancelar</button><button class="btn primary" onclick="confirmarAbater()">Abater</button></div>`);
+    <div class="btns foot"><button class="btn" data-onclick="closeForm()">Cancelar</button><button class="btn primary" data-onclick="confirmarAbater()">Abater</button></div>`);
   drawAbater();
 }
 function drawAbater(){
   const p = db.installments.find(x => x.id === abat.id), A = parseMoney(document.getElementById('abV').value) || 0;
   document.getElementById('abModo').innerHTML = [['prazo', 'Reduzir o prazo'], ['parcela', 'Reduzir o valor da parcela']].map(([k, t]) =>
-    `<button type="button" class="${abat.modo === k ? 'on' : ''}" onclick="abat.modo='${k}';drawAbater()">${t}</button>`).join('');
+    `<button type="button" class="${abat.modo === k ? 'on' : ''}" data-onclick="abat.modo='${k}';drawAbater()">${t}</button>`).join('');
   const S = saldoDevedor(p), c = A > 0 && A < S - .005 && abaterCalc(p, A, abat.modo);
   document.getElementById('abOut').textContent = !A ? 'Digite o valor que você vai pagar a mais.' : !c ? `O abatimento precisa ser menor que o saldo devedor (${fmt(S)}). Para quitar, marque as parcelas restantes como pagas.`
     : `Novo saldo: ${fmt(c.saldo)} · parcelas restantes: ${c.r} · parcela: ${fmt(c.parc)} (valores aproximados)`;
@@ -717,19 +717,19 @@ function viewInvest(){
   evolucao: () => vs.length ? `<div class="card"><b>Evolução do total investido</b>
     <div class="chart" style="height:110px">${chartGrid(hmax)}${hist.map(([m, v]) => `<div class="col" style="cursor:default"><div class="bars"><i style="height:${v == null ? 0 : v/hmax*100}%;width:70%;max-width:16px;background:${v == null ? 'transparent' : 'linear-gradient(var(--brand),var(--brand2))'}"></i></div><small>${MESES[+m.slice(5)-1].slice(0,3)}</small></div>`).join('')}</div>
     <div class="hint">${known.length > 1 ? `De ${fmt(known[0][1])} em ${monthName(known[0][0])} para ${fmt(hoje)} hoje.` : 'O histórico começa neste mês e ganha uma barra a cada mês de uso.'}</div></div>` : '',
-  metas: () => `<h2>Metas <button onclick="openForm('goals')">+ Nova meta</button></h2>
+  metas: () => `<h2>Metas <button data-onclick="openForm('goals')">+ Nova meta</button></h2>
   ${db.goals.length ? db.goals.map(g => { const pct = Math.min(100, g.saved / g.target * 100), left = Math.max(0, g.target - g.saved), months = g.date ? monthDiff(g.date, curYM) : 0; return `
     <div class="card">
-      <div class="item" onclick="edit('goals','${g.id}')">${tile('target')}<div class="mid"><b>${esc(g.name)}</b>
+      <div class="item" data-onclick="edit('goals','${g.id}')">${tile('target')}<div class="mid"><b>${esc(g.name)}</b>
         <small>${g.date ? 'até ' + monthName(g.date) : 'sem prazo'}${bySmall(g)}</small></div><div class="val">${Math.round(pct)}%</div></div>
       <div class="bar"><i style="width:${pct}%"></i></div>
       <div class="grid3"><div class="stat"><small>Guardado</small><b class="in" style="font-size:14px">${fmt(g.saved)}</b></div>
         <div class="stat"><small>Meta</small><b style="font-size:14px">${fmt(g.target)}</b></div>
         <div class="stat"><small>Falta</small><b style="font-size:14px">${fmt(left)}</b></div></div>
       ${left <= 0 ? `<div class="hint in">${I('checked', 15)} Meta alcançada</div>` : g.date ? `<div class="hint">${months > 0 ? `Guardando ${fmt(left / months)} por mês você chega lá no prazo (${months} ${months > 1 ? 'meses' : 'mês'}).` : 'O prazo desta meta já chegou.'}</div>` : ''}
-      <div class="btns"><button class="btn primary" onclick="openForm('goalAdd', null, {id:'${g.id}'})">+ Guardar dinheiro</button></div>
+      <div class="btns"><button class="btn primary" data-onclick="openForm('goalAdd', null, {id:'${g.id}'})">+ Guardar dinheiro</button></div>
     </div>`; }).join('') : '<div class="hint" style="margin:0 4px 12px">Crie uma meta (viagem, reserva de emergência…) e acompanhe quanto falta.</div>'}`,
-  carteira: () => `<h2>Meus investimentos ${vs.some(v => v.ticker) ? `<button onclick="refreshQuotes(true)">${quoting ? 'Atualizando…' : I('refresh', 14) + 'Atualizar cotações'}</button>` : ''}</h2>
+  carteira: () => `<h2>Meus investimentos ${vs.some(v => v.ticker) ? `<button data-onclick="refreshQuotes(true)">${quoting ? 'Atualizando…' : I('refresh', 14) + 'Atualizar cotações'}</button>` : ''}</h2>
   ${vs.length ? vs.map(v => { const c = CAT_INV[v.cat] || CAT_INV.outros, p = projection(v), ap = (v.monthly||0)*12;
     if (v.ticker){ const cost = v.qty*v.paid, gain = v.value - cost, cls = gain < 0 ? 'out' : 'in', sign = gain < 0 ? '−' : '+';
       const sales = v.sales || [], divs = v.divs || [], realized = sum(sales, s => s.qty * (s.price - s.cost)), divTotal = sum(divs, d => d.value);
@@ -750,21 +750,21 @@ function viewInvest(){
       ${v.alertUp || v.alertDown ? `<div class="hint">${I('alert', 13)} Alerta de preço: ${[v.alertUp && 'acima de ' + fmtQ(v.alertUp), v.alertDown && 'abaixo de ' + fmtQ(v.alertDown)].filter(Boolean).join(' · ')}</div>` : ''}
       <label>Compras (${v.lots.length})</label>
       ${v.lots.map((l,i) => `<div class="item" style="cursor:default;padding:6px 0"><div class="mid"><b style="font-weight:500">${l.qty.toLocaleString('pt-BR',{maximumFractionDigits:8})} × ${fmtQ(l.paid)}</b><small>${fmtDate(l.date)} · ${fmt(l.qty*l.paid)}</small></div>
-        <button class="iconbtn" onclick="removeLot('${v.id}',${i})" aria-label="Excluir compra">${I('close', 18)}</button></div>`).join('')}
+        <button class="iconbtn" data-onclick="removeLot('${v.id}',${i})" aria-label="Excluir compra">${I('close', 18)}</button></div>`).join('')}
       ${sales.length ? `<label>Vendas (${sales.length})</label>${sales.map(s => `<div class="item" style="cursor:default;padding:6px 0"><div class="mid"><b style="font-weight:500">${s.qty.toLocaleString('pt-BR',{maximumFractionDigits:8})} × ${fmtQ(s.price)}</b><small>${fmtDate(s.date)} · custo médio ${fmtQ(s.cost)}</small></div><div class="val">${signed(s.qty * (s.price - s.cost))}</div></div>`).join('')}` : ''}
       ${divs.length ? `<label>Proventos (${divs.length})</label>${divs.map(d => `<div class="item" style="cursor:default;padding:6px 0"><div class="mid"><small>${fmtDate(d.date)}</small></div><div class="val in">+${fmt(d.value)}</div></div>`).join('')}` : ''}
       ${sales.length || divs.length ? `<div class="grid3" style="margin-top:12px">
         <div class="stat"><small>Lucro das vendas</small>${signed(realized)}</div>
         <div class="stat"><small>Proventos</small>${signed(divTotal)}</div>
         <div class="stat"><small>Retorno total</small>${signed(gain + realized + divTotal)}</div></div>` : ''}
-      <div class="btns"><button class="btn primary" onclick="buyMore('${v.id}')">${I('plus', 16)}Nova compra</button><button class="btn" onclick="sellAsset('${v.id}')" ${v.qty > 0 ? '' : 'disabled style="opacity:.4"'}>Vender</button></div>
-      <div class="btns"><button class="btn" onclick="openDiv('${v.id}')">${I('coins', 16)}Registrar provento</button><button class="btn danger" onclick="removeRec('investments','${v.id}')">Excluir</button></div>
-      <div class="btns"><button class="btn" onclick="openForm('priceAlert', db.investments.find(x => x.id === '${v.id}'))">${I('alert', 16)}Alerta de preço</button></div>
+      <div class="btns"><button class="btn primary" data-onclick="buyMore('${v.id}')">${I('plus', 16)}Nova compra</button><button class="btn" data-onclick="sellAsset('${v.id}')" ${v.qty > 0 ? '' : 'disabled style="opacity:.4"'}>Vender</button></div>
+      <div class="btns"><button class="btn" data-onclick="openDiv('${v.id}')">${I('coins', 16)}Registrar provento</button><button class="btn danger" data-onclick="removeRec('investments','${v.id}')">Excluir</button></div>
+      <div class="btns"><button class="btn" data-onclick="openForm('priceAlert', db.investments.find(x => x.id === '${v.id}'))">${I('alert', 16)}Alerta de preço</button></div>
       <div class="hint">Cotação de ${new Date(v.quoteAt).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})}</div>
     </div>`; }
     return `
     <div class="card">
-      <div class="item" onclick="edit('investments','${v.id}')">${ico(c)}<div class="mid"><b>${esc(v.name)}</b>
+      <div class="item" data-onclick="edit('investments','${v.id}')">${ico(c)}<div class="mid"><b>${esc(v.name)}</b>
         <small>${esc(c[1])}${v.broker ? ' · ' + esc(v.broker) : ''} · ${rateLabel(v)}${bySmall(v)}</small></div>
         <div class="val muted">≈ ${(annualRate(v)*100).toLocaleString('pt-BR',{maximumFractionDigits:2})}% a.a.</div></div>
       <div class="grid3" style="margin-top:12px">
@@ -772,16 +772,16 @@ function viewInvest(){
         <div class="stat"><small>Em 12 meses</small><b style="font-size:14px">${fmt(p)}</b></div>
         <div class="stat"><small>Rendimento</small><b class="in" style="font-size:14px">+${fmt(p - v.value - ap)}</b></div>
       </div>
-      <div class="btns"><button class="btn primary" onclick="openForm('invAdd', null, {id:'${v.id}'})">${I('plus', 16)}Fazer um aporte</button></div>
+      <div class="btns"><button class="btn primary" data-onclick="openForm('invAdd', null, {id:'${v.id}'})">${I('plus', 16)}Fazer um aporte</button></div>
       <div class="hint">O valor é atualizado sozinho a cada virada de mês com o rendimento${v.monthly ? ` e o aporte mensal de ${fmt(v.monthly)}` : ''}.</div>
     </div>`; }).join('')
   : empty('trend','Cadastre seus investimentos para ver<br>quanto você terá daqui a um ano.')}`,
   taxas: () => `<div class="hint" style="text-align:center;padding:0 10px">Projeção bruta (sem IR), com as taxas: CDI ${r.cdi}% · Selic ${r.selic}% · IPCA ${r.ipca}% a.a. (${ratesInfo()}).
-    <a href="#" onclick="openRates();return false" style="color:var(--brand)">Ver taxas</a>
+    <a href="#" data-onclick="openRates();return false" style="color:var(--brand)">Ver taxas</a>
     ${vs.some(v => v.ticker) ? '<br>Ações e moedas entram pelo valor atual, sem projeção. As cotações podem ter alguns minutos de atraso.' : ''}</div>`
   };
   return head('Investimentos', 'invest') + blocks('invest', B)
-    + (vs.length ? `<div class="btns" style="margin-bottom:12px"><button class="btn danger" style="flex:1" onclick="openApagar('invest')">${I('trash')}Apagar investimentos por dia, mês ou ano</button></div>` : '');
+    + (vs.length ? `<div class="btns" style="margin-bottom:12px"><button class="btn danger" style="flex:1" data-onclick="openApagar('invest')">${I('trash')}Apagar investimentos por dia, mês ou ano</button></div>` : '');
 }
 function openDiv(id){ const v = db.investments.find(x => x.id === id); openForm('div', null, {id, title:'Provento de ' + v.ticker}); }
 function buyMore(id){
@@ -865,16 +865,16 @@ function viewNoticias(){
   loadNews(newsTab);
   return `
   ${head('Notícias', 'noticias')}
-  <div class="btns" style="margin:0 0 12px">${Object.entries(NEWS).map(([k,n]) => `<button class="btn ${newsTab === k ? 'primary' : ''}" onclick="newsTab='${k}';render();scrollTo(0,0)">${n.label}</button>`).join('')}</div>
+  <div class="btns" style="margin:0 0 12px">${Object.entries(NEWS).map(([k,n]) => `<button class="btn ${newsTab === k ? 'primary' : ''}" data-onclick="newsTab='${k}';render();scrollTo(0,0)">${n.label}</button>`).join('')}</div>
   ${newsTab === 'rec' ? '<div class="hint" style="margin:0 4px 12px">Matérias e análises publicadas por sites de notícias. Não são uma recomendação deste app: avalie seu perfil e seus objetivos antes de investir.</div>' : ''}
-  ${items.length ? `${top < 0 ? '' : `<div class="newsHero" onclick="openNews(${top})">
-      <img src="${esc(items[top].img.replace('w=160&h=160', 'w=640&h=360'))}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">
+  ${items.length ? `${top < 0 ? '' : `<div class="newsHero" data-onclick="openNews(${top})">
+      <img src="${esc(items[top].img.replace('w=160&h=160', 'w=640&h=360'))}" alt="" referrerpolicy="no-referrer" data-onerror="this.remove()">
       <div><span class="src">${esc(items[top].source || 'Destaque')}</span><b>${esc(items[top].title)}</b><small>${ago(items[top].date)}</small></div></div>`}
-    <div class="card news">${items.map((n,i) => i === top ? '' : `<div class="item" onclick="openNews(${i})">
-      ${n.img ? `<img class="thumb" src="${esc(n.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.outerHTML=newsPh(this.dataset.s)" data-s="${esc(n.source)}">` : newsPh(n.source)}
+    <div class="card news">${items.map((n,i) => i === top ? '' : `<div class="item" data-onclick="openNews(${i})">
+      ${n.img ? `<img class="thumb" src="${esc(n.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-onerror="this.outerHTML=newsPh(this.dataset.s)" data-s="${esc(n.source)}">` : newsPh(n.source)}
       <div class="mid"><b>${esc(n.title)}</b><span class="src">${esc(n.source || 'Notícia')}</span> <small>${ago(n.date)}</small></div></div>`).join('')}</div>`
   : newsLoading[newsTab] ? skel(4) : empty('signal','Não foi possível carregar as notícias.<br>Verifique a internet e toque em Atualizar.')}
-  <div class="btns" style="margin-bottom:12px"><button class="btn" onclick="loadNews(newsTab,true);render()">${newsLoading[newsTab] ? 'Atualizando…' : I('refresh') + 'Atualizar'}</button></div>
+  <div class="btns" style="margin-bottom:12px"><button class="btn" data-onclick="loadNews(newsTab,true);render()">${newsLoading[newsTab] ? 'Atualizando…' : I('refresh') + 'Atualizar'}</button></div>
   ${c && c.err && items.length ? '<div class="hint" style="text-align:center">Sem conexão: mostrando as últimas notícias salvas.</div>' : ''}`;
 }
 

@@ -1,5 +1,5 @@
 // Cofrim — Formulários, seletores, confirmações e comprovantes.
-// Carregado pelo index.html, nesta ordem: dados.js, telas.js, assistente.js, formularios.js, config.js, inicio.js.
+// Carregado pelo index.html, nesta ordem: dados.js, telas.js, assistente.js, formularios.js, divertido.js, config.js, sincronizacao.js, entrada.js, inicio.js.
 // ---------- Formulários ----------
 // Cada formulário: fields (lista ou função que devolve a lista), e opcionalmente defaults, load (ajusta os
 // valores ao abrir), onChange, hint, check (valida; devolve mensagem de erro) e commit (grava; sem ele,
@@ -95,7 +95,7 @@ const FORMS = {
     ...SCOPE_FIELDS],
     load(v){ v.scope = 'from'; v.from = state.month; },
     // Repetir um gasto: os avulsos mais frequentes viram botões no topo do formulário novo.
-    top(){ if (formVale) return ''; F.freq = frequent(); return F.freq.length ? `<label>Repetir um gasto</label><div class="chips rep">${F.freq.map((x, i) => `<button type="button" onclick="repeatFill(${i})">${esc(x.desc)}</button>`).join('')}</div>` : ''; },
+    top(){ if (formVale) return ''; F.freq = frequent(); return F.freq.length ? `<label>Repetir um gasto</label><div class="chips rep">${F.freq.map((x, i) => `<button type="button" data-onclick="repeatFill(${i})">${esc(x.desc)}</button>`).join('')}</div>` : ''; },
     // Ao trocar a categoria num gasto novo, banco e forma de pagamento vêm do último gasto dessa categoria.
     onChange(k, v, isNew, touched){
       if (formVale){ if (isNew && k === 'pay' && !touched.emp) v.emp = valeEmp(v.pay); return; }
@@ -265,7 +265,7 @@ const FORMS = {
     fields:() => Object.entries(CAT_GASTO).map(([k,c]) => ({k, label:c[1] + ' — limite por mês', type:'money', optional:true})),
     commit(v){ db.budgets = Object.fromEntries(Object.entries(v).filter(([,lim]) => lim > 0)); db.cfgMod = Date.now(); },
     extra:() => `<label>O que sobrar do limite passa para o mês seguinte?</label>
-      <div class="optPick" id="rollPick"><button type="button" data-v="1" class="${db.prefs.rollBudget ? 'on' : ''}" onclick="setRoll(true)">Sim</button><button type="button" data-v="" class="${db.prefs.rollBudget ? '' : 'on'}" onclick="setRoll(false)">Não</button></div>
+      <div class="optPick" id="rollPick"><button type="button" data-v="1" class="${db.prefs.rollBudget ? 'on' : ''}" data-onclick="setRoll(true)">Sim</button><button type="button" data-v="" class="${db.prefs.rollBudget ? '' : 'on'}" data-onclick="setRoll(false)">Não</button></div>
       <div class="hint">Com "Sim", se você gastar menos que o limite de uma categoria, a diferença soma ao limite dela no mês seguinte.</div>`},
   // Cartões: para cada banco com compras no crédito, dia de fechamento (b), dia de pagamento (d) e conta que paga (a).
   cardClose: { fullTitle:'Cartões de crédito',
@@ -306,7 +306,7 @@ const FORMS = {
     {k:'cdi', label:'CDI (% a.a.)', type:'num'}, {k:'selic', label:'Selic (% a.a.)', type:'num'}, {k:'ipca', label:'IPCA (% a.a.)', type:'num'}],
     commit(v){ Object.assign(db.rates, v); },
     extra:() => `<div class="hint">Taxas ${ratesInfo()}.</div>
-      <div class="btns"><button class="btn" onclick="updateRatesNow()">${I('refresh')}Atualizar taxas agora</button></div>`}
+      <div class="btns"><button class="btn" data-onclick="updateRatesNow()">${I('refresh')}Atualizar taxas agora</button></div>`}
 };
 let formVale = false; // o formulário que está abrindo é de vale (ver openForm e os campos de incomes/expenses)
 let formTipo = ''; // parcelas: '' (compra parcelada), 'financiamento' ou 'emprestimo' (ver openForm)
@@ -376,9 +376,9 @@ function fieldHtml(f){
   const id = 'f_' + f.k;
   if (f.type === 'select') return `<select id="${id}" hidden>${(typeof f.options === 'function' ? f.options() : f.options).map(o => `<option value="${esc(o[0])}">${esc(o[1])}</option>`).join('')}</select>` +
     (f.k === 'cat' ? '<div class="catPick" id="catPick"></div>' : `<div id="o_${f.k}"></div>`);
-  if (f.type === 'icons') return `<input id="${id}" type="hidden"><div class="iconGrid">${Object.entries(ICON_NAMES).map(([k, n]) => `<button type="button" data-i="${k}" aria-label="${n}" title="${n}" onclick="pickIcon('${f.k}','${k}')">${I(k, 23)}</button>`).join('')}</div>`;
-  if (f.type === 'colors') return `<input id="${id}" type="hidden"><div class="swatches colorGrid">${CAT_COLORS.map(c => `<button type="button" class="sw" data-c="${c}" style="background:${c}" aria-label="Cor ${c}" onclick="setField('${f.k}','${c}')"></button>`).join('')}</div>`;
-  if (f.type === 'month' || f.type === 'date') return `<input id="${id}" type="hidden"><button type="button" class="pickBtn" id="p_${f.k}" onclick="pickField('${f.k}')"></button>`;
+  if (f.type === 'icons') return `<input id="${id}" type="hidden"><div class="iconGrid">${Object.entries(ICON_NAMES).map(([k, n]) => `<button type="button" data-i="${k}" aria-label="${n}" title="${n}" data-onclick="pickIcon('${f.k}','${k}')">${I(k, 23)}</button>`).join('')}</div>`;
+  if (f.type === 'colors') return `<input id="${id}" type="hidden"><div class="swatches colorGrid">${CAT_COLORS.map(c => `<button type="button" class="sw" data-c="${c}" style="background:${c}" aria-label="Cor ${c}" data-onclick="setField('${f.k}','${c}')"></button>`).join('')}</div>`;
+  if (f.type === 'month' || f.type === 'date') return `<input id="${id}" type="hidden"><button type="button" class="pickBtn" id="p_${f.k}" data-onclick="pickField('${f.k}')"></button>`;
   // Valor de um gasto em vermelho e de um ganho em verde, para confirmar o que está sendo lançado.
   const cor = !['value', 'total'].includes(f.k) || !F ? '' : F.col === 'incomes' ? 'in' : ['expenses', 'installments'].includes(F.col) ? 'out' : '';
   if (f.big) return `<div class="bigVal ${cor}"><span>R$</span><input id="${id}" type="text" inputmode="numeric" placeholder="0,00" autocomplete="off"></div>${somaHtml(f.k)}`;
@@ -389,7 +389,7 @@ function fieldHtml(f){
 }
 // Soma rápida: botões abaixo de todo campo de dinheiro; cada toque soma o valor ao que já está no campo.
 const SOMAS = [10, 20, 50, 100];
-const somaHtml = k => `<div class="chips soma">${SOMAS.map(n => `<button type="button" onclick="somaRapida('${k}',${n})">+${n}</button>`).join('')}</div>`;
+const somaHtml = k => `<div class="chips soma">${SOMAS.map(n => `<button type="button" data-onclick="somaRapida('${k}',${n})">+${n}</button>`).join('')}</div>`;
 function somaRapida(k, n){
   const el = document.getElementById('f_' + k);
   el.value = moneyStr((parseNum(el.value) || 0) + n);
@@ -402,7 +402,8 @@ function centsMask(s){
   const d = String(s).replace(/\D/g, '').replace(/^0+/, '').slice(0, 13);
   return d ? (+d / 100).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '';
 }
-function setField(k, v){ const el = document.getElementById('f_' + k); el.value = v; el.oninput(); }
+// Toques num formulário que já está fechando (F = null) não fazem nada.
+function setField(k, v){ if (!F) return; const el = document.getElementById('f_' + k); el.value = v; el.oninput(); }
 
 // Redesenha os componentes de lista (até 4 opções: botões lado a lado; mais que isso: botão que abre o seletor), mês e data.
 function drawPicks(){
@@ -412,8 +413,8 @@ function drawPicks(){
       const box = document.getElementById('o_' + f.k), os = [...el.options].map(o => [o.value, o.text]), few = os.length <= 4;
       box.className = few ? 'optPick' : '';
       box.innerHTML = few
-        ? os.map(([v, t]) => `<button type="button" class="${v === el.value ? 'on' : ''}" data-v="${esc(v)}" onclick="setField('${f.k}',this.dataset.v)">${esc(t)}</button>`).join('')
-        : `<button type="button" class="pickBtn" onclick="pickField('${f.k}')"><span>${esc((os.find(o => o[0] === el.value) || ['', 'Escolher'])[1])}</span>${I('chev')}</button>`;
+        ? os.map(([v, t]) => `<button type="button" class="${v === el.value ? 'on' : ''}" data-v="${esc(v)}" data-onclick="setField('${f.k}',this.dataset.v)">${esc(t)}</button>`).join('')
+        : `<button type="button" class="pickBtn" data-onclick="pickField('${f.k}')"><span>${esc((os.find(o => o[0] === el.value) || ['', 'Escolher'])[1])}</span>${I('chev')}</button>`;
     } else if (f.type === 'month' || f.type === 'date'){
       const v = el.value;
       document.getElementById('p_' + f.k).innerHTML = `<span class="${v ? '' : 'muted'}">${v ? (f.type === 'month' ? cap(monthName(v)) : fmtDate(v)) : 'Não definido'}</span>${I('calendar')}`;
@@ -421,6 +422,7 @@ function drawPicks(){
   }
 }
 function pickField(k){
+  if (!F) return;
   const f = F.fields.find(x => x.k === k), el = document.getElementById('f_' + k), title = typeof f.label === 'function' ? f.label(F.vals) : f.label, set = v => setField(k, v);
   if (f.type === 'select') pickList(title, [...el.options].map(o => [o.value, o.text]), el.value, set);
   else if (f.type === 'month') pickMonthP(title, el.value, f.optional, set);
@@ -443,16 +445,16 @@ function closePicker(){
 function picked(v){ const cb = pickCb; closePicker(); if (cb) cb(v); }
 function pickList(title, options, cur, cb){
   pickCb = cb; pickOpts = options;
-  showPicker(`<h3>${esc(title)}</h3><div class="pickList">${options.map(([v, t], i) => `<button type="button" class="${v === cur ? 'on' : ''}" onclick="picked(pickOpts[${i}][0])"><span>${esc(t)}</span>${v === cur ? I('check') : ''}</button>`).join('')}</div>
-    <div class="btns foot"><button class="btn" onclick="closePicker()">Cancelar</button></div>`);
+  showPicker(`<h3>${esc(title)}</h3><div class="pickList">${options.map(([v, t], i) => `<button type="button" class="${v === cur ? 'on' : ''}" data-onclick="picked(pickOpts[${i}][0])"><span>${esc(t)}</span>${v === cur ? I('check') : ''}</button>`).join('')}</div>
+    <div class="btns foot"><button class="btn" data-onclick="closePicker()">Cancelar</button></div>`);
 }
 function pickMonthP(title, cur, optional, cb, y){
   pickCb = cb; pickArgs = [title, cur, optional];
   y = y || +(cur || curYM).slice(0, 4);
   showPicker(`<h3>${esc(title)}</h3>
-    <div class="nav" style="box-shadow:none;background:var(--bg)"><button onclick="pickMonthP(pickArgs[0],pickArgs[1],pickArgs[2],pickCb,${y - 1})" aria-label="Ano anterior">‹</button><b>${y}</b><button onclick="pickMonthP(pickArgs[0],pickArgs[1],pickArgs[2],pickCb,${y + 1})" aria-label="Próximo ano">›</button></div>
-    <div class="filters">${MESES.map((n, i) => { const m = ymOf(y, i); return `<button class="btn ${m === cur ? 'primary' : ''}" style="text-transform:capitalize${m === curYM ? ';outline:2px solid var(--brand)' : ''}" onclick="picked('${m}')">${n.slice(0, 3)}</button>`; }).join('')}</div>
-    <div class="btns foot">${optional ? `<button class="btn" onclick="picked('')">Sem data</button>` : ''}<button class="btn" onclick="closePicker()">Cancelar</button></div>`);
+    <div class="nav" style="box-shadow:none;background:var(--bg)"><button data-onclick="pickMonthP(pickArgs[0],pickArgs[1],pickArgs[2],pickCb,${y - 1})" aria-label="Ano anterior">‹</button><b>${y}</b><button data-onclick="pickMonthP(pickArgs[0],pickArgs[1],pickArgs[2],pickCb,${y + 1})" aria-label="Próximo ano">›</button></div>
+    <div class="filters">${MESES.map((n, i) => { const m = ymOf(y, i); return `<button class="btn ${m === cur ? 'primary' : ''}" style="text-transform:capitalize${m === curYM ? ';outline:2px solid var(--brand)' : ''}" data-onclick="picked('${m}')">${n.slice(0, 3)}</button>`; }).join('')}</div>
+    <div class="btns foot">${optional ? `<button class="btn" data-onclick="picked('')">Sem data</button>` : ''}<button class="btn" data-onclick="closePicker()">Cancelar</button></div>`);
 }
 function pickDateP(title, cur, cb, ym){
   pickCb = cb; pickArgs = [title, cur];
@@ -460,9 +462,9 @@ function pickDateP(title, cur, cb, ym){
   ym = ym || (cur || hoje).slice(0, 7);
   const [y, m] = ym.split('-').map(Number), first = new Date(y, m - 1, 1).getDay();
   showPicker(`<h3>${esc(title)}</h3>
-    <div class="nav" style="box-shadow:none;background:var(--bg)"><button onclick="pickDateP(pickArgs[0],pickArgs[1],pickCb,'${addMonths(ym, -1)}')" aria-label="Mês anterior">‹</button><b>${monthName(ym)}</b><button onclick="pickDateP(pickArgs[0],pickArgs[1],pickCb,'${addMonths(ym, 1)}')" aria-label="Próximo mês">›</button></div>
-    <div class="cal">${['dom','seg','ter','qua','qui','sex','sáb'].map(d => `<small>${d}</small>`).join('')}${'<i></i>'.repeat(first)}${[...Array(daysIn(ym))].map((_, i) => { const d = ym + '-' + String(i + 1).padStart(2, '0'); return `<button type="button" class="${d === cur ? 'on' : ''} ${d === hoje ? 'today' : ''}" onclick="picked('${d}')">${i + 1}</button>`; }).join('')}</div>
-    <div class="btns foot"><button class="btn" onclick="picked('${hoje}')">Hoje</button><button class="btn" onclick="closePicker()">Cancelar</button></div>`);
+    <div class="nav" style="box-shadow:none;background:var(--bg)"><button data-onclick="pickDateP(pickArgs[0],pickArgs[1],pickCb,'${addMonths(ym, -1)}')" aria-label="Mês anterior">‹</button><b>${monthName(ym)}</b><button data-onclick="pickDateP(pickArgs[0],pickArgs[1],pickCb,'${addMonths(ym, 1)}')" aria-label="Próximo mês">›</button></div>
+    <div class="cal">${['dom','seg','ter','qua','qui','sex','sáb'].map(d => `<small>${d}</small>`).join('')}${'<i></i>'.repeat(first)}${[...Array(daysIn(ym))].map((_, i) => { const d = ym + '-' + String(i + 1).padStart(2, '0'); return `<button type="button" class="${d === cur ? 'on' : ''} ${d === hoje ? 'today' : ''}" data-onclick="picked('${d}')">${i + 1}</button>`; }).join('')}</div>
+    <div class="btns foot"><button class="btn" data-onclick="picked('${hoje}')">Hoje</button><button class="btn" data-onclick="closePicker()">Cancelar</button></div>`);
 }
 
 // ---------- Confirmações e avisos do app (no lugar das caixas do Android) ----------
@@ -473,7 +475,7 @@ function ask(msg, ok = 'Confirmar', danger = false, only = false){
     if (dlgRes) dlgRes(false);
     dlgRes = res;
     document.getElementById('dlgMsg').textContent = msg;
-    document.getElementById('dlgBtns').innerHTML = (only ? '' : '<button class="btn" onclick="dlgClose(false)">Cancelar</button>') + `<button class="btn ${danger ? 'del' : 'primary'}" onclick="dlgClose(true)">${esc(ok)}</button>`;
+    document.getElementById('dlgBtns').innerHTML = (only ? '' : '<button class="btn" data-onclick="dlgClose(false)">Cancelar</button>') + `<button class="btn ${danger ? 'del' : 'primary'}" data-onclick="dlgClose(true)">${esc(ok)}</button>`;
     document.getElementById('dlg').hidden = false;
   });
 }
@@ -500,10 +502,10 @@ function openForm(col, item, preset = {}){
     (!F.id && cfg.top ? cfg.top() : '') +
     fields.map(f => `<div id="w_${f.k}"><label for="f_${f.k}"></label>${fieldHtml(f)}</div>`).join('') +
     (cfg.before ? `<div id="w__before">${cfg.before()}</div>` : '') +
-    (hasMore && !F.id ? `<button type="button" class="moreBtn" id="moreBtn" onclick="F.more=!F.more;syncForm()"></button><div class="hint" id="moreSum" style="text-align:center"></div>` : '') +
+    (hasMore && !F.id ? `<button type="button" class="moreBtn" id="moreBtn" data-onclick="if(F){F.more=!F.more;syncForm()}"></button><div class="hint" id="moreSum" style="text-align:center"></div>` : '') +
     `<div class="hint" id="fhint"></div><div class="err" id="ferr"></div>
-    <div class="btns foot">${F.id && !cfg.noDelete ? '<button class="btn danger" onclick="removeItem()">Excluir</button>' : ''}
-      <button class="btn" onclick="closeForm()">Cancelar</button><button class="btn primary" onclick="submitForm()">Salvar</button></div>` +
+    <div class="btns foot">${F.id && !cfg.noDelete ? '<button class="btn danger" data-onclick="removeItem()">Excluir</button>' : ''}
+      <button class="btn" data-onclick="closeForm()">Cancelar</button><button class="btn primary" data-onclick="submitForm()">Salvar</button></div>` +
     (cfg.extra ? cfg.extra() : '') + histHtml(item));
   for (const f of fields){
     const el = document.getElementById('f_' + f.k);
@@ -514,6 +516,7 @@ function openForm(col, item, preset = {}){
     // Vale para o que é digitado; valores postos pelo app (setField, comprovante lido) já chegam prontos.
     if (f.type === 'money') el.addEventListener('input', () => { el.value = centsMask(el.value); el.setSelectionRange(el.value.length, el.value.length); });
     el.oninput = el.onchange = () => {
+      if (!F) return; // formulário já fechado (toque ou valor que chegou depois de fechar)
       F.vals[f.k] = el.value; F.touched[f.k] = true;
       if (cfg.onChange) cfg.onChange(f.k, F.vals, !F.id, F.touched);
       syncForm(f.k);
@@ -569,10 +572,10 @@ function drawCatPick(){
   let list = [...document.getElementById('f_cat').options].map(o => [o.value, o.text]);
   const cut = list.length > LIM + 1 && !F.allCats;
   if (cut){ const top = [...list].sort((a, b) => (used[b[0]] || 0) - (used[a[0]] || 0)).slice(0, LIM).map(o => o[0]); list = list.filter(o => top.includes(o[0]) || o[0] === F.vals.cat); }
-  cp.innerHTML = list.map(([v, t]) => `<button type="button" class="${v === F.vals.cat ? 'on' : ''}" data-v="${esc(v)}" onclick="pickCat(this.dataset.v)">${I((M[v] || ['tag'])[0], 17)}${esc(t)}</button>`).join('') +
-    (cut ? `<button type="button" class="more" onclick="F.allCats=true;drawCatPick()">Mais categorias…</button>` : '');
+  cp.innerHTML = list.map(([v, t]) => `<button type="button" class="${v === F.vals.cat ? 'on' : ''}" data-v="${esc(v)}" data-onclick="pickCat(this.dataset.v)">${I((M[v] || ['tag'])[0], 17)}${esc(t)}</button>`).join('') +
+    (cut ? `<button type="button" class="more" data-onclick="F.allCats=true;drawCatPick()">Mais categorias…</button>` : '');
 }
-function pickCat(v){ const el = document.getElementById('f_cat'); el.value = v; el.onchange(); }
+function pickCat(v){ if (!F) return; const el = document.getElementById('f_cat'); el.value = v; el.onchange(); }
 function pickIcon(k, v){ const el = document.getElementById('f_' + k); el.value = v; el.oninput(); }
 // O que mudou entre duas versões de um lançamento, em texto ("valor R$ 10,00 → R$ 12,00"). '' se nada relevante mudou.
 const DIFF_FIELDS = [['value', 'valor', 1], ['total', 'total', 1], ['target', 'meta', 1], ['saved', 'guardado', 1], ['desc', 'descrição'], ['name', 'nome'], ['cat', 'categoria'],
@@ -694,9 +697,9 @@ function photoSection(){
   const has = !F.pick && (F.photo !== undefined ? !!F.photo : !!(F.id && (db.expenses.find(x => x.id === F.id) || {}).photo));
   const gallery = `document.getElementById('photoIn').click()`;
   return `<div id="photoBox"><label>Comprovante</label><div class="btns" style="margin-top:0">${has
-    ? `<button class="btn" onclick="photoView()">Ver</button><button class="btn" onclick="photoSwap()">Trocar</button><button class="btn danger" onclick="photoSet('')">Remover</button>`
-    : canCam() ? `<button class="btn" onclick="photoCam()">Tirar foto</button><button class="btn" onclick="${gallery}">${I('upload')}Galeria</button>`
-    : `<button class="btn" onclick="${gallery}">${I('upload')}Anexar foto do comprovante</button>`}</div>
+    ? `<button class="btn" data-onclick="photoView()">Ver</button><button class="btn" data-onclick="photoSwap()">Trocar</button><button class="btn danger" data-onclick="photoSet('')">Remover</button>`
+    : canCam() ? `<button class="btn" data-onclick="photoCam()">Tirar foto</button><button class="btn" data-onclick="${gallery}">${I('upload')}Galeria</button>`
+    : `<button class="btn" data-onclick="${gallery}">${I('upload')}Anexar foto do comprovante</button>`}</div>
     ${has ? '' : '<div class="hint">Tire a foto na hora ou escolha uma da galeria.</div>'}</div>`;
 }
 function photoDraw(){ document.getElementById('photoBox').outerHTML = photoSection(); }
@@ -795,8 +798,8 @@ function openTrash(){
     ${list.length ? list.map(({t, i}) => { const r = t.rec, dias = Math.floor((Date.now() - t.at) / 864e5), v = r.value ?? r.total ?? r.target; return `
       <div class="item" style="cursor:default"><div class="mid"><b>${esc(r.desc || r.name || r.ticker || (r.from ? r.from + ' → ' + r.to : 'Sem nome'))}</b>
         <small>${COL_NAMES[t.col] || ''}${v ? ' · ' + fmt(v) : ''} · excluído ${dias ? 'há ' + dias + ' dia' + (dias > 1 ? 's' : '') : 'hoje'}</small></div>
-        <button class="btn" style="flex:none;padding:8px 12px" onclick="trashRestore(${i});openTrash()">Restaurar</button></div>`; }).join('') : empty('trash', 'A lixeira está vazia.')}
-    <div class="btns foot">${list.length ? '<button class="btn danger" onclick="trashEmpty()">Esvaziar</button>' : ''}<button class="btn primary" onclick="openSettings('dados')">Voltar</button></div>`);
+        <button class="btn" style="flex:none;padding:8px 12px" data-onclick="trashRestore(${i});openTrash()">Restaurar</button></div>`; }).join('') : empty('trash', 'A lixeira está vazia.')}
+    <div class="btns foot">${list.length ? '<button class="btn danger" data-onclick="trashEmpty()">Esvaziar</button>' : ''}<button class="btn primary" data-onclick="openSettings('dados')">Voltar</button></div>`);
 }
 function trashRestore(i){
   const t = db.trash.splice(i, 1)[0];
@@ -825,7 +828,7 @@ let snackTimer = 0, undoFn = null;
 function showUndo(text, fn){
   const s = document.getElementById('snack');
   undoFn = fn;
-  s.innerHTML = `${text} <button onclick="const f=undoFn;hideSnack();f()">Desfazer</button>`;
+  s.innerHTML = `${text} <button data-onclick="const f=undoFn;hideSnack();f()">Desfazer</button>`;
   s.hidden = false;
   clearTimeout(snackTimer);
   snackTimer = setTimeout(hideSnack, 6000);

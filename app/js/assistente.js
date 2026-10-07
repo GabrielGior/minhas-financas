@@ -1,5 +1,5 @@
 // Cofrim — Assistente, relatório do mês e importação de extrato.
-// Carregado pelo index.html, nesta ordem: dados.js, telas.js, assistente.js, formularios.js, config.js, inicio.js.
+// Carregado pelo index.html, nesta ordem: dados.js, telas.js, assistente.js, formularios.js, divertido.js, config.js, sincronizacao.js, entrada.js, inicio.js.
 // ---------- Assistente: responde perguntas sobre os dados do app ----------
 // Não usa IA nem internet: reconhece na pergunta o assunto (gastos, ganhos, saldo, parcelas, investimentos…),
 // o período e os filtros (categoria, banco, forma de pagamento, palavra da descrição) e faz a conta nos dados.
@@ -48,8 +48,8 @@ function entryHtml(i){
   if (e.done) return e.done;
   return `<b>Lançar este ${e.col === 'incomes' ? 'ganho' : 'gasto'}?</b>` +
     chatRows([[e.desc, e.value], ['Categoria', (C[e.cat] || C.outros)[1]], ...(e.bank ? [['Banco', e.bank]] : []), ...(e.pay ? [['Pagamento', PAY[e.pay]]] : []), ['Mês', cap(monthName(curYM))]]) +
-    `<div class="btns"><button class="btn primary" onclick="entryDo(${i},'ok')">Lançar</button><button class="btn" onclick="entryDo(${i},'edit')">Editar</button></div>
-    <div class="btns" style="margin-top:6px"><button class="btn" onclick="entryDo(${i},'no')">Não era isso</button></div>`;
+    `<div class="btns"><button class="btn primary" data-onclick="entryDo(${i},'ok')">Lançar</button><button class="btn" data-onclick="entryDo(${i},'edit')">Editar</button></div>
+    <div class="btns" style="margin-top:6px"><button class="btn" data-onclick="entryDo(${i},'no')">Não era isso</button></div>`;
 }
 function entryDo(i, op){
   const e = chatEntries[i];
@@ -59,7 +59,7 @@ function entryDo(i, op){
       : {id:e.id, desc:e.desc, value:e.value, cat:e.cat, bank:e.bank, pay:e.pay, tags:'', who:'', share:'', fixed:false, start:curYM, day:'', due:'', end:''}));
     if (e.col === 'expenses') db.catMemo[plain(e.desc)] = e.cat;
     save();
-    e.done = `<span class="in">${I('checked', 16)}</span> Lançado: <b>${esc(e.desc)}</b>, ${shown(() => fmt(e.value))}, em ${monthName(curYM)}.<div class="btns"><button class="btn" onclick="entryDo(${i},'undo')">Desfazer</button></div>`;
+    e.done = `<span class="in">${I('checked', 16)}</span> Lançado: <b>${esc(e.desc)}</b>, ${shown(() => fmt(e.value))}, em ${monthName(curYM)}.<div class="btns"><button class="btn" data-onclick="entryDo(${i},'undo')">Desfazer</button></div>`;
   } else if (op === 'undo'){
     db[e.col] = db[e.col].filter(r => r.id !== e.id); db.tomb[e.id] = Date.now(); save();
     e.done = 'Desfeito: o lançamento foi removido.';
@@ -241,7 +241,7 @@ function chatHtml(){
   return [...ola, 'Para lançar um gasto, escreva por exemplo "mercado 45 nubank crédito".'].map(t => `<div class="msg ola">${t}</div>`).join('') +
     // As sugestões vêm logo depois da saudação: aparecem enquanto nada foi enviado e, depois, ficam no começo da
     // conversa (é só rolar para cima). A conversa recomeça cada vez que o app é aberto (ver inicio.js).
-    `<div class="chips">${CHAT_HINTS.map(h => `<button onclick="sendChat(this.textContent)">${h}</button>`).join('')}</div>` +
+    `<div class="chips">${CHAT_HINTS.map(h => `<button data-onclick="sendChat(this.textContent)">${h}</button>`).join('')}</div>` +
     chatLog.map(m => `<div class="msg ${m.me ? 'me' : ''}">${m.entry != null ? entryHtml(m.entry) : m.html}</div>`).join('');
 }
 function sendChat(text){
@@ -256,12 +256,12 @@ function sendChat(text){
 }
 function viewChat(){
   return `
-  <h1><span class="volta"><button class="iconbtn" onclick="sairChat()" aria-label="Voltar">‹</button>Assistente</span></h1>${contaPill()}
+  <h1><span class="volta"><button class="iconbtn" data-onclick="sairChat()" aria-label="Voltar">‹</button>Assistente</span></h1>${contaPill()}
   <div id="chatLog">${chatHtml()}</div>
   <div style="height:70px"></div>
-  <form class="chatbar" onsubmit="sendChat();return false">
+  <form class="chatbar" data-onsubmit="sendChat();return false">
     <input id="chatIn" placeholder="Pergunte ou lance: mercado 45 pix" autocomplete="off" enterkeyhint="send">
-    ${window.Android && Android.ouvir ? `<button type="button" class="btn" style="flex:none;padding:11px 12px" onclick="Android.ouvir()" aria-label="Falar">${I('mic', 20)}</button>` : ''}
+    ${window.Android && Android.ouvir ? `<button type="button" class="btn" style="flex:none;padding:11px 12px" data-onclick="Android.ouvir()" aria-label="Falar">${I('mic', 20)}</button>` : ''}
     <button class="btn primary" style="flex:none;padding:11px 14px" aria-label="Enviar">${I('send', 20)}</button>
   </form>`;
 }
@@ -280,7 +280,7 @@ function render(){
   dirty();
   if (archNeeded()) ensureArchive();
   document.getElementById('app').innerHTML = VIEWS[state.tab]();
-  document.getElementById('tabs').innerHTML = visTabs().map(t => `<button class="${t === state.tab ? 'on' : ''}" ${t === state.tab ? 'aria-current="page"' : ''} onclick="go('${t}')"><span>${I(TABS[t][0], 23)}</span>${TABS[t][1]}</button>`).join('');
+  document.getElementById('tabs').innerHTML = visTabs().map(t => `<button class="${t === state.tab ? 'on' : ''}" ${t === state.tab ? 'aria-current="page"' : ''} data-onclick="go('${t}')"><span>${I(TABS[t][0], 23)}</span>${TABS[t][1]}</button>`).join('');
   const noFab = ['resumo', 'noticias', 'chat'].includes(state.tab);
   document.getElementById('fab').hidden = noFab;
   document.getElementById('fab').classList.remove('away');
@@ -297,12 +297,12 @@ function render(){
 function drawTopbar(){
   const mes = state.tab === 'gastos' && state.gsub === 'mes';
   document.getElementById('topbar').innerHTML = `<b>${TABS[state.tab][1]}</b>` + (mes
-    ? `<span><button onclick="state.month=addMonths(state.month,-1);renderIn()" aria-label="Mês anterior">‹</button><em onclick="pickMonth()">${cap(monthName(state.month))}</em><button onclick="state.month=addMonths(state.month,1);renderIn()" aria-label="Próximo mês">›</button></span>`
-    : state.tab === 'resumo' ? `<span><button onclick="resMes(-1)" aria-label="Mês anterior">‹</button><em onclick="pickResumo()">${cap(monthName(resumoMes()))}</em><button onclick="resMes(1)" aria-label="Próximo mês">›</button></span>` : '');
+    ? `<span><button data-onclick="state.month=addMonths(state.month,-1);renderIn()" aria-label="Mês anterior">‹</button><em data-onclick="pickMonth()">${cap(monthName(state.month))}</em><button data-onclick="state.month=addMonths(state.month,1);renderIn()" aria-label="Próximo mês">›</button></span>`
+    : state.tab === 'resumo' ? `<span><button data-onclick="resMes(-1)" aria-label="Mês anterior">‹</button><em data-onclick="pickResumo()">${cap(monthName(resumoMes()))}</em><button data-onclick="resMes(1)" aria-label="Próximo mês">›</button></span>` : '');
 }
 // Leitor de tela e teclado: o que é clicável e não é botão passa a se anunciar como botão; setas ganham nome.
 function a11y(root){
-  root.querySelectorAll('[onclick]:not(button):not(a):not(input)').forEach(e => { e.setAttribute('role', 'button'); e.tabIndex = 0; });
+  root.querySelectorAll('[data-onclick]:not(button):not(a):not(input)').forEach(e => { e.setAttribute('role', 'button'); e.tabIndex = 0; });
   root.querySelectorAll('button:not([aria-label])').forEach(b => { const t = b.textContent.trim(); if (t === '‹') b.setAttribute('aria-label', 'Anterior'); else if (t === '›') b.setAttribute('aria-label', 'Próximo'); });
 }
 document.addEventListener('keydown', e => {
@@ -339,8 +339,8 @@ function pickYear(){
   settingsOpen = false; F = null;
   const cur = now.getFullYear(), from = Math.min(state.year, cur) - 5;
   showSheet(`<h3>Escolher ano</h3><div class="filters">${[...Array(12)].map((_,i) => from + i).map(y =>
-    `<button class="btn ${y === state.year ? 'primary' : ''}" onclick="state.year=${y};closeForm();render()">${y}</button>`).join('')}</div>
-    <div class="btns"><button class="btn" onclick="closeForm()">Cancelar</button></div>`);
+    `<button class="btn ${y === state.year ? 'primary' : ''}" data-onclick="state.year=${y};closeForm();render()">${y}</button>`).join('')}</div>
+    <div class="btns"><button class="btn" data-onclick="closeForm()">Cancelar</button></div>`);
 }
 // Resumo: o filtro é de mês e ano. state.rmes guarda o mês escolhido e state.year acompanha o ano dele.
 const resumoMes = () => state.year + (state.rmes || curYM).slice(4);
@@ -350,16 +350,16 @@ function pickResumo(y = state.year){
   settingsOpen = false; F = null;
   const sel = resumoMes();
   showSheet(`<h3>Escolher mês e ano</h3>
-    <div class="nav" style="box-shadow:none;background:var(--bg)"><button onclick="pickResumo(${y - 1})" aria-label="Ano anterior">‹</button><b>${y}</b><button onclick="pickResumo(${y + 1})" aria-label="Próximo ano">›</button></div>
-    <div class="filters">${MESES.map((n,i) => { const m = ymOf(y, i); return `<button class="btn ${m === sel ? 'primary' : ''}" style="text-transform:capitalize${m === curYM ? ';outline:2px solid var(--brand)' : ''}" onclick="setResumoMes('${m}');closeForm();render()">${n.slice(0,3)}</button>`; }).join('')}</div>
-    <div class="btns"><button class="btn" onclick="setResumoMes(curYM);closeForm();render()">Mês atual</button><button class="btn" onclick="closeForm()">Cancelar</button></div>`);
+    <div class="nav" style="box-shadow:none;background:var(--bg)"><button data-onclick="pickResumo(${y - 1})" aria-label="Ano anterior">‹</button><b>${y}</b><button data-onclick="pickResumo(${y + 1})" aria-label="Próximo ano">›</button></div>
+    <div class="filters">${MESES.map((n,i) => { const m = ymOf(y, i); return `<button class="btn ${m === sel ? 'primary' : ''}" style="text-transform:capitalize${m === curYM ? ';outline:2px solid var(--brand)' : ''}" data-onclick="setResumoMes('${m}');closeForm();render()">${n.slice(0,3)}</button>`; }).join('')}</div>
+    <div class="btns"><button class="btn" data-onclick="setResumoMes(curYM);closeForm();render()">Mês atual</button><button class="btn" data-onclick="closeForm()">Cancelar</button></div>`);
 }
 function pickMonth(y = +state.month.slice(0, 4)){
   settingsOpen = false; F = null;
   showSheet(`<h3>Escolher mês</h3>
-    <div class="nav" style="box-shadow:none;background:var(--bg)"><button onclick="pickMonth(${y - 1})">‹</button><b>${y}</b><button onclick="pickMonth(${y + 1})">›</button></div>
-    <div class="filters">${MESES.map((n,i) => { const m = ymOf(y, i); return `<button class="btn ${m === state.month ? 'primary' : ''}" style="text-transform:capitalize${m === curYM ? ';outline:2px solid var(--brand)' : ''}" onclick="state.month='${m}';closeForm();render()">${n.slice(0,3)}</button>`; }).join('')}</div>
-    <div class="btns"><button class="btn" onclick="state.month=curYM;closeForm();render()">Mês atual</button><button class="btn" onclick="closeForm()">Cancelar</button></div>`);
+    <div class="nav" style="box-shadow:none;background:var(--bg)"><button data-onclick="pickMonth(${y - 1})">‹</button><b>${y}</b><button data-onclick="pickMonth(${y + 1})">›</button></div>
+    <div class="filters">${MESES.map((n,i) => { const m = ymOf(y, i); return `<button class="btn ${m === state.month ? 'primary' : ''}" style="text-transform:capitalize${m === curYM ? ';outline:2px solid var(--brand)' : ''}" data-onclick="state.month='${m}';closeForm();render()">${n.slice(0,3)}</button>`; }).join('')}</div>
+    <div class="btns"><button class="btn" data-onclick="state.month=curYM;closeForm();render()">Mês atual</button><button class="btn" data-onclick="closeForm()">Cancelar</button></div>`);
 }
 
 // Na aba Gastos, deslizar o dedo para os lados troca o mês.
@@ -520,19 +520,19 @@ function openStatement(){
   showSheet(`<h3>Importar extrato</h3>
     <div class="hint" style="margin-top:0">${stmt.rows.length} lançamentos encontrados. Valores negativos entram como gastos e positivos como ganhos.</div>
     <label>Este arquivo é</label>
-    <div class="btns" style="margin-top:0">${[[false,'Extrato da conta'],[true,'Fatura de cartão']].map(([v,t]) => `<button class="btn ${stmt.flip === v ? 'primary' : ''}" onclick="stmt.flip=${v};openStatement()">${t}</button>`).join('')}</div>
+    <div class="btns" style="margin-top:0">${[[false,'Extrato da conta'],[true,'Fatura de cartão']].map(([v,t]) => `<button class="btn ${stmt.flip === v ? 'primary' : ''}" data-onclick="stmt.flip=${v};openStatement()">${t}</button>`).join('')}</div>
     ${stmt.flip ? '<div class="hint">Na fatura, os valores positivos são compras: eles entram como gastos.</div>' : ''}
     <label>Banco / conta (opcional)</label>
-    <input value="${esc(stmt.bank)}" id="stmtBank" placeholder="Ex.: Nubank" oninput="stmt.bank=this.value"><div class="chips sug" id="sug_stmt" hidden></div>
+    <input value="${esc(stmt.bank)}" id="stmtBank" placeholder="Ex.: Nubank" data-oninput="stmt.bank=this.value"><div class="chips sug" id="sug_stmt" hidden></div>
     <label>Forma de pagamento dos gastos (opcional)</label>
-    <button type="button" class="pickBtn" onclick="pickList('Forma de pagamento',[['','Não informar'],...Object.entries(PAY)],stmt.pay,v=>{stmt.pay=v;openStatement()})"><span>${PAY[stmt.pay] || 'Não informar'}</span>${I('chev')}</button>
+    <button type="button" class="pickBtn" data-onclick="pickList('Forma de pagamento',[['','Não informar'],...Object.entries(PAY)],stmt.pay,v=>{stmt.pay=v;openStatement()})"><span>${PAY[stmt.pay] || 'Não informar'}</span>${I('chev')}</button>
     <label>Lançamentos</label>
-    ${shown.map((x, i) => { const exp = stmtIsExpense(x); return `<div class="stmt"><button type="button" class="iconbtn ${x.on ? 'in' : 'muted'}" onclick="stmtToggle(${i},this)" aria-label="Importar este lançamento">${I(x.on ? 'checked' : 'unchecked', 24)}</button>
+    ${shown.map((x, i) => { const exp = stmtIsExpense(x); return `<div class="stmt"><button type="button" class="iconbtn ${x.on ? 'in' : 'muted'}" data-onclick="stmtToggle(${i},this)" aria-label="Importar este lançamento">${I(x.on ? 'checked' : 'unchecked', 24)}</button>
       <div class="mid"><b>${esc(x.desc)}</b><span class="muted">${fmtDate(x.date)}${x.dup ? ' · já existe' : ''}</span>
-      ${exp ? `<button type="button" class="pickBtn sm" style="margin-top:4px;width:auto;max-width:100%" onclick="pickList('Categoria',opts(CAT_GASTO),stmt.rows[${i}].cat,v=>{stmt.rows[${i}].cat=v;openStatement()})"><span>${esc((CAT_GASTO[x.cat] || CAT_GASTO.outros)[1])}</span>${I('chev', 14)}</button>` : ''}</div>
+      ${exp ? `<button type="button" class="pickBtn sm" style="margin-top:4px;width:auto;max-width:100%" data-onclick="pickList('Categoria',opts(CAT_GASTO),stmt.rows[${i}].cat,v=>{stmt.rows[${i}].cat=v;openStatement()})"><span>${esc((CAT_GASTO[x.cat] || CAT_GASTO.outros)[1])}</span>${I('chev', 14)}</button>` : ''}</div>
       <b class="${exp ? 'out' : 'in'}">${fmt(Math.abs(x.amount))}</b></div>`; }).join('')}
     ${stmt.rows.length > shown.length ? `<div class="hint">Mostrando os primeiros ${shown.length}; os demais também serão importados.</div>` : ''}
-    <div class="btns foot"><button class="btn" onclick="closeForm()">Cancelar</button><button class="btn primary" id="stmtGo" onclick="commitStatement()">${stmtLabel()}</button></div>`);
+    <div class="btns foot"><button class="btn" data-onclick="closeForm()">Cancelar</button><button class="btn primary" id="stmtGo" data-onclick="commitStatement()">${stmtLabel()}</button></div>`);
   sugBind(document.getElementById('stmtBank'), document.getElementById('sug_stmt'), bankSuggestions());
 }
 function stmtToggle(i, b){

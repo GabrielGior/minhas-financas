@@ -173,7 +173,7 @@ function cenaAplicar(){
   if (el.dataset.k !== k){ el.dataset.k = k; el.innerHTML = k && SKINS[k] ? cenaHtml(k) : ''; }
   // Os primeiros temas (SKIN_ANTIGOS) já têm a sua troca de tela no app.css; os demais usam a escolhida em CENAS.
   document.documentElement.dataset.troca = k && !SKIN_ANTIGOS.includes(k) ? cenaDe(k)[4] : '';
-  if (typeof logErr === 'function') widgetFundoEnviar(); // na primeira chamada (carga deste arquivo) config.js ainda não existe; inicio.js chama de novo
+  if (typeof logErr === 'function') widgetFundoEnviar(); // na primeira chamada (carga deste arquivo) divertido.js e config.js ainda não existem; inicio.js chama de novo
 }
 cenaAplicar(); // o tema já foi aplicado antes de este arquivo carregar
 // A cena para quando o app sai da tela (não gasta bateria à toa) e volta a andar quando ele reaparece.

@@ -1,12 +1,12 @@
 // Cofrim — Dados, aparência, utilidades, regras de cálculo, cotações, taxas, orçamento, planejamento e contas.
-// Carregado pelo index.html, nesta ordem: dados.js, telas.js, assistente.js, formularios.js, config.js, inicio.js.
+// Carregado pelo index.html, nesta ordem: dados.js, telas.js, assistente.js, formularios.js, divertido.js, config.js, sincronizacao.js, entrada.js, inicio.js.
 // ---------- Dados ----------
 // window.TESTE: página de testes automáticos (ver testes.js); usa outra chave para não tocar nos dados de verdade.
 const KEY = window.TESTE ? 'financas-teste' : 'financas-v1';
 // Versão do formato dos dados. Sobe quando um campo muda de significado; um backup ou uma conta com versão
 // maior que esta foi gravado por um app mais novo e é recusado, para não estragar o que este app não entende.
 const DB_VER = 2;
-// Modo demonstração (ver demoLigar em config.js): dados fictícios só na memória. demoOn nunca é gravado, então o app
+// Modo demonstração (ver demoLigar em entrada.js): dados fictícios só na memória. demoOn nunca é gravado, então o app
 // sempre abre com os dados reais. Com ele ligado nada é gravado neste aparelho nem enviado à conta Google; como rede de
 // segurança, o localStorage não aceita gravações.
 let demoOn = false;
@@ -29,7 +29,7 @@ function logErr(onde, e){
 }
 addEventListener('error', e => logErr('erro na tela', (e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0)));
 addEventListener('unhandledrejection', e => logErr('promessa', e.reason));
-const APP_VERSION = '1.73'; // manter igual ao versionName do build.gradle
+const APP_VERSION = '1.74'; // manter igual ao versionName do build.gradle
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 // Ícones do app: desenhos em dois tons (traço + preenchimento translúcido nas partes com class="d"),
 // todos numa grade de 24×24. I('nome', tamanho) devolve o <svg>; a cor vem do texto ao redor (currentColor).
@@ -200,7 +200,7 @@ function fixDb(d){
   for (const k of ['tomb', 'budgets', 'cardClose', 'cardDue', 'cardAcc', 'cardLimit', 'yieldLog', 'netLog', 'catMemo', 'cats', 'membros']) if (!d[k] || typeof d[k] !== 'object') d[k] = {};
   for (const t of ['gasto', 'ganho']) if (!d.cats[t] || typeof d.cats[t] !== 'object') d.cats[t] = {};
   // Os dados chegam também da planilha da conta compartilhada e de backups importados, que qualquer um pode editar.
-  // Ids e chaves de categoria entram em onclick="...('id')" nas telas: ficam só com letras, números, _ e -.
+  // Ids e chaves de categoria entram em data-onclick="...('id')" nas telas: ficam só com letras, números, _ e -.
   // Categorias: ícone conhecido, cor #rrggbb e nome de até 40 letras (sem tirar caracteres: "Bares & Restaurantes").
   const limpaId = v => typeof v === 'string' && /[^\w-]/.test(v) ? v.replace(/[^\w-]/g, '') : v;
   for (const c of COLS) d[c] = d[c].filter(r => r && typeof r === 'object');
@@ -552,7 +552,7 @@ const fmt = v => hideVals ? MASK : (v||0).toLocaleString('pt-BR',{style:'currenc
 // Roda fn com os valores à mostra (lembretes, widget e relatório não podem sair mascarados).
 function shown(fn){ const h = hideVals; hideVals = false; try { return fn(); } finally { hideVals = h; } }
 function toggleHide(){ hideVals = !hideVals; try { localStorage.setItem(HIDE_KEY, hideVals ? '1' : ''); } catch(e){} render(); }
-const eyeBtn = () => `<button class="iconbtn" onclick="toggleHide()" aria-label="${hideVals ? 'Mostrar valores' : 'Esconder valores'}">${I(hideVals ? 'eyeOff' : 'eye', 24)}</button>`;
+const eyeBtn = () => `<button class="iconbtn" data-onclick="toggleHide()" aria-label="${hideVals ? 'Mostrar valores' : 'Esconder valores'}">${I(hideVals ? 'eyeOff' : 'eye', 24)}</button>`;
 // Etiquetas livres de um lançamento ("viagem SP, trabalho" -> ['viagem SP', 'trabalho']).
 const tagsOf = x => String(x.tags || '').split(',').map(s => s.trim()).filter(Boolean);
 const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -576,7 +576,7 @@ const isMonthly = x => x.fixed && x.fixed !== 'y';
 // Assinatura: gasto fixo mensal marcado como tal (sub '1'), ou com nome de serviço conhecido se não foi marcado como conta fixa (sub '0').
 const SUB_RX = /netflix|spotify|stream|stremm|disney|prime video|amazon prime|\bhbo\b|\bmax\b|globoplay|paramount|youtube|apple|icloud|google one|deezer|crunchyroll|star\+|telecine|xbox|playstation|\bpsn\b|game ?pass|chatgpt|openai|claude|canva|adobe|microsoft 365|office 365|dropbox|academia|smart ?fit|gympass|wellhub|totalpass|kindle|audible|duolingo|uber one|mubi|assinatura/;
 const isSub = x => !!isMonthly(x) && (x.sub === '1' || (x.sub !== '0' && SUB_RX.test(plain(x.desc || ''))));
-// Arquivo de anos antigos (ver archiveUntil em config.js): os lançamentos até o ano db.archUntil saem dos dados do dia a dia
+// Arquivo de anos antigos (ver archiveUntil em sincronizacao.js): os lançamentos até o ano db.archUntil saem dos dados do dia a dia
 // e ficam num arquivo à parte, na conta Google (arquivo.json) e neste aparelho (ARCH_KEY). arch = o conteúdo do arquivo,
 // carregado quando a tela mostra um período arquivado; os cálculos desses meses somam os lançamentos dele.
 let arch = null, archTried = false;
@@ -779,7 +779,7 @@ function searchAssets(q){
     catch(e){ box.innerHTML = '<div class="hint">Não foi possível buscar. Verifique a internet.</div>'; return; }
     if (!F || document.getElementById('assetList') !== box) return;
     assetResults = items;
-    box.innerHTML = items.length ? items.map((a,i) => `<div class="item" style="padding:9px 2px" onclick="pickAsset(${i})"><div class="mid"><b>${esc(a.code)}</b><small>${esc(a.name)}</small></div><div class="val">${a.quote != null ? fmtQ(a.quote) : ''}</div></div>`).join('')
+    box.innerHTML = items.length ? items.map((a,i) => `<div class="item" style="padding:9px 2px" data-onclick="pickAsset(${i})"><div class="mid"><b>${esc(a.code)}</b><small>${esc(a.name)}</small></div><div class="val">${a.quote != null ? fmtQ(a.quote) : ''}</div></div>`).join('')
       : '<div class="hint">Nada encontrado.</div>';
   }, 350);
 }
@@ -948,9 +948,9 @@ function planHtml(){
     <div class="hint" style="margin-top:3px">${r.months == null ? 'Depois de um mês de gastos lançados, o app calcula quantos meses suas contas e investimentos cobrem.'
       : `Você tem ${fmt(r.have)} em contas e investimentos e gasta em média ${fmt(r.avg)} por mês. O recomendado é guardar de 3 a 6 meses de gastos.`}</div></div>
     <div class="quick" style="margin:14px 0 0">
-      <button onclick="openSubs()"><span>${I('calendar', 20)}</span>Assinaturas</button>
-      <button onclick="openDebts()"><span>${I('coins', 20)}</span>Dívidas</button>
-      <button onclick="openPayoff()"><span>${I('percent', 20)}</span>Quitação</button></div></div>`;
+      <button data-onclick="openSubs()"><span>${I('calendar', 20)}</span>Assinaturas</button>
+      <button data-onclick="openDebts()"><span>${I('coins', 20)}</span>Dívidas</button>
+      <button data-onclick="openPayoff()"><span>${I('percent', 20)}</span>Quitação</button></div></div>`;
 }
 let subsHits = [];
 function openSubs(){
@@ -961,11 +961,11 @@ function openSubs(){
     <div class="hint" style="margin-top:0">Tudo o que se repete todo mês, do mais caro ao mais barato, com o custo em um ano. Toque em um item para editar ou encerrar.</div>
     ${subsHits.length ? `<div class="card" style="background:var(--bg);box-shadow:none"><div class="grid2">
         <div class="stat"><small>Por mês</small><b>${fmt(mes)}</b></div><div class="stat"><small>Por ano</small><b class="out">${fmt(mes * 12)}</b></div></div></div>
-      ${subsHits.map((x, i) => { const c = CAT_GASTO[x.cat] || CAT_GASTO.outros; return `<div class="item" onclick="openForm('expenses', subsHits[${i}])">${ico(c)}<div class="mid"><b>${esc(x.desc)}</b>
+      ${subsHits.map((x, i) => { const c = CAT_GASTO[x.cat] || CAT_GASTO.outros; return `<div class="item" data-onclick="openForm('expenses', subsHits[${i}])">${ico(c)}<div class="mid"><b>${esc(x.desc)}</b>
         <small>${c[1]} · ${fmt(x.value)} por mês</small></div><div class="val out">${fmt(x.value * 12)}<small style="display:block;font-weight:500;color:var(--muted);text-align:right">por ano</small></div></div>`; }).join('')}`
     : empty('calendar', 'Nenhum gasto fixo mensal cadastrado.')}
     ${anuais.length ? `<label>Uma vez por ano</label>${anuais.map(x => `<div class="item" style="cursor:default"><div class="mid"><b>${esc(x.desc)}</b><small>todo mês de ${MESES[+x.start.slice(5) - 1]}</small></div><div class="val out">${fmt(x.value)}</div></div>`).join('')}` : ''}
-    <div class="btns foot"><button class="btn primary" onclick="closeForm()">Fechar</button></div>`);
+    <div class="btns foot"><button class="btn primary" data-onclick="closeForm()">Fechar</button></div>`);
 }
 function openDebts(){
   settingsOpen = false; F = null;
@@ -977,7 +977,7 @@ function openDebts(){
         <small>${p.n - p.paid} de ${p.n} parcelas de ${fmt(parcVal(p, p.paid))} · até ${monthName(end)}</small>
         <div class="bar" style="margin:6px 0 0;height:6px"><i style="width:${p.paid / p.n * 100}%"></i></div></div><div class="val out">${fmt(left)}</div></div>`; }).join('')}`
     : empty('checked', 'Nenhuma compra parcelada em aberto.')}
-    <div class="btns foot">${d.list.length ? '<button class="btn" onclick="openPayoff()">Simular quitação</button>' : ''}<button class="btn primary" onclick="closeForm()">Fechar</button></div>`);
+    <div class="btns foot">${d.list.length ? '<button class="btn" data-onclick="openPayoff()">Simular quitação</button>' : ''}<button class="btn primary" data-onclick="closeForm()">Fechar</button></div>`);
 }
 const payoff = {id:'', k:1};
 const payoffOpts = () => db.installments.filter(p => p.paid < p.n).map(p => [p.id, p.desc]);
@@ -990,11 +990,11 @@ function openPayoff(id){
   payoff.k = Math.max(1, Math.min(payoff.k, p.n - p.paid));
   showSheet(`<h3>Simular quitação</h3>
     <label>Compra</label>
-    <button type="button" class="pickBtn" onclick="pickList('Compra', payoffOpts(), payoff.id, openPayoff)"><span>${esc(p.desc)}</span>${I('chev')}</button>
+    <button type="button" class="pickBtn" data-onclick="pickList('Compra', payoffOpts(), payoff.id, openPayoff)"><span>${esc(p.desc)}</span>${I('chev')}</button>
     <label for="payK">Parcelas a adiantar (faltam ${p.n - p.paid}, de ${fmt(parcVal(p, p.paid))} cada)</label>
-    <input id="payK" type="text" inputmode="numeric" autocomplete="off" value="${payoff.k}" oninput="payoff.k=parseInt(this.value)||0;drawPayoff()">
+    <input id="payK" type="text" inputmode="numeric" autocomplete="off" value="${payoff.k}" data-oninput="payoff.k=parseInt(this.value)||0;drawPayoff()">
     <div id="payOut"></div>
-    <div class="btns foot"><button class="btn primary" onclick="closeForm()">Fechar</button></div>`);
+    <div class="btns foot"><button class="btn primary" data-onclick="closeForm()">Fechar</button></div>`);
   drawPayoff();
 }
 function drawPayoff(){
