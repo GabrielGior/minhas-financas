@@ -1,4 +1,4 @@
-// Minhas Finanças — O "ato" de cada tema especial: uma figura que só aquele tema tem, com um movimento que combina
+// Cofrim — O "ato" de cada tema especial: uma figura que só aquele tema tem, com um movimento que combina
 // com ela (a bola rola, o navio navega, a roleta gira, o morcego voa…). É ela que deixa claro do que o tema trata:
 // aparece o tempo todo no fundo da tela (js/cena.js), na abertura, na comemoração e na animação de um novo gasto.
 // Carregado pelo index.html antes de cena.js.

@@ -1,4 +1,4 @@
-// Minhas Finanças — Guia do app: todas as funções, onde ficam e como usar (Configurações › Guia do app).
+// Cofrim — Guia do app: todas as funções, onde ficam e como usar (Configurações › Guia do app).
 // Cada item: [função, onde fica, como usar]. Ao criar ou mudar uma função, atualize aqui também.
 // "(só no Android)" marca o que não existe na versão web (iPhone e computador).
 const GUIA = [
@@ -7,14 +7,16 @@ const GUIA = [
     ['Novo ganho', 'Aba Ganhos › botão +, ou atalho "+ Ganho" no Resumo', 'Informe o valor e a categoria. Em "Tipo", escolha fixo (todo mês), anual (13º, bônus) ou avulso.'],
     ['Gasto fixo, anual ou assinatura', 'Novo gasto › Mais opções › Tipo', 'Fixo repete todo mês; anual, uma vez por ano. Gastos fixos com nome de serviço (Netflix, academia…) viram assinatura sozinhos; "É uma assinatura?" corrige.'],
     ['Compra parcelada', 'Aba Gastos › Parceladas › botão +', 'Informe o total (ou o valor da parcela), o número de parcelas e quantas já pagou. As parcelas entram sozinhas em cada mês.'],
+    ['Financiamento e empréstimo', 'Aba Gastos › Parceladas › botão +', 'Cadastre com credor, conta de débito, dia do vencimento e taxa de juros (opcional). O app calcula o saldo devedor e avisa no dia do vencimento, se os lembretes estiverem ligados.'],
+    ['Detalhe das parcelas', 'Aba Gastos › Parceladas › toque num item', 'Mostra o saldo devedor, a próxima parcela e todas as parcelas (vencidas, a vencer e pagas). Pague, desfaça, abata, edite ou exporte em PDF.'],
     ['Repetir um gasto', 'No topo do formulário de novo gasto', 'Os gastos avulsos que você mais repete aparecem como botões; tocar preenche o formulário.'],
     ['Banco, forma de pagamento e dia', 'Novo gasto ou ganho › Mais opções', 'As sugestões de banco aparecem abaixo do campo. O dia da compra define em qual fatura do cartão ela cai.'],
     ['Etiquetas', 'Novo gasto › Mais opções › Etiquetas', 'Escreva palavras separadas por vírgula (ex.: viagem). Depois filtre por etiqueta na lista de lançamentos.'],
     ['Dividir um gasto com alguém', 'Novo gasto › Mais opções › Dividir com', 'Informe o nome e a parte da outra pessoa. O app mostra em Gastos › "A receber" e você marca quando receber.'],
     ['Comprovante por foto', 'Novo gasto › Mais opções › Comprovante', 'Tire uma foto ou escolha da galeria. No Android, o app tenta ler o valor e a data da foto.'],
     ['Lançar escrevendo ou falando', 'Botão redondo do assistente, em qualquer tela', 'Escreva "mercado 45 nubank crédito" ou toque no microfone (só no Android). O app mostra o que entendeu e pede confirmação.'],
-    ['Sugestões pelos avisos do banco (só no Android)', 'Configurações › Lançamento automático', 'Ligue e autorize o acesso às notificações. Compras e Pix avisados pelo banco viram sugestões no Resumo.'],
-    ['Importar extrato', 'Aba Gastos › Importar extrato', 'O app mostra primeiro o formato esperado (OFX, ou CSV com as colunas Data e Valor, e Descrição se houver). Depois você escolhe o arquivo, confere os lançamentos e importa.'],
+    ['Sugestões pelos avisos do banco (só no Android)', 'Configurações › Lançamento automático', 'Ligue e autorize o acesso às notificações. Compras e Pix avisados pelo banco, pelas carteiras do celular (Google, Samsung…) e pelos apps de vale-refeição e alimentação viram sugestões no Resumo; as dos vales já vão para o vale certo.'],
+    ['Importar extrato', 'Aba Gastos › Importar extrato', 'O app mostra primeiro o formato esperado (OFX, ou CSV com as colunas Data e Valor, e Descrição se houver). Depois você escolhe o arquivo, confere os lançamentos e importa. PDF, planilha do Excel, foto ou arquivo com mais de 5 MB não são lidos: o app avisa e explica o que fazer.'],
     ['Editar, excluir e desfazer', 'Toque num lançamento; ou deslize para a esquerda', 'Depois de excluir ou salvar uma alteração aparece "Desfazer" por alguns segundos. O que foi excluído fica 30 dias na Lixeira.']]],
   ['Resumo', [
     ['Escolher mês e ano', 'Aba Resumo › seletor no topo', 'As setas trocam o mês; tocar no nome do mês abre a escolha de mês e ano. Os cartões do topo, a rosca, o calendário e as faturas mostram o mês escolhido; o gráfico e as listas, o ano dele.'],
@@ -24,7 +26,7 @@ const GUIA = [
     ['Contas bancárias e transferências', 'Aba Resumo › Contas', 'Cadastre as contas com o saldo inicial. O saldo acompanha os lançamentos feitos com o mesmo nome de banco. "Transferir" passa dinheiro de uma para outra.'],
     ['Planejamento', 'Aba Resumo › Planejamento', 'Reserva de emergência, lista de assinaturas, dívidas e simulador de quitação.'],
     ['Gastos por categoria, banco e pagamento', 'Aba Resumo', 'Gráfico e listas do ano escolhido.'],
-    ['Personalizar o Resumo', 'Botão de ajustes no topo do Resumo', 'Escolha quais blocos aparecem e em que ordem. As outras abas têm o mesmo botão.'],
+    ['Personalizar o Resumo', 'Botão de ajustes no topo do Resumo, ou "Ver mais informações no resumo" no fim dele', 'Escolha quais blocos aparecem e em que ordem. Quem começa vê só o essencial; os outros blocos (previsão, gráficos, metas, investimentos…) ficam aqui, desligados. As outras abas têm o mesmo botão.'],
     ['Gastos do mês e do ano, rosca e calendário', 'Aba Resumo', 'No topo, os gastos do mês e do ano lado a lado. Abaixo, a rosca mostra para onde foi o dinheiro do mês e o calendário pinta mais escuro os dias com mais gasto; toque num dia para ver o que saiu.'],
     ['Esconder valores', 'Botão do olho no topo', 'Troca os valores por •••• para abrir o app em público.']]],
   ['Gastos', [
@@ -35,33 +37,35 @@ const GUIA = [
     ['Orçamento por categoria', 'Aba Gastos › Orçamento do mês', 'Defina um limite mensal por categoria. O app avisa a partir de 80% do limite.'],
     ['Faturas e limite do cartão', 'Aba Gastos › Faturas do cartão › Configurar cartões', 'Informe o dia de fechamento, o limite e a conta que paga cada cartão.'],
     ['Comparativo', 'Aba Gastos › Comparativo por categoria', 'Compara o mês com o anterior e com a média de 6 meses.'],
-    ['Relatório em PDF e planilha', 'Aba Gastos (fim da tela)', '"Relatório (PDF)" abre a impressão com o relatório do mês formatado; "Exportar planilha (Excel)" gera o arquivo do ano com três abas (resumo, gastos e ganhos), cabeçalho colorido e totais.'],
+    ['Relatório em PDF e planilha', 'Aba Gastos (fim da tela)', '"Relatório (PDF)" abre a impressão com o relatório do mês formatado; "Exportar planilha (Excel)" gera o arquivo do ano com quatro abas (resumo, gastos, ganhos e investimentos, com a corretora), cabeçalho colorido e totais.'],
     ['Apagar por dia, mês ou ano', 'Fim das abas Gastos, Ganhos e Investir', 'Apaga todos os lançamentos de um dia, de um mês, de um ano ou tudo. Vai para a lixeira e dá para desfazer em seguida.'],
     ['Histórico de sugestões do banco', 'Aba Resumo › Histórico de sugestões', 'Lista o que o app leu das notificações do banco, inclusive o que já foi lançado ou ignorado, com um botão para lançar o gasto.'],
     ['Vales: refeição, alimentação e transporte', 'Aba Gastos › Vales e aba Ganhos › Vales', 'Use "+ Crédito deste vale" para o que entra (de preferência todo mês) e "+ Gasto neste vale" para o que sai. O formulário pede só valor, vale, empresa e descrição. Os vales ficam fora dos totais do mês; toque num vale para ver o saldo e o histórico completo dele.'],
     ['Planilha do Google ligada ao app', 'Aba Gastos (fim da tela) ou Configurações › Dados e ajustes', 'O app cria uma planilha na sua conta. O que você lançar no app aparece nela, e o que escrever nela aparece no app.']]],
   ['Investimentos e metas', [
     ['Cadastrar investimento', 'Aba Investir › botão +', 'Renda fixa: valor, índice (CDI, Selic, IPCA) e percentual. Ações, FIIs e moedas: procure o código e informe quantidade e preço.'],
+    ['Corretora do investimento', 'Aba Investir › botão + (ou toque no investimento para editar)', 'Campo opcional, com até 40 letras. O app sugere as corretoras que você já usou, para não repetir o mesmo nome escrito de outro jeito. Ela aparece na lista e na planilha do Excel.'],
     ['Aporte, venda e proventos', 'Aba Investir › toque no investimento', 'Registre aportes, vendas (o lucro pode virar ganho) e dividendos.'],
-    ['Alerta de preço (só no Android)', 'Aba Investir › ação ou moeda › Alerta de preço', 'Escolha um preço acima ou abaixo; o app avisa por notificação.'],
+    ['Alerta de preço (só no Android)', 'Aba Investir › ação ou moeda › Alerta de preço', 'Escolha um preço acima ou abaixo; o app avisa por notificação, com os lembretes deste aparelho ligados (Configurações › Lembretes).'],
     ['Metas', 'Aba Investir › Metas', 'Crie a meta com valor e prazo e use "Guardar" para registrar o que já juntou.'],
     ['Taxas de referência', 'Configurações › Dados e ajustes › Taxas de referência', 'CDI, Selic e IPCA vêm do Banco Central; dá para ajustar à mão.']]],
   ['Assistente e notícias', [
     ['Perguntas sobre os seus dados', 'Botão redondo do assistente, em qualquer tela', 'Pergunte "quanto gastei com mercado este mês?" ou "qual meu saldo?". As contas são feitas no aparelho, sem enviar nada.'],
     ['Notícias (só no Android)', 'Aba Notícias', 'Manchetes de economia; tocar abre a notícia no navegador.']]],
   ['Conta e segurança', [
+    ['Modo demonstração', 'Tela de entrada › Testar sem conta (modo demonstração)', 'Abre o app com dados fictícios, para conhecer antes de entrar com a conta Google. Nada é salvo nem enviado; a faixa no topo leva para "Entrar com Google", e os dados fictícios somem ao sair ou ao fechar o app.'],
+    ['Aviso de sem internet', 'Aparece sozinho no topo da tela', 'Quando a internet cai, o app avisa que as alterações ficam salvas e serão sincronizadas depois. Quando a conexão volta, mostra "Internet de volta" e sincroniza.'],
     ['Sincronização com a conta Google', 'Configurações › Conta e sincronização', 'Os dados ficam na pasta privada do app no seu Google Drive e sincronizam entre os aparelhos. "Versões salvas" restaura uma cópia dos últimos 30 dias.'],
     ['Conta compartilhada (casal ou família)', 'Configurações › Conta compartilhada', 'Três formas de começar: compartilhar os seus lançamentos, criar uma conta do zero (vazia) ou entrar com um código de convite. Cada lançamento mostra quem fez. No Resumo, o botão Pessoal / Compartilhada troca entre os seus dados e os da conta compartilhada, e uma faixa no topo de todas as telas diz qual está em uso. Com a conta ligada, a mesma tela lista as pessoas e tem "Atividade recente"; o app avisa quando outra pessoa entra ou adiciona/edita um gasto, ganho ou investimento (na tela e, com o app fechado, por notificação em até cerca de uma hora). Sair encerra a conta para todos: a outra pessoa volta para a conta individual, a planilha é apagada e cada um pode ficar com uma cópia.'],
-    ['Bloqueio por senha ou biometria (só no Android)', 'Configurações › Ícone e bloqueio', 'Ligue para o app pedir a digital, o rosto ou a senha do celular ao abrir.'],
+    ['Bloqueio por senha ou biometria (só no Android)', 'Configurações › Ícone e bloqueio', 'Ligue para o app pedir a digital, o rosto ou a senha do celular ao abrir. Com ele ligado, sair da conta Google também pede, e os widgets escondem os valores (dá para desligar ali mesmo).'],
     ['Backup em arquivo', 'Configurações › Dados e ajustes › Backup em arquivo', '"Exportar" salva um arquivo com tudo; "Importar" troca os dados pelos do arquivo.'],
     ['Lixeira', 'Configurações › Dados e ajustes › Lixeira', 'Restaure lançamentos excluídos nos últimos 30 dias.'],
     ['Arquivar anos antigos', 'Configurações › Dados e ajustes › Anos antigos', 'Tira da sincronização do dia a dia os lançamentos de anos que já passaram; os resumos continuam.'],
     ['Apagar todos os dados', 'Configurações › Dados e ajustes › Apagar tudo', 'Apaga os dados do aparelho e da conta Google. Não dá para desfazer.']]],
   ['Avisos e tela inicial', [
-    ['Lembretes de contas (só no Android)', 'Configurações › Lembretes', 'Ligue as notificações e escolha a antecedência. Tire o app da economia de bateria para os avisos chegarem na hora.'],
-    ['Widgets (só no Android)', 'Configurações › Widgets', 'Quadros do app na tela inicial: Resumo (você escolhe as linhas), Gastos (a lista dos gastos do mês; você escolhe o grupo e a ordem), Saldo do mês, Contas a vencer e Mascote. O fundo acompanha a cor do app ou o tema especial (ou fica escuro), as listas rolam dentro do widget e o mascote é o mesmo do app.'],
+    ['Lembretes (só no Android)', 'Configurações › Lembretes', 'Ligue "Lembretes ativos neste aparelho" (o Android pede a permissão de notificações) e escolha os tipos: contas a vencer, com antecedência, e parcelas de financiamentos. Os tipos ficam na sua conta; o interruptor vale só para este celular. Tire o app da economia de bateria para os avisos chegarem na hora.'],
+    ['Widgets (só no Android)', 'Configurações › Widgets', 'Quadros do app na tela inicial: Resumo (você escolhe as linhas), Gastos (a lista dos gastos do mês; você escolhe o grupo e a ordem), Saldo do mês, Contas a vencer e Mascote. O fundo acompanha a cor do app ou o tema especial (ou fica escuro), as listas rolam dentro do widget e o mascote é o mesmo do app. Dá para esconder os valores (R$ ••••) neste aparelho.'],
     ['Abertura animada', 'Ao abrir o app', 'Uma animação rápida nas cores escolhidas ou no jeito do tema especial; um toque pula. Some com as animações desligadas (Configurações › Aparência).'],
-    ['Atalho com nome livre (só no Android)', 'Configurações › Ícone e bloqueio › Criar atalho com o meu nome', 'Cria na tela inicial um atalho do app com o nome que você escrever e o ícone escolhido. Na lista de apps continua o nome da lista.'],
     ['Puxar para atualizar', 'Em qualquer aba, com a tela no topo', 'Puxe a tela para baixo e solte: o app sincroniza com a conta, atualiza taxas e cotações e redesenha a tela.'],
     ['Atualizações', 'Configurações › Procurar atualizações', 'O app procura versão nova ao abrir e mostra o que vem nela, um aviso de cada vez. O botão avisa também quando você já está na versão mais recente.']]],
   ['Aparência', [
@@ -72,6 +76,6 @@ const GUIA = [
     ['Modo divertido', 'Configurações › Aparência › Modo divertido', 'Porquinho no Resumo que reage ao seu mês, mais de 100 conquistas, desafio do mês e confete.'],
     ['Abas do menu', 'Configurações › Menu de baixo', 'Esconda abas que não usa e mude a ordem.'],
     ['Categorias', 'Configurações › Dados e ajustes › Categorias', 'Crie, renomeie ou esconda categorias, com ícone e cor.'],
-    ['Ícone e nome do app (só no Android)', 'Configurações › Ícone e bloqueio', 'Escolha a cor, o desenho (gráfico ou porquinho) e o nome que aparece na tela inicial.'],
-    ['Seu nome e tutorial', 'Configurações › Perfil', 'Troque o nome usado nas mensagens, reveja o tutorial e as novidades da versão.']]]
+    ['Ícone do app (só no Android)', 'Configurações › Ícone e bloqueio', 'Escolha a cor e o desenho (gráfico, porquinho e outros) do ícone na tela inicial.'],
+    ['Seu nome e tutorial', 'Configurações › Perfil', 'Troque o nome usado nas mensagens, reveja o tutorial e as novidades da versão. As novidades aparecem sozinhas depois de uma atualização (não na primeira vez no app).']]]
 ];

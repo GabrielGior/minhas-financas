@@ -1,4 +1,4 @@
-// Minhas Finanças — O que roda quando o app abre.
+// Cofrim — O que roda quando o app abre.
 // Carregado pelo index.html, nesta ordem: dados.js, telas.js, assistente.js, formularios.js, config.js, inicio.js.
 // ---------- Início ----------
 document.getElementById('gateLogo').innerHTML = I('chart', 52);
@@ -6,6 +6,7 @@ document.getElementById('lockIcon').innerHTML = I('lock', 48);
 document.getElementById('fabChat').innerHTML = I('chat', 26);
 document.getElementById('ptr').innerHTML = I('refresh', 22);
 document.getElementById('lockX').innerHTML = I('close', 20);
+lembMigrar(); // interruptor dos lembretes deste aparelho: decidido na primeira abertura (antes da sincronização)
 rollover();
 // Botão "+ Gasto" do widget: abre direto o formulário de novo gasto.
 function onAtalho(){
@@ -30,6 +31,7 @@ if (needGate()){
 } else {
   // Quem já usava o app antes do aviso de conta nova: a conta atual vira a "última usada", sem repetir as boas-vindas.
   if (canSync() && !sync.account && Android.conta && Android.conta()){ sync.account = Android.conta(); saveSync(); }
+  netConferir(); // sem internet ao abrir: aviso (com internet, nada)
   syncNow(); aposAbertura(() => { startSheets(); onFoto(); onAtalho(); }); // depois da animação de abertura; o convite do bloqueio vem no fim das telas de início
 }
 let saiuEm = 0;

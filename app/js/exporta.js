@@ -1,4 +1,4 @@
-// Minhas Finanças — Dados: planilha formatada (.xlsx), exclusão por período, aviso do extrato e histórico de sugestões.
+// Cofrim — Dados: planilha formatada (.xlsx), exclusão por período, aviso do extrato e histórico de sugestões.
 // Carregado pelo index.html depois de planilha.js.
 
 // ---------- Planilha do ano (.xlsx) ----------
@@ -66,18 +66,21 @@ function xlsx(abas){
     ['xl/styles.xml', ESTILOS_XLSX],
     ...abas.map((a, i) => [`xl/worksheets/sheet${i + 1}.xml`, abaXlsx(a)])]);
 }
-// As três abas da planilha do ano y: resumo por mês, gastos e ganhos (com os vales, como no CSV).
+// As abas da planilha do ano y: resumo por mês, gastos e ganhos (com os vales, como no CSV) e os investimentos de hoje
+// (com a corretora).
 function abasDoAno(y){
-  const meses = [...Array(12)].map((_, i) => ymOf(+y, i)), sub = `Minhas Finanças · gerado em ${now.toLocaleDateString('pt-BR')}`;
-  const tipo = x => x.kind === 'installment' ? `parcela ${x.num}/${x.n}` : x.fixed === 'y' ? 'anual' : x.fixed ? 'fixo' : 'avulso';
+  const meses = [...Array(12)].map((_, i) => ymOf(+y, i)), sub = `Cofrim · gerado em ${now.toLocaleDateString('pt-BR')}`;
+  const tipo = x => x.kind === 'installment' ? parcTag(x) : x.fixed === 'y' ? 'anual' : x.fixed ? 'fixo' : 'avulso';
   const gastos = meses.flatMap(m => expensesAll(m).map(x => [cap(monthName(m).split(' ')[0]), x.day ? String(x.day) : '', x.desc, (CAT_GASTO[x.cat] || CAT_GASTO.outros)[1], x.bank || '', PAY[x.pay] || '', tipo(x), x.value]));
   const ganhos = meses.flatMap(m => incomesAll(m).map(x => [cap(monthName(m).split(' ')[0]), x.day ? String(x.day) : '', x.desc, (CAT_GANHO[x.cat] || CAT_GANHO.outros)[1], x.bank || '', tipo(x), x.value]));
+  const invest = db.investments.map(v => [v.ticker ? v.ticker + (v.assetName ? ' · ' + v.assetName : '') : v.name || '', (CAT_INV[v.cat] || CAT_INV.outros)[1], v.broker || '', v.value || 0]);
   const res = meses.map(m => [cap(monthName(m).split(' ')[0]), totalIn(m), totalOut(m), round2(totalIn(m) - totalOut(m))]);
   const tot = (l, c) => round2(sum(l, r => r[c]));
   return [
     {nome:'Resumo', larguras:[16, 16, 16, 16], titulo:`Resumo de ${y}`, sub, cabecalho:['Mês', 'Ganhos', 'Gastos', 'Saldo'], linhas:res, total:['Total do ano', tot(res, 1), tot(res, 2), tot(res, 3)]},
     {nome:'Gastos', larguras:[12, 6, 34, 22, 16, 18, 14, 14], titulo:`Gastos de ${y}`, sub, cabecalho:['Mês', 'Dia', 'Descrição', 'Categoria', 'Banco', 'Pagamento', 'Tipo', 'Valor'], linhas:gastos, total:['Total', '', '', '', '', '', '', tot(gastos, 7)]},
-    {nome:'Ganhos', larguras:[12, 6, 34, 22, 16, 14, 14], titulo:`Ganhos de ${y}`, sub, cabecalho:['Mês', 'Dia', 'Descrição', 'Categoria', 'Conta', 'Tipo', 'Valor'], linhas:ganhos, total:['Total', '', '', '', '', '', tot(ganhos, 6)]}];
+    {nome:'Ganhos', larguras:[12, 6, 34, 22, 16, 14, 14], titulo:`Ganhos de ${y}`, sub, cabecalho:['Mês', 'Dia', 'Descrição', 'Categoria', 'Conta', 'Tipo', 'Valor'], linhas:ganhos, total:['Total', '', '', '', '', '', tot(ganhos, 6)]},
+    {nome:'Investimentos', larguras:[34, 26, 22, 16], titulo:`Investimentos em ${now.toLocaleDateString('pt-BR')}`, sub, cabecalho:['Investimento', 'Categoria', 'Corretora', 'Valor hoje'], linhas:invest, total:['Total', '', '', tot(invest, 3)]}];
 }
 // Planilha do ano da aba Gastos, já formatada. No APK antigo (sem gravação de arquivo binário), cai no CSV simples.
 function exportPlanilha(){

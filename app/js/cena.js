@@ -1,4 +1,4 @@
-// Minhas Finanças — Motor de cenas dos temas especiais.
+// Cofrim — Motor de cenas dos temas especiais.
 // Carregado pelo index.html depois de arte.js. Cada tema especial tem uma CENA própria, desenhada pelo app (sem
 // imagens): um horizonte, um astro e partículas que ficam se movendo o tempo todo no fundo da tela; e quatro
 // animações com as formas e as cores do tema: a entrada (abertura), a troca de tela, a comemoração e o novo gasto.
@@ -153,7 +153,7 @@ function cenaWidgetSvg(k){
     ${ato ? `<g transform="translate(186,132) scale(1.25)" opacity=".38">${ato[0]}</g>` : ''}</svg>`;
 }
 function widgetFundoEnviar(){
-  if (!(window.Android && Android.widgetFundo) || window.TESTE) return;
+  if (!(window.Android && Android.widgetFundo) || window.TESTE || demoOn) return;
   const k = db.prefs.skin && SKINS[db.prefs.skin] ? db.prefs.skin : '', marca = k + "|3";
   try { if (localStorage.getItem(WFUNDO_KEY) === marca) return; } catch(e){}
   const pronto = b64 => { Android.widgetFundo(b64, k); try { localStorage.setItem(WFUNDO_KEY, marca); } catch(e){} };

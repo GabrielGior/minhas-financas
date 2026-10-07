@@ -1,6 +1,6 @@
 {
-  "name": "Minhas Finanças",
-  "short_name": "Finanças",
+  "name": "Cofrim",
+  "short_name": "Cofrim",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

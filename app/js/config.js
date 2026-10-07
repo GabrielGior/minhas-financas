@@ -1,4 +1,4 @@
-// Minhas Finanças — Modo divertido, configurações, diagnóstico, sincronização, primeiro uso e backup.
+// Cofrim — Modo divertido, configurações, diagnóstico, sincronização, primeiro uso e backup.
 // Carregado pelo index.html, nesta ordem: dados.js, telas.js, assistente.js, formularios.js, config.js, inicio.js.
 // ---------- Modo divertido (db.prefs.fun) ----------
 // Porquinho no Resumo, conquistas, confete e recados ao salvar. Nada disso muda os dados: tudo é calculado na hora.
@@ -61,7 +61,7 @@ function challengeHtml(){
   if (!c) return '';
   const nome = (CAT_GASTO[c.cat] || CAT_GASTO.outros)[1], pct = Math.min(100, c.used / c.target * 100);
   return `<div class="card"><b>${I('target')} Desafio de ${monthName(curYM).split(' ')[0]}</b>
-    <div class="hint" style="margin-top:4px">Gaste menos de ${fmt(c.target)} em ${nome} (foi o gasto do mês passado).</div>
+    <div class="hint" style="margin-top:4px">Gaste menos de ${fmt(c.target)} em ${esc(nome)} (foi o gasto do mês passado).</div>
     <div class="bar"><i style="width:${pct}%;background:${c.ok ? 'var(--in)' : 'var(--out)'}"></i></div>
     <div class="hint" style="margin-top:0">${c.ok ? `Até agora: ${fmt(c.used)}. Ainda cabem ${fmt(c.target - c.used)}.` : `Passou em ${fmt(c.used - c.target)}. Mês que vem tem outro!`}</div></div>`;
 }
@@ -420,8 +420,9 @@ function funCount(){
 // Ícone e bloqueio são funções do lado nativo (window.Android). Na prévia do PC (localhost) não há
 // lado nativo: demoOpts só guarda as escolhas na memória para a tela poder ser vista; não tem efeito real.
 const demoOpts = {
-  lock:false, time:30, icon:'indigo',
+  lock:false, time:30, icon:'indigo', esconde:true,
   bloqueio(){ return this.lock; }, setBloqueio(v){ this.lock = v; },
+  widgetEsconde(){ return this.esconde; }, setWidgetEsconde(v){ this.esconde = v; },
   tempoBloqueio(){ return this.time; }, setTempoBloqueio(v){ this.time = v; },
   icone(){ return this.icon; }, setIcone(v){ this.icon = v; }
 };
@@ -495,34 +496,42 @@ function openSettings(sec){
     <label>Cor do ícone do app</label>
     <div class="swatches">${Object.entries(ICONES).filter(([k]) => !SKINS[k] || SKIN_ANTIGOS.includes(k) || (k === p.skin || k === N.icone()) && iconeTem(k)).map(([k,c]) => `<button class="sw ${N.icone() === k ? 'on' : ''}" style="background:linear-gradient(135deg,${c[1]},${c[2]});border-radius:14px" onclick="nativeOpts().setIcone('${k}');openSettings()" aria-label="${c[0]}" title="${c[0]}"></button>`).join('')}</div>
     ${window.Android && Android.setIconeApp ? `<label>Desenho do ícone</label>
-    <div class="icoGrid">${iconeDesenhos(Android.icone()).map(k => `<button class="${Android.iconeDesenho() === k ? 'on' : ''}" onclick="Android.setIconeApp(Android.icone(),'${k}',Android.iconeNome());openSettings()">${iconeSvg(Android.icone(), k)}<small>${ICON_DESENHOS[k][0]}</small></button>`).join('')}</div>
-    ${SKINS[Android.icone()] ? '<div class="hint">Os outros desenhos (moeda, carteira, cofre…) existem para as doze cores comuns: escolha uma delas acima para vê-los.</div>' : Android.criarAtalho ? '' : '<div class="hint">Há mais desenhos (moeda, carteira, cofre…) na versão nova do app: toque em Procurar atualizações.</div>'}
-    <label>Nome do app na tela inicial</label>
-    <div class="btns" style="margin-top:0;flex-wrap:wrap">${APP_NOMES.map((t, i) => `<button class="btn ${Number(Android.iconeNome()) === i ? 'primary' : ''}" style="padding:11px 6px;flex:1 0 40%" onclick="Android.setIconeApp(Android.icone(),Android.iconeDesenho(),${i});openSettings()">${t}</button>`).join('')}</div>` : ''}
-    <div class="hint">Ao trocar a cor, o desenho ou o nome, o Android fecha o app: é só abrir de novo pelo ícone novo. Se o ícone sumir da tela inicial, adicione de novo pela lista de apps.</div>
-    ${window.Android && Android.criarAtalho ? `<label>Outro nome, escrito por você</label>
-    <div class="hint" style="margin-top:0">O Android só deixa o app trocar de nome entre os da lista acima. Para um nome livre, o app cria na tela inicial um atalho com o nome que você escrever e o ícone escolhido aqui; na lista de apps continua o nome da lista.</div>
-    <div class="btns"><button class="btn" onclick="askAtalho()">${I('edit')}Criar atalho com o meu nome</button></div>` : ''}
+    <div class="icoGrid">${iconeDesenhos(Android.icone()).map(k => `<button class="${Android.iconeDesenho() === k ? 'on' : ''}" onclick="Android.setIconeApp(Android.icone(),'${k}',0);openSettings()">${iconeSvg(Android.icone(), k)}<small>${ICON_DESENHOS[k][0]}</small></button>`).join('')}</div>
+    ${SKINS[Android.icone()] ? '<div class="hint">Os outros desenhos (moeda, carteira, cofre…) existem para as doze cores comuns: escolha uma delas acima para vê-los.</div>' : Android.criarAtalho ? '' : '<div class="hint">Há mais desenhos (moeda, carteira, cofre…) na versão nova do app: toque em Procurar atualizações.</div>'}` : ''}
+    <div class="hint">Ao trocar a cor ou o desenho, o Android fecha o app: é só abrir de novo pelo ícone novo. Se o ícone sumir da tela inicial, adicione de novo pela lista de apps.</div>
     <label>Pedir senha ou biometria ao abrir</label>
     <div class="btns" style="margin-top:0">${[[true, I('lock') + 'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${lockOn === v ? 'primary' : ''}" onclick="nativeOpts().setBloqueio(${v});openSettings()">${t}</button>`).join('')}</div>
-    ${lockOn ? '<div class="hint">Para desligar, o app pede a senha ou a biometria. Ao sair da conta Google, o bloqueio desliga sozinho.</div>' : ''}
+    ${lockOn ? '<div class="hint">Para desligar, o app pede a senha ou a biometria. Ao sair da conta Google, o app também pede, e o bloqueio desliga.</div>' : ''}
+    ${N.setWidgetEsconde ? `<label>Esconder valores nos widgets com o bloqueio ligado</label>
+    <div class="btns" style="margin-top:0${lockOn ? '' : ';opacity:.4;pointer-events:none'}">${[[true, 'Ligado'], [false, 'Desligado']].map(([v, t]) => `<button class="btn ${!!N.widgetEsconde() === v ? 'primary' : ''}" onclick="nativeOpts().setWidgetEsconde(${v});openSettings()">${t}</button>`).join('')}</div>
+    <div class="hint">Os widgets da tela inicial mostram R$ •••• no lugar dos valores enquanto o bloqueio estiver ligado.</div>` : ''}
     <label>Pedir de novo depois de ficar fora do app por</label>
     <div class="btns" style="margin-top:0;flex-wrap:wrap${lockOn ? '' : ';opacity:.4;pointer-events:none'}">${[[0,'Sempre'],[30,'30 s'],[60,'1 min'],[300,'5 min'],[900,'15 min']].map(([s,t]) => `<button class="btn ${lockTime === s ? 'primary' : ''}" style="padding:11px 6px" onclick="nativeOpts().setTempoBloqueio(${s});openSettings()">${t}</button>`).join('')}</div>`],
-  ['lembretes', 'calendar', 'Lembretes', 'Contas a vencer e economia de bateria', !isApp ? '' : `${demo}
-    <label>Notificações de contas a vencer</label>
-    <div class="btns" style="margin-top:0">${[[true,'Ligadas'],[false,'Desligadas']].map(([v,t]) => `<button class="btn ${p.notify === v ? 'primary' : ''}" onclick="setNotify(${v})">${t}</button>`).join('')}</div>
-    ${p.notify && batLivre === false ? `<div class="hint warn">${I('alert', 13)} A economia de bateria está ligada para o app: os lembretes podem atrasar ou não chegar. Desligue para recebê-los na hora.</div>` : ''}
-    ${p.notify && batLivre ? `<div class="hint in">${I('check', 13)} Economia de bateria desligada para o app: os lembretes chegam na hora.</div>` : ''}
+  ['lembretes', 'calendar', 'Lembretes', 'Contas a vencer, parcelas e economia de bateria', !isApp ? '' : `${demo}
+    <label>Lembretes ativos neste aparelho</label>
+    <div class="btns" style="margin-top:0">${[[true,'Ligados'],[false,'Desligados']].map(([v,t]) => `<button class="btn ${lembLigados() === v ? 'primary' : ''}" onclick="${v ? 'ligarLembretes()' : 'desligarLembretes()'}">${t}</button>`).join('')}</div>
+    ${aparelhoLemb() === '1' && !notifLiberada() ? `<div class="hint warn">${I('alert', 13)} Desligados porque as notificações do Cofrim estão bloqueadas nas configurações do Android.</div>
+      <div class="btns"><button class="btn" onclick="Android.abrirConfigNotificacoes()">Abrir configurações do Android</button></div>` : ''}
+    <div class="hint">Vale só para este aparelho. O que você escolhe abaixo fica salvo na sua conta e vale em todos os aparelhos em que os lembretes estiverem ligados.</div>
+    ${lembLigados() && batLivre === false ? `<div class="hint warn">${I('alert', 13)} A economia de bateria está ligada para o app: os lembretes podem atrasar ou não chegar. Desligue para recebê-los na hora.</div>` : ''}
+    ${lembLigados() && batLivre ? `<div class="hint in">${I('check', 13)} Economia de bateria desligada para o app: os lembretes chegam na hora.</div>` : ''}
+    <label>Contas a vencer (gastos fixos com dia de vencimento)</label>
+    <div class="btns" style="margin-top:0">${[[true,'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${!!p.notify === v ? 'primary' : ''}" onclick="setNotify(${v})">${t}</button>`).join('')}</div>
     <div style="${p.notify ? '' : 'opacity:.4;pointer-events:none'}">
       <label>Avisar com antecedência de (pode marcar mais de uma)</label>
       <div class="btns" style="margin-top:0">${[[1,'1 dia'],[3,'3 dias'],[5,'5 dias']].map(([d,t]) => `<button class="btn ${p.reminds.includes(d) ? 'primary' : ''}" onclick="toggleRemind(${d})">${p.reminds.includes(d) ? I('check', 15) : ''}${t}</button>`).join('')}</div>
       <label>Categorias que notificam (as que têm gastos fixos; toque para ligar ou desligar)</label>
-      <div class="chips" style="margin:0">${Object.entries(CAT_GASTO).filter(([k]) => k !== 'emprestimo' && (p.notifyCats[k] === false || db.expenses.some(x => x.cat === k && x.fixed))).map(([k,c]) => { const on = p.notifyCats[k] !== false; return `<button style="${on ? 'background:var(--brand);color:' + (theme.dark ? '#0b1020' : '#fff') : 'opacity:.6;text-decoration:line-through'}" onclick="toggleNotifyCat('${k}')">${I(c[0], 14)} ${c[1]}</button>`; }).join('')}</div>
+      <div class="chips" style="margin:0">${Object.entries(CAT_GASTO).filter(([k]) => k !== 'emprestimo' && (p.notifyCats[k] === false || db.expenses.some(x => x.cat === k && x.fixed))).map(([k,c]) => { const on = p.notifyCats[k] !== false; return `<button style="${on ? 'background:var(--brand);color:' + (theme.dark ? '#0b1020' : '#fff') : 'opacity:.6;text-decoration:line-through'}" onclick="toggleNotifyCat('${k}')">${I(c[0], 14)} ${esc(c[1])}</button>`; }).join('')}</div>
     </div>
     <div class="hint">Vale para gastos fixos com dia de vencimento. O app avisa em cada antecedência marcada e de novo no dia do vencimento, por volta das 9h. Sem nenhuma marcada, avisa só no dia.</div>${window.Android && Android.bateria ? `${batLivre ? '' : `<div class="btns"><button class="btn" onclick="Android.bateria()">Tirar o app da economia de bateria</button></div>`}
-    <div class="hint">Em alguns celulares (Samsung, Xiaomi, Motorola) a economia de bateria atrasa ou corta os lembretes. Na tela que abre, procure "Minhas Finanças" e escolha "Não otimizar". O app também reagenda os lembretes quando o celular reinicia e quando é atualizado.</div>` : ''}`],
+    <label>Parcelas de financiamentos e empréstimos (no dia do vencimento)</label>
+    <div class="btns" style="margin-top:0">${[[true,'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${!!(p.notifyFin ?? p.notify) === v ? 'primary' : ''}" onclick="setNotifyTipo('notifyFin',${v})">${t}</button>`).join('')}</div>
+    <div class="hint">Em alguns celulares (Samsung, Xiaomi, Motorola) a economia de bateria atrasa ou corta os lembretes. Na tela que abre, procure "Cofrim" e escolha "Não otimizar". O app também reagenda os lembretes quando o celular reinicia e quando é atualizado.</div>` : ''}`],
   ['widgets', 'chart', 'Widgets', 'Tela inicial do celular: resumo, saldo e porquinho', !(window.Android && Android.widget) ? '' : `
     <div class="hint" style="margin-top:0">Widgets são quadros do app na tela inicial do celular. Há cinco: <b>Resumo</b> (você escolhe as linhas), <b>Gastos</b> (a lista dos gastos do mês), <b>Saldo do mês</b>, <b>Contas a vencer</b> e <b>Mascote</b> (a cara do mês e os gastos). O que você muda aqui vale na hora para os widgets que já estão na tela inicial.</div>
+    ${Android.setWidgetOculto ? `<label>Valores nos widgets</label>
+    <div class="btns" style="margin-top:0">${[[false, 'Mostrar'], [true, 'Esconder']].map(([v, t]) => `<button class="btn ${!!Android.widgetOculto() === v ? 'primary' : ''}" onclick="Android.setWidgetOculto(${v});openSettings()">${t}</button>`).join('')}</div>
+    <div class="hint">Escondendo, os widgets mostram R$ •••• no lugar dos valores. Vale só para este aparelho.${N && N.setWidgetEsconde ? ' Com o bloqueio ligado, eles também podem esconder os valores (Configurações › Ícone e bloqueio).' : ''}</div>` : ''}
     <label>Fundo dos widgets</label>
     <div class="btns" style="margin-top:0">${[['tema', p.skin ? 'Tema especial' : 'Cor do app'], ['escuro', 'Escuro']].map(([v, t]) => `<button class="btn ${(p.widgetFundo || 'tema') === v ? 'primary' : ''}" onclick="setPref('widgetFundo','${v}')">${t}</button>`).join('')}</div>
     <label>Mascote nos widgets Resumo, Gastos, Saldo e Contas</label>
@@ -536,15 +545,15 @@ function openSettings(sec){
     <label>Widget Gastos: ordem</label>
     <div class="btns" style="margin-top:0">${[['', 'Como no app'], ['valor', 'Maiores primeiro']].map(([k, t]) => `<button class="btn ${(p.widgetOrdem || '') === k ? 'primary' : ''}" onclick="setPref('widgetOrdem','${k}')">${t}</button>`).join('')}</div>
     ${Android.fixarWidget ? `<label>Pôr na tela inicial</label>
-    <div class="btns" style="margin-top:0;flex-wrap:wrap">${[['resumo', 'Resumo'], ...(Android.criarAtalho ? [['gastos', 'Gastos']] : []), ['saldo', 'Saldo do mês'], ['contas', 'Contas a vencer'], ['porco', 'Mascote']].map(([k, t]) => `<button class="btn" style="padding:11px 6px;flex:1 0 30%" onclick="if(!Android.fixarWidget('${k}'))tell('Esta tela inicial não aceita o pedido. Segure o dedo num espaço vazio da tela inicial, toque em Widgets e procure Minhas Finanças.')">${t}</button>`).join('')}</div>
-    <div class="hint">O Android pede sua confirmação. Também dá para adicionar segurando o dedo num espaço vazio da tela inicial › Widgets › Minhas Finanças.</div>` : ''}`],
+    <div class="btns" style="margin-top:0;flex-wrap:wrap">${[['resumo', 'Resumo'], ...(Android.criarAtalho ? [['gastos', 'Gastos']] : []), ['saldo', 'Saldo do mês'], ['contas', 'Contas a vencer'], ['porco', 'Mascote']].map(([k, t]) => `<button class="btn" style="padding:11px 6px;flex:1 0 30%" onclick="if(!Android.fixarWidget('${k}'))tell('Esta tela inicial não aceita o pedido. Segure o dedo num espaço vazio da tela inicial, toque em Widgets e procure Cofrim.')">${t}</button>`).join('')}</div>
+    <div class="hint">O Android pede sua confirmação. Também dá para adicionar segurando o dedo num espaço vazio da tela inicial › Widgets › Cofrim.</div>` : ''}`],
   ['conta', 'cloud', 'Conta e sincronização', 'Conta Google, sincronização e cópias', syncHtml],
   ['compart', 'people', 'Conta compartilhada', sync.shared ? 'Ligada: vocês veem os mesmos dados' : 'Casal ou família: os mesmos dados em dois celulares', syncHtml ? shareHtml() : ''],
-  ['auto', 'sparkle', 'Lançamento automático', 'Sugestões pelas notificações do banco', !(window.Android && Android.avisosLigar) ? '' : `
-    <label>Sugerir lançamentos pelas notificações do banco</label>
+  ['auto', 'sparkle', 'Lançamento automático', 'Sugestões pelas notificações de bancos, carteiras e vales', !(window.Android && Android.avisosLigar) ? '' : `
+    <label>Sugerir lançamentos pelas notificações de bancos, carteiras e vales</label>
     <div class="btns" style="margin-top:0">${[[true,'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${!!Android.avisosLigado() === v ? 'primary' : ''}" onclick="setAvisos(${v})">${t}</button>`).join('')}</div>
     ${Android.avisosLigado() && !Android.avisosAcesso() ? `<div class="hint warn">${I('alert', 13)} Falta autorizar no Android. <a href="#" onclick="Android.avisosConfigurar();return false" style="color:var(--brand)">Abrir a tela de autorização</a></div>` : ''}
-    <div class="hint">Quando o banco avisa uma compra ou um Pix, o app mostra no Resumo uma sugestão já preenchida; você confere e lança. Para isso o Android pede acesso às notificações: o app guarda só as de compras, Pix e pagamentos, e nada sai do aparelho. Depende do texto que cada banco usa, então pode não reconhecer todos. A partir do Android 15, avisos com números longos (como um código de 4 dígitos ou o final do cartão) chegam escondidos: aí o app mostra só "Novo aviso do banco" para você lançar o valor.</div>`],
+    <div class="hint">Quando o banco, a carteira do celular (Google, Samsung…) ou o app do vale-refeição ou alimentação avisa uma compra ou um Pix, o app mostra no Resumo uma sugestão já preenchida; você confere e lança. Para isso o Android pede acesso às notificações: o app guarda só as de compras, Pix e pagamentos, e nada sai do aparelho. Depende do texto que cada banco usa, então pode não reconhecer todos. A partir do Android 15, avisos com números longos (como um código de 4 dígitos ou o final do cartão) chegam escondidos: aí o app mostra só "Novo aviso do banco" para você lançar o valor.</div>`],
   ['guia', 'book', 'Guia do app', 'Todas as funções, onde ficam e como usar', guideHtml()],
   ['dados', 'box', 'Dados e ajustes', 'Categorias, taxas, lixeira, backup e apagar', `
     <label>Investimentos</label>
@@ -557,7 +566,7 @@ function openSettings(sec){
     <label>Planilha do Google</label>
     <div class="btns" style="margin-top:0"><button class="btn" onclick="openSheetLink()">${I('doc')}${sheetId() ? 'Planilha ligada ao app' : 'Criar planilha ligada ao app'}</button></div>
     <label>Backup em arquivo</label>
-    <div class="btns" style="margin-top:0"><button class="btn" onclick="exportData()">${I('download')}Exportar</button><button class="btn" onclick="document.getElementById('file').click()">${I('upload')}Importar</button></div>
+    <div class="btns" style="margin-top:0"><button class="btn" onclick="exportData()">${I('download')}Exportar</button><button class="btn" onclick="if(!demoBloqueia())document.getElementById('file').click()">${I('upload')}Importar</button></div>
     ${sync.fileAt ? `<div class="hint">Cópia automática semanal: a última foi em ${new Date(sync.fileAt).toLocaleDateString('pt-BR')}, na pasta <span style="overflow-wrap:anywhere">${esc(sync.fileDir || '')}</span> do celular (são guardadas as 8 mais recentes; a pasta é apagada se o app for desinstalado).</div>` : ''}
     <label>Apagar tudo</label>
     <div class="btns" style="margin-top:0"><button class="btn danger" style="flex:1" onclick="wipeAll()">${I('trash')}Apagar todos os meus dados</button></div>
@@ -572,7 +581,7 @@ function openSettings(sec){
     <div class="setGrid">${S.map(([k, ic, t, d]) => `<button class="setTile" onclick="openSettings('${k}')"><span>${I(ic, 22)}</span><b>${t}</b><small>${d}</small></button>`).join('')}</div>
     ${(window.Android && Android.atualizar) || WEB_APP ? `<div class="btns"><button class="btn" onclick="procurarAtualizacao()">${I('refresh')}Procurar atualizações</button></div>` : ''}
     <div class="btns foot"><button class="btn primary" onclick="closeForm()">Fechar</button></div>
-    <div class="hint" style="text-align:center" onclick="diagTap()">Minhas Finanças · versão ${APP_VERSION}</div>`);
+    <div class="hint" style="text-align:center" onclick="diagTap()">Cofrim · versão ${APP_VERSION}</div>`);
   settingsOpen = true;
 }
 // O APK instalado tem ícone para esta cor ou tema? (Os temas por categoria chegaram ao ícone no APK 1.46.)
@@ -612,24 +621,6 @@ async function setSkin(k){
   if (k && window.Android && Android.setIconeApp && Android.icone() !== k && iconeTem(k)
     && await ask(`Trocar também o ícone do app para combinar com o tema ${SKINS[k][0]}?\n\nO Android fecha o app ao trocar o ícone: é só abrir de novo pelo ícone novo.`, 'Trocar o ícone')) Android.setIconeApp(k, 't', Android.iconeNome()); // o ícone do tema: o mascote dele e as barras do app
 }
-// Nome livre para o app: o Android só troca o nome do app entre os que estão no APK; então o app pede à tela inicial
-// um atalho com o nome escrito pela pessoa e o ícone (cor e desenho) em uso.
-function askAtalho(){
-  settingsOpen = false; F = null;
-  showSheet(`<h3>Atalho com o seu nome</h3>
-    <div class="hint" style="margin-top:0">O atalho aparece na tela inicial com o nome que você escrever e este ícone. O Android pede sua confirmação e, em alguns celulares, põe um selo pequeno do app no canto do atalho.</div>
-    <div style="display:flex;justify-content:center;margin:8px 0 4px">${iconeSvg(Android.icone(), Android.iconeDesenho(), 76)}</div>
-    <label for="atNome">Nome</label>
-    <input id="atNome" type="text" maxlength="30" autocomplete="off" placeholder="Ex.: Meu cofre" value="${esc(sync.atalhoNome || (myName() ? 'Finanças de ' + myName() : ''))}" onkeydown="if(event.key==='Enter')atalhoCriar()">
-    <div class="btns foot"><button class="btn" onclick="openSettings('seguranca')">Voltar</button><button class="btn primary" onclick="atalhoCriar()">Criar atalho</button></div>`);
-}
-function atalhoCriar(){
-  const nome = document.getElementById('atNome').value.trim().slice(0, 30);
-  if (!nome) return tell('Escreva o nome do atalho.');
-  sync.atalhoNome = nome; saveSync();
-  if (Android.criarAtalho(nome, Android.icone(), Android.iconeDesenho())) openSettings('seguranca');
-  else tell('Esta tela inicial não aceita criar atalhos pelo app.');
-}
 // Guia do app (Configurações): todas as funções (GUIA, em js/guia.js), por assunto, com busca.
 function guideHtml(){
   return `<div class="search" style="margin-bottom:10px">${I('search')}<input id="gq" type="text" placeholder="Buscar uma função" autocomplete="off" oninput="guideFilter(this.value)"></div>
@@ -651,27 +642,21 @@ function guideFilter(q){
 // Ao voltar de uma tela do Android (economia de bateria, notificações), as configurações abertas se atualizam.
 document.addEventListener('visibilitychange', () => { if (!document.hidden && settingsShown()) openSettings(); });
 // ---------- Diagnóstico (tela escondida) ----------
-// Abre com 7 toques seguidos no número da versão, em Configurações, e a senha abaixo. A senha só esconde a tela
-// de quem não deve mexer nela; não protege dados (quem abre o APK consegue lê-la).
-const DIAG_PASS = '12344321';
+// Abre com 7 toques seguidos no número da versão, em Configurações. Não tem senha: o relatório não traz valores nem
+// descrições dos lançamentos, e uma senha fixa no código não protegia nada.
 let diagTaps = 0, diagTimer = 0;
 function diagTap(){
   clearTimeout(diagTimer); diagTimer = setTimeout(() => diagTaps = 0, 1500);
   if (++diagTaps < 7) return;
   diagTaps = 0; settingsOpen = false; F = null;
-  showSheet(`<h3>Diagnóstico</h3>
-    <label for="diagPass">Senha</label>
-    <input id="diagPass" type="password" inputmode="numeric" autocomplete="off" onkeydown="if(event.key==='Enter')diagOpen()">
-    <div class="err" id="diagErr"></div>
-    <div class="btns foot"><button class="btn" onclick="openSettings()">Voltar</button><button class="btn primary" onclick="diagOpen()">Abrir</button></div>`);
-  document.getElementById('diagPass').focus();
+  diagOpen();
 }
 function diagErrors(){ try { return JSON.parse(localStorage.getItem(ERR_KEY) || '[]'); } catch(e){ return []; } }
 // Texto do relatório: nada de valores nem descrições dos lançamentos, só contagens e o estado do app.
 function diagText(){
   const kb = k => { try { return Math.round((localStorage.getItem(k) || '').length / 1024); } catch(e){ return -1; } };
   const errs = diagErrors();
-  return [`Minhas Finanças ${APP_VERSION} · formato dos dados ${db.ver || 1}`,
+  return [`Cofrim ${APP_VERSION} · formato dos dados ${db.ver || 1}`,
     `Data: ${new Date().toLocaleString('pt-BR')}`,
     `Aparelho: ${navigator.userAgent}`,
     `Tela: ${screen.width}x${screen.height} · zoom do texto ${db.prefs.font}`,
@@ -686,13 +671,12 @@ function diagText(){
     ...errs.slice().reverse().map(e => `[${new Date(e.t).toLocaleString('pt-BR')} · v${e.v}] ${e.onde}: ${e.msg}`)].join('\n');
 }
 function diagOpen(){
-  const el = document.getElementById('diagPass');
-  if (el && el.value !== DIAG_PASS){ document.getElementById('diagErr').textContent = 'Senha incorreta.'; el.value = ''; el.focus(); return; }
   showSheet(`<h3>Diagnóstico</h3>
     <div class="hint" style="margin-top:0">Estado do app e últimos erros, para enviar a quem dá suporte. Não inclui valores nem descrições dos seus lançamentos.</div>
     <textarea id="diagBox" readonly>${esc(diagText())}</textarea>
     <div class="btns"><button class="btn" onclick="diagSave()">${I('download')}Salvar em arquivo</button><button class="btn" onclick="diagCopy()">Copiar</button></div>
     <div class="btns"><button class="btn danger" style="flex:1" onclick="localStorage.removeItem(ERR_KEY);diagOpen()">Limpar erros</button></div>
+    <div class="btns"><button class="btn" style="flex:1" onclick="demoLigar()">${I('sparkle')}Ligar modo demonstração</button></div>
     <div class="btns foot"><button class="btn primary" onclick="openSettings()">Voltar</button></div>`);
 }
 function diagSave(){
@@ -778,13 +762,54 @@ function toggleTab(t){
 }
 function setPref(k, v){ db.prefs[k] = v; db.cfgMod = Date.now(); save(); applyTheme(); render(); openSettings(); }
 function moveTab(i, d){ const t = db.prefs.tabs; [t[i], t[i+d]] = [t[i+d], t[i]]; db.cfgMod = Date.now(); save(); render(); openSettings(); }
-async function setNotify(on){
-  if (on && window.Android && Android.pedirNotificacao) Android.pedirNotificacao(); // permissão de notificações do Android
-  setPref('notify', on);
+// Um tipo de lembrete (preferência da conta). Ligar um tipo com o interruptor do aparelho desligado liga os dois juntos.
+function setNotify(on){ setNotifyTipo('notify', on); }
+function setNotifyTipo(k, on){
+  setPref(k, on);
+  if (on && !lembLigados()) ligarLembretes();
+}
+// Liga os lembretes deste aparelho. No Android 13 ou mais novo, sem a permissão de notificações, pede a permissão: se a
+// pessoa permitir, liga; se recusar (ou se o Android não perguntar mais), fica desligado e oferece as configurações.
+let lembQuerLigar = false, permRes = null;
+async function ligarLembretes(){
+  if (demoBloqueia()) return;
+  const A = window.Android;
+  if (!notifLiberada()){
+    lembQuerLigar = true;
+    const ok = A.notificacaoBloqueada && A.notificacaoBloqueada() ? false : await new Promise(r => { permRes = r; A.pedirNotificacao(); });
+    if (!ok) return lembNegado();
+  }
+  lembQuerLigar = false;
+  setAparelhoLemb(true); scheduleReminders(); compNativo();
+  if (settingsOpen) openSettings('lembretes');
   // Com a economia de bateria ligada para o app, o Android atrasa ou corta os lembretes: avisa e oferece a tela de desligar.
-  if (on && window.Android && Android.bateriaLivre && !Android.bateriaLivre()
-    && await ask(comNome('Para os lembretes chegarem na hora, {nome}, é preciso desligar a economia de bateria do app.\n\nNa tela que vai abrir, procure "Minhas Finanças" e escolha "Não otimizar" (ou "Sem restrições").'), 'Abrir a tela'))
-    Android.bateria();
+  if (A && A.bateriaLivre && !A.bateriaLivre()
+    && await ask(comNome('Para os lembretes chegarem na hora, {nome}, é preciso desligar a economia de bateria do app.\n\nNa tela que vai abrir, procure "Cofrim" e escolha "Não otimizar" (ou "Sem restrições").'), 'Abrir a tela'))
+    A.bateria();
+}
+function desligarLembretes(){
+  lembQuerLigar = false;
+  setAparelhoLemb(false); scheduleReminders();
+  if (settingsOpen) openSettings('lembretes');
+}
+async function lembNegado(){
+  if (settingsOpen) openSettings('lembretes');
+  if (await ask('Para receber lembretes, permita as notificações do Cofrim.', 'Abrir configurações do Android') && window.Android.abrirConfigNotificacoes) Android.abrirConfigNotificacoes();
+  else lembQuerLigar = false;
+}
+// Resposta do pedido de permissão (chamada pelo lado nativo).
+function onPermissaoNotificacao(ok){ const r = permRes; permRes = null; if (r) r(!!ok); }
+// Volta ao app (das configurações do Android, por exemplo): confere a permissão de novo e atualiza a tela.
+function onVoltouApp(){
+  if (lembQuerLigar && notifLiberada()) return void ligarLembretes();
+  if (settingsOpen) openSettings('lembretes');
+}
+// Entrou numa conta que já tem lembretes, com eles desligados neste aparelho: pergunta uma vez, de forma discreta.
+function avisoLembretes(){
+  if (!(window.Android && Android.lembretes) || demoOn || lembLigados() || !Object.values(lembTipos(db.prefs)).some(Boolean)) return false;
+  try { if (localStorage.getItem(LEMB_AVISO)) return false; localStorage.setItem(LEMB_AVISO, '1'); } catch(e){ return false; }
+  ask('Seus lembretes estão salvos na conta, mas desligados neste aparelho. Ligar agora?', 'Ligar').then(sim => { if (sim) ligarLembretes(); askLock(); });
+  return true;
 }
 function toggleRemind(d){ const r = db.prefs.reminds; setPref('reminds', r.includes(d) ? r.filter(x => x !== d) : r.concat(d).sort((a,b) => a - b)); }
 function toggleNotifyCat(k){ db.prefs.notifyCats[k] = db.prefs.notifyCats[k] === false; setPref('notifyCats', db.prefs.notifyCats); }
@@ -798,15 +823,26 @@ const SYNC_KEY = 'financas-sync', DRIVE = 'https://www.googleapis.com';
 const canSync = () => !!(window.Android && Android.drive);
 let sync = {on:false, linked:false, at:0, err:'', bk:'', demo:false, lockAsked:false, up:[], del:[]}; // estado só deste aparelho, não vai para a conta
 try { Object.assign(sync, JSON.parse(localStorage.getItem(SYNC_KEY))); } catch(e){}
-const saveSync = () => { try { localStorage.setItem(SYNC_KEY, JSON.stringify(sync)); } catch(e){} };
+const saveSync = () => { if (demoOn) return; try { localStorage.setItem(SYNC_KEY, JSON.stringify(sync)); } catch(e){} };
 let syncing = false, syncAgain = false, syncTimer = 0, driveSeq = 0;
 const drivePending = {};
 
 function drive(method, url, body, ctype, interactive){
+  if (demoOn) return Promise.resolve({status:-6, text:'demonstração'}); // nada vai para a conta Google
   return espera(new Promise(res => { const id = ++driveSeq; drivePending[id] = res; Android.drive(id, method, url, body || '', ctype || '', !!interactive); }));
 }
-// Chamado pelo lado nativo. status: código HTTP; 0 = sem conexão; -1 = precisa entrar na conta; -2 = outro erro.
+// Chamado pelo lado nativo. status: código HTTP; 0 = sem conexão; -1 = precisa entrar na conta; -2 = outro erro;
+// -5 = a pessoa não deu ao app uma permissão pedida (desmarcou a caixa na tela do Google).
 function onDrive(id, status, text){ const res = drivePending[id]; delete drivePending[id]; if (res) res({status, text}); }
+// Erro do Google em palavras para quem usa o app. A resposta do Google (JSON) nunca vai para a tela: fica só no
+// registro de erros do Diagnóstico (logErr).
+const MSG_ESCOPO = 'Para guardar seus dados, o app precisa da permissão do Google Drive. Toque em "Entrar com Google" e deixe todas as caixas marcadas.';
+const MSG_ESCOPO_CONTA = 'Para guardar seus dados, o app precisa da permissão do Google Drive. Toque em "Sincronizar agora" (Configurações › Conta e sincronização) e deixe todas as caixas marcadas.';
+const semPermissao = e => e.status === -5 || (e.status === 403 && !/rate ?limit|quota/i.test(String(e.text)));
+const erroAmigavel = e => semPermissao(e) ? 'O Google não deu ao app todas as permissões. Entre de novo com sua conta Google e deixe todas as caixas marcadas.'
+  : e.status === 401 ? 'Sua sessão do Google expirou. Entre de novo com sua conta Google.'
+  : e.status === 0 ? 'Sem conexão com a internet.'
+  : 'Não foi possível sincronizar. Tente de novo.';
 const ok = r => { if (r.status !== 200 && r.status !== 204) throw r; return r; };
 const driveList = async (q, interactive) => JSON.parse(ok(await drive('GET', `${DRIVE}/drive/v3/files?spaces=appDataFolder&pageSize=100&orderBy=name%20desc&q=${encodeURIComponent(q)}&fields=files(id,name)`, '', '', interactive)).text).files;
 const driveGet = async id => JSON.parse(ok(await drive('GET', `${DRIVE}/drive/v3/files/${id}?alt=media`)).text);
@@ -825,7 +861,7 @@ async function driveWrite(id, name, json){
 // comprovantes. sync.shared = {id, owner, with:[e-mails convidados]}.
 const SHEETS = 'https://sheets.googleapis.com/v4/spreadsheets';
 let PEDACO = 40000;
-const fam = (method, url, body, ctype, interactive) => espera(new Promise(res => { const id = ++driveSeq; drivePending[id] = res; Android.driveFamilia(id, method, url, body || '', ctype || '', !!interactive); }));
+const fam = (method, url, body, ctype, interactive) => demoOn ? Promise.resolve({status:-6, text:'demonstração'}) : espera(new Promise(res => { const id = ++driveSeq; drivePending[id] = res; Android.driveFamilia(id, method, url, body || '', ctype || '', !!interactive); }));
 // sync.pessoal = a pessoa está numa conta compartilhada mas escolheu ver, por enquanto, a conta pessoal (trocarConta):
 // nesse modo tudo funciona como sem conta compartilhada (os dados vêm do arquivo da conta Google dela).
 const shared = () => sync.shared && !sync.pessoal && sync.shared.id;
@@ -853,7 +889,7 @@ const canonS = d => canon(shared() ? {...d, prefs:null} : d);
 const sharedMsg = e => e.status === 403 && /SERVICE_DISABLED|has not been used|not been enabled/i.test(e.text) ? 'A API do Google Sheets não está ativada no projeto do app no Google Cloud.'
   : e.status === 403 || e.status === 404 ? 'Sem acesso à conta compartilhada: confira se o convite foi feito para esta conta Google.' : '';
 const codeOf = s => (String(s).match(/\/d\/([\w-]{20,})/) || String(s).trim().match(/^([\w-]{20,})$/) || [])[1] || '';
-const inviteText = id => `Te convidei para a nossa conta compartilhada no app Minhas Finanças. No app, abra Configurações > Conta compartilhada > Tenho um convite e cole este código:\n${id}`;
+const inviteText = id => `Te convidei para a nossa conta compartilhada no app Cofrim. No app, abra Configurações > Conta compartilhada > Tenho um convite e cole este código:\n${id}`;
 // Quem lançou: registros antigos (sem by) passam a ser desta pessoa ao entrar numa conta compartilhada.
 function claimMine(){ const me = myName(); if (me) for (const c of COLS) for (const r of db[c]) if (!r.by){ r.by = me; r.u = Date.now(); } }
 // ---------- Pessoas e avisos da conta compartilhada ----------
@@ -908,11 +944,11 @@ function openAtividade(){
 // Entrega ao lado nativo o que ele precisa para avisar com o app fechado ('' desliga).
 // d = os dados da conta compartilhada: os do app ou, na conta pessoal, os que espiarComp acabou de ler da planilha.
 function compNativo(d){
-  if (!(window.Android && Android.compart) || (sync.shared && sync.pessoal && !d)) return; // na conta pessoal, só espiarComp atualiza o lado nativo
+  if (demoOn || !(window.Android && Android.compart) || (sync.shared && sync.pessoal && !d)) return; // na conta pessoal, só espiarComp atualiza o lado nativo
   d = d || db;
   const ligado = sync.shared && db.prefs.avisoComp !== false;
-  // Sem a permissão de notificações do Android nada aparece com o app fechado: pede uma vez a quem já estava na conta.
-  if (ligado && !sync.notifPedida && Android.pedirNotificacao && !window.TESTE){ sync.notifPedida = true; saveSync(); Android.pedirNotificacao(); }
+  // A permissão de notificações do Android só é pedida ao ligar os lembretes deste aparelho (ver ligarLembretes);
+  // com eles desligados, o lado nativo continua conferindo a conta, mas não mostra notificação.
   Android.compart(ligado ? JSON.stringify({id:sync.shared.id, eu:myName(), t:Math.max(0, ...Object.keys(ATIV_COLS).flatMap(c => d[c].map(r => r.u || 0))), membros:Object.keys(d.membros)}) : '');
 }
 // ---------- Na conta pessoal: espiar a conta compartilhada ----------
@@ -925,7 +961,7 @@ const vistoDe = d => ({membros:Object.fromEntries(Object.keys(d.membros || {}).m
 function vistoGuardar(d){ try { localStorage.setItem(VISTO_KEY, JSON.stringify(vistoDe(d))); } catch(e){} }
 let espiando = false;
 async function espiarComp(){
-  if (!sync.shared || !sync.pessoal || espiando || trocando || !canSync()) return;
+  if (demoOn || !sync.shared || !sync.pessoal || espiando || trocando || !canSync()) return;
   espiando = true;
   try {
     const bruto = await sharedRead(sync.shared.id), remoto = bruto && fixDb(bruto);
@@ -944,20 +980,22 @@ function avisoNativoHtml(){
   const A = window.Android;
   if (!A || db.prefs.avisoComp === false) return '';
   if (!A.compartLog) return '<div class="hint warn">Para receber os avisos com o app fechado, instale a atualização do app (Configurações › Atualização).</div>';
-  const [t, r] = String(A.compartLog()).split('|'), semPerm = A.notificacaoLiberada && !A.notificacaoLiberada(), economia = A.bateriaLivre && !A.bateriaLivre();
-  return `${semPerm ? `<div class="hint warn">O Android está bloqueando as notificações do app.</div><div class="btns" style="margin-top:6px"><button class="btn primary" onclick="Android.pedirNotificacao();setTimeout(openSettings,1500)">Permitir notificações</button></div>` : ''}
+  const [t, r] = String(A.compartLog()).split('|'), semPerm = !lembLigados(), economia = A.bateriaLivre && !A.bateriaLivre();
+  return `${semPerm ? `<div class="hint warn">Os lembretes estão desligados neste aparelho: os avisos não aparecem como notificação.</div><div class="btns" style="margin-top:6px"><button class="btn primary" onclick="ligarLembretes()">Ligar lembretes</button></div>` : ''}
     ${economia ? `<div class="hint warn">O app está na economia de bateria: o Android pode atrasar ou cortar os avisos com ele fechado.</div><div class="btns" style="margin-top:6px"><button class="btn" onclick="Android.bateria()">Tirar da economia de bateria</button></div>` : ''}
     <div class="hint">Última conferência com o app fechado: ${t ? `${quando(+t)} — ${esc(r || '')}` : 'ainda não aconteceu'}.</div>
     ${A.compartHist && A.compartHist() ? `<details class="grp"><summary>Últimas conferências${I('chev')}</summary><div class="hint" style="margin:0 0 8px">${String(A.compartHist()).split('\n').map(l => { const i = l.indexOf('|'); return `${quando(+l.slice(0, i))} — ${esc(l.slice(i + 1))}`; }).join('<br>')}</div></details>` : ''}
-    <div class="btns" style="margin-top:6px"><button class="btn" onclick="Android.notificar('Conta compartilhada','Teste: é assim que o aviso aparece.')">Testar notificação</button><button class="btn" onclick="conferirNativo()">Conferir agora</button></div>`;
+    <div class="btns" style="margin-top:6px"><button class="btn" onclick="testarNotificacao()">Testar notificação</button><button class="btn" onclick="conferirNativo()">Conferir agora</button></div>`;
 }
-function conferirNativo(){ Android.compartConferir(); comCarga('Conferindo a conta compartilhada…', () => new Promise(r => setTimeout(r, 6000))).then(() => { if (settingsShown()) openSettings(); }); }
+// Teste do aviso da conta compartilhada: com os lembretes deste aparelho desligados, oferece ligar.
+async function testarNotificacao(){
+  if (podeNotificar('compart')) return Android.notificar('Conta compartilhada', 'Teste: é assim que o aviso aparece.');
+  if (await ask('Os lembretes estão desligados neste aparelho. Ligar agora?', 'Ligar')) ligarLembretes();
+}
+function conferirNativo(){ if (demoBloqueia()) return; Android.compartConferir(); comCarga('Conferindo a conta compartilhada…', () => new Promise(r => setTimeout(r, 6000))).then(() => { if (settingsShown()) openSettings(); }); }
 // Fim da conta compartilhada neste aparelho: a lista de pessoas e os avisos dela deixam de valer.
 function compFim(){ sync.pessoal = false; saveSync(); db.membros = {}; try { localStorage.removeItem(ATIV_KEY); localStorage.removeItem(VISTO_KEY); } catch(e){} compNativo(); }
-function setAvisoComp(on){
-  if (on && window.Android && Android.pedirNotificacao) Android.pedirNotificacao();
-  setPref('avisoComp', on); compNativo();
-}
+function setAvisoComp(on){ setPref('avisoComp', on); compNativo(); if (on && !lembLigados()) ligarLembretes(); }
 const membrosHtml = s => { const eu = membroChave(), ms = Object.entries(db.membros).sort((a, b) => a[1].desde - b[1].desde), emails = new Set(ms.map(([, m]) => m.email));
   const falta = (s.with || []).filter(e => !emails.has(e));
   return `<label>Pessoas na conta (${ms.length})</label><div class="card" style="box-shadow:none;background:var(--bg);margin:0">
@@ -976,6 +1014,7 @@ const trocaContaHtml = () => !sync.shared ? '' : `<div class="trocaConta">${[[tr
   `<button class="${!!sync.pessoal === p ? 'on' : ''}" onclick="${!!sync.pessoal === p ? '' : 'trocarConta()'}">${I(ic, 16)}${t}</button>`).join('')}</div>`;
 let trocaOcupada = false; // toque duplo não troca duas vezes
 async function trocarConta(semPerguntar){
+  if (demoBloqueia()) return;
   if (!sync.shared || !canSync() || trocaOcupada) return;
   trocaOcupada = true;
   try { await trocarContaJa(semPerguntar); } finally { trocaOcupada = false; }
@@ -997,6 +1036,7 @@ async function trocarContaJa(semPerguntar){
       if (paraPessoal){ const file = (await driveList("name='financas.json'", true))[0]; novo = file ? fixDb(await driveGet(file.id)) : fixDb({}); }
       else novo = await sharedReadDireto(sync.shared.id);
       if (!novo) throw {status:404, text:'vazia'};
+      if (demoOn) return; // a demonstração foi ligada no meio
       if (newerDb(novo)) return tell('Os dados dessa conta foram gravados por uma versão mais nova do app. Atualize o app neste aparelho.');
       if (canonS(db) !== antes) return tell('Você lançou ou alterou algo enquanto a troca acontecia. Para não perder nada, a troca foi cancelada: tente de novo.');
       loadDb({...novo, prefs:db.prefs}); // nome e aparência continuam os deste aparelho
@@ -1006,7 +1046,7 @@ async function trocarContaJa(semPerguntar){
       if (e.status === undefined) throw e;
       logErr('trocar conta', e.status + ' ' + String(e.text).slice(0, 200));
       if (!paraPessoal && (e.status === -4 || e.status === 404)){ trocando = false; sync.pessoal = false; return shareEnded(e.por || ''); }
-      return tell(e.status === 0 ? 'Sem conexão com a internet: não deu para abrir a outra conta.' : `Não foi possível abrir a conta ${destino} agora (${e.status}).`);
+      return tell(e.status === 0 ? 'Sem conexão com a internet: não deu para abrir a outra conta.' : semPermissao(e) || e.status === 401 ? erroAmigavel(e) : `Não foi possível abrir a conta ${destino} agora (${e.status}).`);
     } finally { trocando = false; }
     closeForm(); render(); scrollTo(0, 0);
     toast(`Agora você está na conta ${destino}.`);
@@ -1067,7 +1107,7 @@ let shareFromStart = false;
 function shareBack(){ if (shareFromStart){ shareFromStart = false; closeForm(); startSheets(); } else openSettings('compart'); }
 // Tela de permissão do Google: o app abre sozinho, mas o aviso de "app não verificado" e o "Permitir" são da pessoa.
 // Antes da primeira vez, explica o que tocar; se a autorização não for concluída, mostra como fazer.
-const PASSOS_GOOGLE = '1. Se aparecer "O Google não verificou este app", toque em "Avançado" e depois em "Acessar Minhas Finanças (não seguro)". O aviso aparece porque o app ainda não passou pela verificação do Google; os dados ficam só na sua conta.\n2. Marque as caixas de permissão (Planilhas e arquivos do Drive criados pelo app).\n3. Toque em "Continuar".';
+const PASSOS_GOOGLE = '1. Se aparecer "O Google não verificou este app", toque em "Avançado" e depois em "Acessar Cofrim (não seguro)". O aviso aparece porque o app ainda não passou pela verificação do Google; os dados ficam só na sua conta.\n2. Marque as caixas de permissão (Planilhas e arquivos do Drive criados pelo app).\n3. Toque em "Continuar".';
 async function famPrepare(){
   if (sync.famOk) return true;
   return ask(`Agora o Google vai pedir sua permissão para o app criar e ler a planilha da conta compartilhada.\n\n${PASSOS_GOOGLE}`, 'Abrir a tela do Google');
@@ -1076,12 +1116,13 @@ function famNegado(){ tell(`A permissão do Google não foi concluída, então a
 // Toque duplo num botão que fala com o Google (criar, convidar, entrar, sair) não roda a ação duas vezes.
 const umaVez = fn => { let ocupado = false; return async (...a) => { if (ocupado) return; ocupado = true; try { return await fn(...a); } finally { ocupado = false; } }; };
 const shareInvite = umaVez(async function(email, quieto){
+  if (demoBloqueia()) return;
   email = String(email).trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return shErr('Digite um e-mail válido.');
   const r = await fam('POST', `${DRIVE}/drive/v3/files/${shared()}/permissions?sendNotificationEmail=true&emailMessage=${encodeURIComponent(inviteText(shared()))}`, JSON.stringify({role:'writer', type:'user', emailAddress:email}), 'application/json', true);
   if (r.status !== 200){
     logErr('convidar', r.status + ' ' + String(r.text).slice(0, 300));
-    if (!quieto) shErr('Não consegui enviar o convite pelo Google (' + r.status + '). Copie o convite e compartilhe a planilha com essa pessoa pelo app do Google Planilhas.');
+    if (!quieto){ if (r.status === -5 || r.status === -1) famNegado(); else shErr('Não consegui enviar o convite pelo Google (' + r.status + '). Copie o convite e compartilhe a planilha com essa pessoa pelo app do Google Planilhas.'); }
     return false;
   }
   sync.shared.with = [...new Set([...(sync.shared.with || []), email])]; saveSync();
@@ -1092,6 +1133,7 @@ const shareInvite = umaVez(async function(email, quieto){
 // limpa = conta criada do zero: começa vazia, sem os lançamentos de ninguém (os pessoais continuam guardados na conta
 // de cada um e voltam ao sair).
 const shareStart = umaVez(async function(email, semPerguntar, limpa = !!sync.limpaProx){
+  if (demoBloqueia()) return;
   email = String(email).trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return shErr('Digite um e-mail válido.');
   if (!limpa && db.archUntil) return shErr('Antes de compartilhar, traga de volta os anos arquivados (Configurações > Dados e ajustes > Anos antigos).');
@@ -1102,10 +1144,10 @@ const shareStart = umaVez(async function(email, semPerguntar, limpa = !!sync.lim
   try {
     await syncNow(); // os dados pessoais ficam em dia na sua conta antes de passar a usar a planilha
     if (limpa && sync.err) return shErr('Não consegui guardar os seus dados pessoais na sua conta antes de criar a conta do zero. Confira a internet e tente de novo.');
-    const corpo = {properties:{title:'Minhas Finanças (conta compartilhada)'}, sheets:[{properties:{title:'leia-me'}}, {properties:{title:'dados'}}]};
+    const corpo = {properties:{title:'Cofrim (conta compartilhada)'}, sheets:[{properties:{title:'leia-me'}}, {properties:{title:'dados'}}]};
     const id = JSON.parse(ok(await fam('POST', SHEETS, JSON.stringify(corpo), 'application/json', true)).text).spreadsheetId;
     sync.famOk = true;
-    await fam('PUT', `${SHEETS}/${id}/values/${rng('leia-me!A1:A3')}?valueInputOption=RAW`, JSON.stringify({values:[['Esta planilha guarda os dados do app Minhas Finanças compartilhados entre contas Google.'], ['Não edite nem apague: o app lê e grava a aba "dados".'], ['Para parar de compartilhar, use "Sair da conta compartilhada" no app.']]}), 'application/json');
+    await fam('PUT', `${SHEETS}/${id}/values/${rng('leia-me!A1:A3')}?valueInputOption=RAW`, JSON.stringify({values:[['Esta planilha guarda os dados do app Cofrim compartilhados entre contas Google.'], ['Não edite nem apague: o app lê e grava a aba "dados".'], ['Para parar de compartilhar, use "Sair da conta compartilhada" no app.']]}), 'application/json');
     const vazio = limpa ? {...fixDb({}), prefs:db.prefs} : null;
     if (limpa) ok(await fam('PUT', `${SHEETS}/${id}/values/${rng('leia-me!A4')}?valueInputOption=RAW`, JSON.stringify({values:[['LIMPA']]}), 'application/json'));
     else { claimMine(); save(false); }
@@ -1116,13 +1158,13 @@ const shareStart = umaVez(async function(email, semPerguntar, limpa = !!sync.lim
     const convidou = await shareInvite(email, true);
     await syncNow();
     showSheet(`<h3>Conta compartilhada criada</h3>
-      <div class="hint" style="margin-top:0">${convidou ? `${esc(email)} vai receber um e-mail do Google.` : `Não consegui enviar o convite pelo Google. Abra a planilha "Minhas Finanças (conta compartilhada)" no Google Planilhas e compartilhe com ${esc(email)} como editor.`} Mande também o código abaixo: no app, a pessoa abre Configurações > Conta compartilhada > Tenho um convite.</div>
+      <div class="hint" style="margin-top:0">${convidou ? `${esc(email)} vai receber um e-mail do Google.` : `Não consegui enviar o convite pelo Google. Abra a planilha "Cofrim (conta compartilhada)" no Google Planilhas e compartilhe com ${esc(email)} como editor.`} Mande também o código abaixo: no app, a pessoa abre Configurações > Conta compartilhada > Tenho um convite.</div>
       <textarea readonly style="min-height:70px">${esc(id)}</textarea>
       <div class="btns foot"><button class="btn" onclick="shareCopy()">Copiar convite</button><button class="btn primary" onclick="shareBack()">Pronto</button></div>`);
   } catch(e){
     logErr('compartilhar', e.status ? e.status + ' ' + String(e.text).slice(0, 300) : e);
     sync.shared = null; saveSync();
-    if (e.status === -1) return famNegado();
+    if (e.status === -1 || e.status === -5) return famNegado();
     shErr(sharedMsg(e) || (e.status === 0 ? 'Sem conexão com a internet.' : e.status === -1 ? 'É preciso autorizar o acesso na conta Google.' : 'Não foi possível criar a conta compartilhada agora.'));
   } finally { fimCarga(); }
 });
@@ -1133,6 +1175,7 @@ function shareCopy(){
 }
 // Entra na conta compartilhada de outra pessoa. escolha: 'juntar' (leva os seus lançamentos junto) ou 'so' (usa só os de lá).
 const shareJoin = umaVez(async function(code, escolha){
+  if (demoBloqueia()) return;
   const id = codeOf(code);
   if (!id) return shErr('Código inválido. Cole o código inteiro que a outra pessoa mandou.');
   let remote;
@@ -1148,7 +1191,7 @@ const shareJoin = umaVez(async function(code, escolha){
   } catch(e){
     if (e.status === undefined) throw e;
     logErr('entrar compartilhada', e.status + ' ' + String(e.text).slice(0, 300));
-    if (e.status === -1) return famNegado();
+    if (e.status === -1 || e.status === -5) return famNegado();
     if (e.status === -4) return shErr('Esta conta compartilhada já foi encerrada. Peça para a outra pessoa criar uma nova e mandar o novo código.');
     return shErr(sharedMsg(e) || (e.status === 0 ? 'Sem conexão com a internet.' : 'Não foi possível abrir a conta compartilhada (' + e.status + ').'));
   } finally { fimCarga(); }
@@ -1162,7 +1205,6 @@ const shareJoin = umaVez(async function(code, escolha){
   else loadDb({...remote, prefs});
   rollover(); save(false);
   sync.shared = {id, owner:false, limpa:sharedInfo.limpa}; saveSync();
-  if (window.Android && Android.pedirNotificacao && !window.TESTE) Android.pedirNotificacao(); // para os avisos do que a outra pessoa lançar
   await syncNow();
   closeForm(); render();
   toast(comNome('Pronto, {nome}! Agora vocês veem os mesmos lançamentos.'));
@@ -1191,6 +1233,7 @@ function askShareAns(modo){
 // 'so' = volta só aos dados pessoais, como estavam antes de compartilhar.
 const apagarPlanilha = id => fam('DELETE', `${DRIVE}/drive/v3/files/${id}`).catch(() => ({status:0}));
 const shareLeave = umaVez(async function(escolha){
+  if (demoBloqueia()) return;
   if (!escolha){
     if (!await ask('Sair e ENCERRAR a conta compartilhada?\n\nIsto vale para todos: a outra pessoa também é desligada e volta para a conta individual dela, e a planilha compartilhada é apagada. Não dá para desfazer.\n\nNinguém perde os lançamentos: cada pessoa pode ficar com uma cópia na própria conta.', 'Encerrar para todos', true)) return;
     return pickList('O que fazer com os lançamentos compartilhados neste aparelho?', [['copia', 'Ficar com uma cópia, junto com os meus dados'], ['so', 'Não ficar: voltar só aos meus dados de antes']], '', v => shareLeave(v));
@@ -1231,6 +1274,14 @@ async function shareEnded(por){
 // - configurações (tema, abas, orçamentos, fechamento do cartão): vale o lado que mexeu nelas por último (cfgMod);
 // - históricos mensais: soma dos dois lados, preferindo o deste aparelho.
 function mergeDb(a, b){
+  // As datas de alteração vêm de cada aparelho (e da planilha, que qualquer pessoa da conta pode editar). Uma data no
+  // futuro faria o registro vencer todas as edições seguintes: ficam limitadas a agora + 5 minutos (folga de relógio).
+  const max = Date.now() + 5 * 60e3;
+  for (const d of [a, b]){
+    if (d.cfgMod > max) d.cfgMod = max;
+    for (const c of COLS) for (const r of d[c] || []) if (r.u > max) r.u = max;
+    for (const id in d.tomb || {}) if (d.tomb[id] > max) d.tomb[id] = max;
+  }
   const tomb = {...b.tomb};
   for (const [id, t] of Object.entries(a.tomb || {})) tomb[id] = Math.max(t, tomb[id] || 0);
   for (const id in tomb) if (tomb[id] < Date.now() - 90*864e5) delete tomb[id]; // 90 dias bastam para todos os aparelhos saberem
@@ -1240,10 +1291,14 @@ function mergeDb(a, b){
     for (const r of a[c] || []){ const o = byId.get(r.id); if (!o || (r.u || 0) >= (o.u || 0)) byId.set(r.id, r); }
     out[c] = [...byId.values()].filter(r => !(tomb[r.id] >= (r.u || 0)));
   }
-  const cfg = (b.cfgMod || 0) > (a.cfgMod || 0) ? b : a;
+  // Empate sem nenhuma alteração deste lado (aparelho novo, com o Resumo enxuto de primeira abertura): valem as da conta.
+  const cfg = (b.cfgMod || 0) > (a.cfgMod || 0) || (!a.cfgMod && a.prefs && a.prefs.resumoEnxuto && b.prefs && Array.isArray(b.prefs.resumo)) ? b : a;
   Object.assign(out, {prefs:cfg.prefs, budgets:cfg.budgets, cardClose:cfg.cardClose, cardDue:cfg.cardDue, cardAcc:cfg.cardAcc, cardLimit:cfg.cardLimit, archUntil:cfg.archUntil || '', cats:cfg.cats, cfgMod:cfg.cfgMod});
   out.membros = {...b.membros};
   for (const [k, m] of Object.entries(a.membros || {})) if (!out.membros[k] || (m.t || 0) >= (out.membros[k].t || 0)) out.membros[k] = m;
+  // Última versão do app vista nesta conta (novidades depois de reinstalar): a mais nova dos dois lados.
+  const vs = [a.verVista, b.verVista].filter(v => typeof v === 'string' && /^\d+\.\d+$/.test(v));
+  if (vs.length) out.verVista = vs.reduce((x, y) => verNum(y) > verNum(x) ? y : x); else delete out.verVista;
   out.catMemo = {...b.catMemo, ...a.catMemo};
   out.yieldLog = {...b.yieldLog, ...a.yieldLog};
   out.netLog = {...b.netLog, ...a.netLog};
@@ -1269,6 +1324,7 @@ const BEFORE_KEY = 'financas-antes';
 function keepBefore(){ try { localStorage.setItem(BEFORE_KEY, JSON.stringify({at:Date.now(), db:JSON.stringify(db)})); } catch(e){} }
 function beforeInfo(){ try { return JSON.parse(localStorage.getItem(BEFORE_KEY)); } catch(e){ return null; } }
 async function restoreBefore(){
+  if (demoBloqueia()) return;
   const o = beforeInfo();
   if (!o) return;
   if (!await ask(`Voltar este aparelho ao estado de ${new Date(o.at).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'})}, antes da última junção com a conta?\nO que veio de outros aparelhos nessa junção será desfeito em todos eles.`, 'Voltar', true)) return;
@@ -1287,14 +1343,51 @@ function applySnapshot(snap){
   snap.cfgMod = t;
   loadDb(snap); rollover(); save(); closeForm(); render();
 }
-// Sem conexão: aviso discreto no topo das telas. As alterações ficam salvas no aparelho e sobem depois.
-const offline = () => navigator.onLine === false || (canSync() && sync.on && sync.err === 'Sem conexão com a internet.');
 // semConta: o Resumo já mostra a conta em uso no botão Pessoal / Compartilhada, então dispensa a faixa.
-const offlinePill = semConta => (semConta ? '' : contaPill()) + (offline() ? `<div class="offline">${I('signal', 14)}Sem conexão: o que você lançar fica salvo e sincroniza depois.</div>` : '');
-addEventListener('online', () => { render(); syncNow(); });
-addEventListener('offline', () => render());
-function scheduleSync(){ if (!canSync() || !sync.on) return; clearTimeout(syncTimer); syncTimer = setTimeout(syncNow, 3000); }
+// (A falta de internet tem aviso próprio, #net, logo abaixo.)
+const offlinePill = semConta => semConta ? '' : contaPill();
+// ---------- Aviso de sem internet e de internet de volta ----------
+// Só com o app aberto e visível, sem notificação do sistema. Uma mudança só vale depois de NET_FIRME no mesmo estado
+// (conexão instável não gera avisos repetidos). O aviso de sem internet fica no topo enquanto durar, sem bloquear o uso;
+// "Internet de volta" aparece por alguns segundos, só para quem viu o de sem internet, e dispara a sincronização.
+// Mudança com o app em segundo plano não gera aviso: ao voltar, só aparece o de sem internet, se ainda faltar.
+// No APK quem informa é o lado nativo (onRede e Android.redeOk, pelo ConnectivityManager, só em primeiro plano); na
+// versão web, navigator.onLine e os eventos online/offline.
+const NET_MSG = 'Você está sem internet. Suas alterações ficam salvas e serão sincronizadas quando a conexão voltar.';
+let NET_FIRME = 3000;
+const netNativo = () => !!(window.Android && Android.redeOk);
+const netAgora = () => netNativo() ? !!Android.redeOk() : navigator.onLine !== false;
+const visivel = () => document.visibilityState === 'visible';
+let netOk = true, netBruto = true, netTimer = 0, netVoltaT = 0, netViuCaiu = false;
+function netMostrar(tipo){
+  const el = document.getElementById('net');
+  if (!el) return;
+  clearTimeout(netVoltaT);
+  el.hidden = !tipo; el.className = tipo || ''; el.textContent = tipo === 'caiu' ? NET_MSG : tipo === 'voltou' ? 'Internet de volta' : '';
+  if (tipo === 'caiu') netViuCaiu = true;
+  if (tipo === 'voltou') netVoltaT = setTimeout(() => netMostrar(''), 3000);
+}
+function netEvento(on){ netBruto = on; clearTimeout(netTimer); netTimer = setTimeout(netFirmou, NET_FIRME); }
+function netFirmou(){
+  if (!visivel() || netBruto === netOk) return;
+  netOk = netBruto;
+  if (!netOk) return netMostrar('caiu');
+  netMostrar(netViuCaiu ? 'voltou' : ''); netViuCaiu = false;
+  syncNow();
+}
+// Começo e volta para a tela: o estado de agora, sem esperar e sem "Internet de volta" (a sincronização ao voltar para
+// a tela já acontece no inicio.js).
+function netConferir(){
+  netOk = netBruto = netAgora(); clearTimeout(netTimer);
+  netViuCaiu = false; netMostrar(netOk ? '' : 'caiu');
+}
+window.onRede = on => netEvento(!!on);
+addEventListener('online', () => { if (!netNativo()) netEvento(true); });
+addEventListener('offline', () => { if (!netNativo()) netEvento(false); });
+document.addEventListener('visibilitychange', () => { if (visivel()) netConferir(); else { clearTimeout(netTimer); netMostrar(''); } });
+function scheduleSync(){ if (demoOn || !canSync() || !sync.on) return; clearTimeout(syncTimer); syncTimer = setTimeout(syncNow, 3000); }
 async function syncNow(interactive){
+  if (demoOn){ if (interactive) tell(DEMO_MSG); return; }
   if (!canSync() || !sync.on || trocando) return;
   if (syncing){ syncAgain = true; return; } // houve alteração durante a sincronização: repete ao terminar
   syncing = true;
@@ -1302,6 +1395,7 @@ async function syncNow(interactive){
     // Na conta compartilhada, os dados vêm da planilha (sharedRead); senão, do arquivo na pasta oculta do Drive.
     const sid = shared(), file = sid ? null : (await driveList("name='financas.json'", interactive))[0];
     const bruto = sid ? await sharedRead(sid, interactive) : file ? await driveGet(file.id) : null, remote = bruto && fixDb(bruto);
+    if (demoOn) return; // a demonstração foi ligada no meio: os dados reais não podem entrar na tela
     if (newerDb(remote)) throw {status:-3};
     if (sid && membroEu()) save(false); // este aparelho entra na lista de pessoas da conta
     if (remote){
@@ -1331,8 +1425,10 @@ async function syncNow(interactive){
     if (e.status !== 0 && e.status !== -1) logErr('sincronizar', e.status ? e.status + ' ' + String(e.text).slice(0, 300) : e);
     sync.err = e.status === -3 ? 'Os dados da conta foram gravados por uma versão mais nova do app. Atualize o app neste aparelho.'
       : shared() && sharedMsg(e) ? sharedMsg(e)
-      : e.status === -1 ? 'É preciso entrar na conta Google.' : e.status === 0 ? 'Sem conexão com a internet.'
-      : 'Erro ao sincronizar' + (e.status ? ` (${e.status}): ` + String(e.text).slice(0, 200) : '.');
+      : e.status === -1 ? 'É preciso entrar na conta Google.' : e.status === -5 && !shared() ? (sync.linked ? MSG_ESCOPO_CONTA : MSG_ESCOPO) : erroAmigavel(e);
+    // Permissão desmarcada na tela do Google, num pedido da pessoa: oferece tentar de novo (na tela de entrada, o próprio
+    // botão "Entrar com Google" faz isso).
+    if (e.status === -5 && interactive && sync.linked) ask(sync.err, 'Tentar de novo').then(sim => { if (sim) syncNow(true); });
     // Sem internet ou falha do servidor: tenta de novo sozinho, esperando cada vez mais (30 s, 1 min, 2 min… até 30 min).
     if (e.status === 0 || e.status >= 500 || e.status === undefined){
       sync.retry = Math.min((sync.retry || 0) + 1, 8);
@@ -1357,6 +1453,7 @@ async function dailyBackup(){
   sync.bk = today;
 }
 async function openBackups(){
+  if (demoBloqueia()) return;
   settingsOpen = false; F = null;
   showSheet('<h3>Versões salvas na conta</h3><div class="hint">Carregando…</div>');
   let files;
@@ -1376,14 +1473,22 @@ async function restoreBackup(id, name){
   applySnapshot(snap);
   syncNow();
 }
+// Sai da conta Google no lado nativo. Com o bloqueio ligado, o Android pede antes a senha ou a biometria e responde
+// em onSair(true/false); a promessa diz se saiu. Sem o lado nativo, não há o que confirmar.
+function sairNativo(){
+  if (!(window.Android && Android.sair)) return Promise.resolve(true);
+  return new Promise(res => { window.onSair = ok => { window.onSair = null; res(ok !== false); }; Android.sair(); });
+}
 // Sair da conta (para trocar de conta): envia o que falta, apaga os dados deste aparelho e volta ao login.
 // Os dados precisam sair do aparelho; senão, ao entrar com outra conta, eles seriam misturados aos dela.
 async function logout(){
+  if (demoBloqueia()) return;
   if (!await ask('Sair da conta Google?\n\nOs dados deste aparelho serão apagados. Eles continuam salvos na sua conta e voltam quando você entrar de novo com ela.', 'Sair', true)) return;
   if (canSync()){
     await syncNow();
     if (sync.err && !await ask(`Não foi possível sincronizar agora (${sync.err})\n\nSe sair mesmo assim, as alterações ainda não enviadas serão perdidas. Sair?`, 'Sair mesmo assim', true)) return;
-    if (Android.sair) Android.sair(); // o próximo login volta a perguntar qual conta usar
+    // O próximo login volta a perguntar qual conta usar. Sem a senha ou a biometria (bloqueio ligado), nada muda.
+    if (!await sairNativo()) return;
   }
   clearTimeout(syncTimer);
   db.expenses.filter(x => x.photo).forEach(x => photoDelete(x.id)); // as fotos continuam na conta; aqui saem junto com os dados
@@ -1396,6 +1501,7 @@ async function logout(){
 }
 // Apaga tudo: os arquivos do app na conta Google e os dados deste aparelho; depois volta à tela de login.
 async function wipeAll(semPerguntar){
+  if (demoBloqueia()) return;
   // Na conta compartilhada, apagar tudo apagaria os dados da outra pessoa também.
   if (shared()){ tell('Você está numa conta compartilhada. Saia dela antes (Configurações > Conta compartilhada) para apagar os seus dados.'); return; }
   if (!semPerguntar){
@@ -1410,7 +1516,7 @@ async function wipeAll(semPerguntar){
         for (const f of files) ok(await drive('DELETE', `${DRIVE}/drive/v3/files/${f.id}`));
       }
     } catch(e){ return tell('Não consegui apagar os dados da conta Google (sem internet?). Nada foi apagado neste aparelho; tente de novo.'); }
-    if (Android.sair) Android.sair();
+    await sairNativo(); // os dados da conta já foram apagados: os deste aparelho saem mesmo se a senha não for confirmada
   }
   clearTimeout(syncTimer); clearTimeout(retryTimer);
   db.expenses.filter(x => x.photo).forEach(x => photoDelete(x.id));
@@ -1437,6 +1543,7 @@ function archPick(Y){
     transfers:db.transfers.filter(t => ate(t.month))};
 }
 async function archiveUntil(Y, semPerguntar){
+  if (demoBloqueia()) return;
   if (!(canSync() && sync.on)) return tell('O arquivo fica na sua conta Google: entre com a conta para usar.');
   if (shared()) return tell('Na conta compartilhada ainda não dá para arquivar anos antigos (o arquivo ficaria só na sua conta).');
   const pick = archPick(Y), n = ARCH_COLS.reduce((t, c) => t + pick[c].length, 0);
@@ -1461,6 +1568,7 @@ async function archiveUntil(Y, semPerguntar){
   } catch(e){ logErr('arquivar', e); tell('Não foi possível arquivar agora (sem internet?). Nada foi tirado dos seus dados.'); }
 }
 async function archiveRestore(semPerguntar){
+  if (demoBloqueia()) return;
   if (!semPerguntar && !await ask('Trazer de volta todos os lançamentos arquivados?\nEles voltam a ser editáveis e a sincronizar normalmente.', 'Trazer de volta')) return;
   if (!arch && canSync() && sync.on) try { const f = (await driveList("name='arquivo.json'"))[0]; if (f) arch = await driveGet(f.id); } catch(e){}
   if (!arch) return tell('Não consegui abrir o arquivo (sem internet?). Tente de novo.');
@@ -1497,8 +1605,82 @@ function syncSection(){
     <div class="btns"><button class="btn danger" style="flex:1" onclick="logout()">Sair ou trocar de conta</button></div>`;
 }
 
+// ---------- Modo demonstração ----------
+// Para conhecer o app antes de entrar com a conta Google (botão na tela de entrada) ou, já logado, pelo Diagnóstico.
+// Os dados fictícios ficam só na memória: demoOn (dados.js) bloqueia gravação, sincronização e escrita nativa. Os dados
+// reais ficam guardados em demoReal (texto) e voltam exatamente iguais ao sair; fechar o app também os traz de volta,
+// porque nada da demonstração é gravado.
+let demoReal = null;
+// ~3 meses de lançamentos com datas relativas ao mês atual, nomes genéricos (sem pessoas reais), passando por fixDb.
+function demoDados(){
+  let n = 0;
+  const id = () => 'demo' + (++n), m = k => addMonths(curYM, k), hoje = Math.min(now.getDate(), 28);
+  const dia = (k, d) => k === 0 ? Math.min(d, hoje) : d; // no mês atual, só até hoje
+  const g = (desc, cat, value, k, d, mais = {}) => ({id:id(), desc, cat, value, start:m(k), day:dia(k, d), fixed:false, end:'', u:1, ...mais});
+  const fixo = (desc, cat, value, due, mais = {}) => ({id:id(), desc, cat, value, start:m(-2), fixed:true, end:'', due, u:1, ...mais});
+  const expenses = [
+    fixo('Aluguel', 'moradia', 1450, 10, {bank:'Banco Verde', pay:'boleto'}), fixo('Internet', 'internet', 99.9, 15, {bank:'Banco Azul', pay:'credito'}),
+    fixo('Streaming de filmes', 'contas', 39.9, 8, {bank:'Banco Azul', pay:'credito'}), fixo('Streaming de música', 'contas', 21.9, 20, {bank:'Banco Azul', pay:'credito'}),
+    fixo('Academia', 'academia', 89.9, 5, {bank:'Banco Verde', pay:'debito'})];
+  for (const k of [-2, -1, 0]) expenses.push(
+    g('Mercado do Bairro', 'mercado', 412.35 + k * 18, k, 6, {bank:'Banco Azul', pay:'credito'}), g('Supermercado Central', 'mercado', 238.6 - k * 11, k, 20, {bank:'Banco Verde', pay:'debito'}),
+    g('Padaria Central', 'alimentacao', 46.8, k, 3, {bank:'Banco Verde', pay:'pix'}), g('Combustível', 'combustivel', 180 + k * 12, k, 12, {bank:'Banco Azul', pay:'credito'}),
+    g('Transporte por app', 'transporte', 64.5, k, 17, {bank:'Banco Azul', pay:'credito'}), g('Cinema', 'cinema', 58, k, 22, {bank:'Banco Azul', pay:'credito'}),
+    g('Restaurante Sabor', 'restaurante', 96.4, k, 14, {bank:'Banco Azul', pay:'credito'}), g('Farmácia', 'farmacia', 37.9, k, 9, {bank:'Banco Verde', pay:'debito'}));
+  return {
+    incomes:[{id:id(), desc:'Salário', cat:'salario', value:5200, fixed:true, start:m(-2), end:'', bank:'Banco Verde', day:5, u:1},
+      {id:id(), desc:'Trabalho extra', cat:'freelance', value:650, fixed:false, start:m(-1), end:'', bank:'Banco Verde', day:18, u:1}],
+    expenses,
+    installments:[{id:id(), desc:'Geladeira', cat:'casa', total:2400, n:10, paid:2, start:m(-2), bank:'Banco Azul', pay:'credito', u:1},
+      {id:id(), tipo:'financiamento', desc:'Financiamento do carro', credor:'Financeira Exemplo', conta:'Banco Azul', cat:'transporte', total:28800, n:24, paid:12, start:m(-12), due:15, taxa:1.2, u:1}],
+    accounts:[{id:id(), name:'Banco Verde', initial:2300, since:m(-2), u:1}, {id:id(), name:'Banco Azul', initial:800, since:m(-2), u:1}],
+    goals:[{id:id(), name:'Reserva de emergência', target:15000, saved:6200, date:m(12), u:1}, {id:id(), name:'Viagem de férias', target:6000, saved:1800, date:m(8), u:1}],
+    investments:[{id:id(), name:'CDB Banco Verde', cat:'rendafixa', value:6200, index:'cdi', pct:105, monthly:300, broker:'Corretora Alfa', accYM:m(-2), u:1},
+      {id:id(), name:'Tesouro Selic', cat:'tesouro', value:3500, index:'selic', pct:100, monthly:0, broker:'Corretora Beta', accYM:m(-2), u:1},
+      {id:id(), name:'LCI Banco Azul', cat:'rendafixa', value:2000, index:'cdi', pct:92, monthly:0, broker:'Corretora Alfa', accYM:m(-2), u:1}],
+    transfers:[{id:id(), from:'Banco Verde', to:'Banco Azul', value:500, month:m(-1), day:6, u:1}],
+    budgets:{mercado:700, restaurante:250, transporte:150, cinema:100},
+    cardClose:{'Banco Azul':25}, cardDue:{'Banco Azul':5}, cardAcc:{'Banco Azul':'Banco Azul'}, cardLimit:{'Banco Azul':4000}};
+}
+async function demoLigar(){
+  if (demoOn) return;
+  closeForm();
+  clearTimeout(syncTimer);
+  // Espera a sincronização ou a troca de conta em andamento (no máximo 15 s; se ainda estiverem rodando, elas desistem ao ver
+  // demoOn, ver syncNow e trocarContaJa).
+  for (let i = 0; i < 150 && (syncing || trocando); i++) await new Promise(r => setTimeout(r, 100));
+  flushLater(); // o que estava esperando para ser gravado é dos dados reais: grava antes
+  demoReal = JSON.stringify(db);
+  demoOn = true;
+  // Na demonstração, o Resumo completo: todos os blocos, para mostrar tudo o que o app oferece.
+  loadDb({...demoDados(), prefs:{...db.prefs, name:'', greet:'', resumo:Object.keys(RESUMO).map(k => ({k, on:true})), resumoEnxuto:false, resumoAuto:[]}}); rollover();
+  chatLog.length = 0; state.tab = 'resumo'; state.month = curYM; state.year = +curYM.slice(0, 4);
+  document.getElementById('gate').hidden = true;
+  demoFaixa(); render(); scrollTo(0, 0);
+}
+// Volta aos dados reais, exatamente como estavam (sem gravar nada: eles nunca saíram do aparelho).
+function demoSair(){
+  if (!demoOn) return;
+  const real = JSON.parse(demoReal);
+  demoReal = null; demoOn = false;
+  loadDb(real);
+  chatLog.length = 0; state.tab = 'resumo'; state.month = curYM; state.year = +curYM.slice(0, 4);
+  closeForm(); demoFaixa(); render(); scrollTo(0, 0);
+  if (needGate()) return showGate();
+  scheduleReminders(); updateWidget(); syncNow();
+}
+// "Entrar com Google" na faixa: os dados fictícios são descartados antes; nada deles vai para a conta.
+function demoEntrar(){ demoSair(); if (needGate()) loginGoogle(); }
+// Faixa fixa no topo enquanto durar a demonstração.
+function demoFaixa(){
+  const el = document.getElementById('demo');
+  document.documentElement.classList.toggle('demo', demoOn);
+  el.hidden = !demoOn;
+  el.innerHTML = !demoOn ? '' : `<span>Modo demonstração – dados fictícios</span>${canSync() && sync.linked ? '<button onclick="demoSair()">Sair da demonstração</button>' : '<button onclick="demoEntrar()">Entrar com Google</button>'}`;
+}
+
 // ---------- Primeiro uso: login obrigatório e convite para ligar o bloqueio ----------
-const needGate = () => canSync() ? !sync.linked : isPreview && !sync.demo;
+const needGate = () => demoOn ? false : canSync() ? !sync.linked : isPreview && !sync.demo;
 function showGate(){
   document.getElementById('gateMsg').textContent = WEB_APP && !WEB_CLIENT_ID ? 'O login da versão web ainda não foi configurado.'
     : iosNoBrowser() ? 'Dica: para usar como app, toque em Compartilhar (□↑) e depois em "Adicionar à Tela de Início".'
@@ -1515,6 +1697,8 @@ async function loginGoogle(){
     // Conta diferente da última usada neste aparelho: boas-vindas, tutorial e novidades de novo.
     const conta = Android.conta ? Android.conta() : '';
     if (conta && conta !== sync.account) Object.assign(sync, {account:conta, tour:false, welcomed:false, forceNews:true, askedShare:false, famOk:false});
+    // Quem nunca usou o app (conta sem nenhum dado): sem a tela de novidades, que só faz sentido para quem já usava.
+    if (sync.forceNews && contaVazia()) semNovidades();
     saveSync();
   } else { sync.demo = true; saveSync(); }
   document.getElementById('gate').hidden = true;
@@ -1573,15 +1757,16 @@ function nameSave(daConfig){
 }
 // Tutorial: boas-vindas e um passeio rápido pelas funções. Abre sozinho uma vez por conta; dá para rever no Perfil.
 const TOUR = [
-  ['piggy', () => `${greeting() || 'Boas-vindas!'}`, 'Este é o Minhas Finanças: seus ganhos, gastos, contas e investimentos num lugar só, salvos na sua conta Google. Veja em um minuto como usar.'],
+  ['piggy', () => `${greeting() || 'Boas-vindas!'}`, 'Este é o Cofrim: seus ganhos, gastos, contas e investimentos num lugar só, salvos na sua conta Google. Veja em um minuto como usar.'],
   ['plus', 'Lançar é rápido', 'Toque no + (ou nos atalhos do Resumo) e informe só o valor e a categoria; o resto fica em "Mais opções". Os gastos que você mais repete viram botões.'],
-  ['chart', 'Resumo', 'Saldo do ano, previsão dos próximos meses, contas a vencer e gráficos. O botão de ajustes, no topo, escolhe quais blocos aparecem e em que ordem.'],
+  ['chart', 'Resumo', 'Gastos do mês e do ano, contas a vencer, gastos por categoria e contas bancárias. Há muito mais (previsão, gráficos, metas, investimentos): toque em "Ver mais informações no resumo", no fim da tela, ou no botão de ajustes, no topo.'],
   ['receipt', 'Gastos do mês', 'Separados em Assinaturas, Fixos e anuais, Parceladas e Ocasionais, com busca e filtros. Deslize um lançamento para a esquerda para excluir; numa conta com vencimento, para a direita marca como paga.'],
+  ['card', 'Parcelas e financiamentos', 'Em Gastos › Parceladas, cadastre compras parceladas, financiamentos e empréstimos. Toque num item para ver o saldo devedor e todas as parcelas, pagar, abater ou exportar em PDF.'],
   ['trend', 'Investimentos e metas', 'Cadastre aplicações, ações e metas. O app projeta quanto vão render com CDI, Selic e IPCA e mostra quanto falta para cada meta.'],
   ['chat', 'Assistente', 'Pergunte "quanto gastei com mercado este mês?" ou escreva "gastei 30 no almoço" para lançar sem abrir formulário.'],
-  ['calendar', 'Lembretes', 'Contas fixas com dia de vencimento avisam antes e no dia. Para os avisos chegarem na hora, desligue a economia de bateria do app.'],
+  ['calendar', 'Lembretes', 'Começam desligados neste aparelho. Ligue em Configurações › Lembretes (o Android pede a permissão de notificações) e escolha os tipos: contas a vencer, antes e no dia, e parcelas de financiamentos. Desligue a economia de bateria do app para os avisos chegarem na hora.'],
   ['people', 'Sua conta e a conta compartilhada', 'Tudo sincroniza com a sua conta Google, com uma cópia por dia. Em Configurações > Conta compartilhada, dá para dividir os dados com outra pessoa.'],
-  ['gear', 'Do seu jeito', 'Tema, cores, abas do menu, bloqueio com senha e o modo divertido, com mais de 100 conquistas. Tudo em Configurações.']];
+  ['gear', 'Do seu jeito', 'Tema, cores, abas do menu, bloqueio com senha, widgets na tela inicial (com ou sem os valores) e o modo divertido, com mais de 100 conquistas. Tudo em Configurações.']];
 function openTour(i, daConfig){
   settingsOpen = false; F = null;
   const [ic, t, s] = TOUR[i], ult = i === TOUR.length - 1;
@@ -1597,6 +1782,9 @@ function tourDone(daConfig){
 }
 // Novidades: mostradas uma vez quando o app abre numa versão diferente da última usada neste aparelho.
 const VER_KEY = 'financas-versao';
+// Última versão publicada antes de a versão vista ir também para os dados da conta (db.verVista): quem reinstala vindo
+// dela ou de antes não tem registro em lugar nenhum e vê as novidades a partir daqui.
+const NOV_SEM_REGISTRO = '1.66';
 // Atualização automática (só no APK; ver Updater no lado nativo). tipo: 'web' = telas novas baixadas, entram na próxima
 // abertura; 'apk' = é preciso instalar um APK novo (mudou a parte nativa); 'nada' e 'erro' = resposta à busca manual.
 // Um aviso de cada vez: se outra tela estiver aberta (novidades, tutorial, login, bloqueio), o aviso de versão nova
@@ -1630,7 +1818,7 @@ function updFlush(agora){
 // Versão web: confere a versão publicada; se for mais nova, recarrega (o app busca os arquivos novos na rede).
 async function webProcurar(){
   try {
-    const j = await comCarga('Procurando atualização…', async () => (await fetch('https://raw.githubusercontent.com/GabrielGior/minhas-financas-app/main/atualizacao/versao.json?t=' + Date.now(), {cache:'no-store'})).json());
+    const j = await comCarga('Procurando atualização…', async () => (await fetch('https://raw.githubusercontent.com/cofrim/cofrim-updater/main/versao.json?t=' + Date.now(), {cache:'no-store'})).json());
     if (verNum(j.versao) <= verNum(APP_VERSION)) return tell(`Você já está na versão mais recente (${APP_VERSION}).`);
     if (await ask(`Saiu a versão ${j.versao}. Atualizar agora? Seus dados não mudam.`, 'Atualizar')) location.reload();
   } catch(e){ tell('Não consegui procurar atualizações. Confira a internet e tente de novo.'); }
@@ -1642,7 +1830,7 @@ function openUpdate(versao, novas, url){
   settingsOpen = false; F = null;
   updUrl = url; updVer = versao;
   showSheet(`<h3>Nova versão ${esc(versao)} disponível</h3>
-    <div class="hint" style="margin-top:0">${url ? 'Esta atualização precisa ser instalada: o Android baixa o arquivo e pede sua confirmação. Seus dados continuam no aparelho e na sua conta.' : 'A atualização já foi baixada. Seus dados não mudam.'}</div>
+    <div class="hint" style="margin-top:0">${url ? 'Esta atualização precisa ser instalada: o app baixa o arquivo e o Android pede sua confirmação. Seus dados continuam no aparelho e na sua conta.' : 'A atualização já foi baixada. Seus dados não mudam.'}</div>
     ${updNews(novas)}
     <div class="btns foot"><button class="btn" onclick="closeForm()">Depois</button><button class="btn primary" onclick="updateNow()">${url ? 'Baixar e instalar' : 'Atualizar agora'}</button></div>`);
 }
@@ -1657,9 +1845,26 @@ function updNews(novas){
 }
 function updateNow(){
   closeForm();
-  if (updUrl) return Android.abrir(updUrl);
+  if (updUrl) return Android.instalarApk ? Android.instalarApk(updUrl) : Android.abrir(updUrl);
   try { localStorage.setItem(VER_KEY, updVer); } catch(e){} // a prévia já mostrou as novidades: não repete ao recarregar
   Android.recarregar();
+}
+// Andamento do APK novo baixado pelo próprio app (Android.instalarApk): baixando, permissao (a pessoa precisa liberar
+// "instalar apps desconhecidos" na tela que abriu), pronto (abriu a instalação do Android) ou erro.
+let apkCarga = null;
+function onApkEstado(e){
+  if (apkCarga){ apkCarga(); apkCarga = null; }
+  if (e === 'baixando') apkCarga = cargaOn('Baixando a atualização…');
+  else if (e === 'permissao') tell('Para instalar, o Android pede uma permissão: na tela que abriu, ligue "Permitir desta fonte" para o Cofrim e volte ao app.');
+  else if (e === 'erro') ask('Não foi possível baixar a atualização agora. Quer baixar pelo navegador?', 'Abrir no navegador').then(sim => { if (sim) Android.abrir(updUrl); });
+}
+// Conta sem nada lançado nem versão vista: é a primeira vez da pessoa no app.
+const contaVazia = () => !db.verVista && COLS.every(c => !db[c].length);
+// Marca a versão atual como vista, sem mostrar as novidades (primeira entrada de quem nunca usou o app).
+function semNovidades(){
+  sync.forceNews = false; saveSync();
+  try { localStorage.setItem(VER_KEY, APP_VERSION); } catch(e){}
+  if (db.verVista !== APP_VERSION && !demoOn){ db.verVista = APP_VERSION; save(); }
 }
 // Número de uma versão, para comparar ("1.9" < "1.40").
 const verNum = v => String(v).split('.').reduce((a, n) => a * 1000 + (+n || 0), 0);
@@ -1667,6 +1872,10 @@ const verNum = v => String(v).split('.').reduce((a, n) => a * 1000 + (+n || 0), 
 function maybeNews(sempre){
   let last = null;
   try { last = localStorage.getItem(VER_KEY); localStorage.setItem(VER_KEY, APP_VERSION); } catch(e){}
+  // Reinstalação ou celular novo: este aparelho não sabe a versão anterior, mas os dados da conta (que voltam do Drive)
+  // guardam a última que a pessoa viu. Sem esse registro e com dados, ela vem da 1.66 ou de antes.
+  if (!last) last = db.verVista || (db.expenses.length || db.incomes.length ? NOV_SEM_REGISTRO : null);
+  if (db.verVista !== APP_VERSION && !demoOn){ db.verVista = APP_VERSION; save(); }
   if (!sempre && !sync.forceNews && (last === APP_VERSION || (!last && !db.expenses.length && !db.incomes.length))) return false;
   if (sync.forceNews){ sync.forceNews = false; saveSync(); }
   settingsOpen = false; F = null;
@@ -1686,7 +1895,7 @@ function startSheets(){
   if (canSync() && !sync.askedShare && !sync.shared) return askShare();
   if (!db.prefs.name) return askName();
   if (!sync.tour) return openTour(0);
-  if (!maybeWelcome() && !maybeNews()) askLock();
+  if (!maybeWelcome() && !maybeNews() && !avisoLembretes()) askLock();
 }
 // Mostrado uma vez, depois do login: convida a ligar o bloqueio por senha/biometria.
 function askLock(){
@@ -1709,8 +1918,10 @@ function exportData(){
   a.download = 'financas-backup-' + curYM + '.json'; a.click();
 }
 function importData(input){
-  const file = input.files[0]; if (!file) return;
+  if (demoOn){ input.value = ''; return demoBloqueia(); }
+  const file = input.files && input.files[0]; if (!file) return;
   const r = new FileReader();
+  r.onerror = () => { logErr('importar backup', 'leitura: ' + ((r.error && r.error.message) || r.error)); tell(LER_ERRO); input.value = ''; };
   r.onload = async () => {
     try {
       const d = JSON.parse(r.result);
@@ -1719,9 +1930,9 @@ function importData(input){
       if (!await ask('Substituir todos os dados atuais pelos do backup?', 'Substituir', true)) return;
       loadDb(d); rollover();
       save(); closeForm(); render();
-    } catch(e){ tell('Arquivo de backup inválido.'); }
+    } catch(e){ if (e !== 0) logErr('importar backup', e); tell('Arquivo de backup inválido.'); }
     input.value = '';
   };
-  r.readAsText(file);
+  try { r.readAsText(file); } catch(e){ logErr('importar backup', e); tell(LER_ERRO); input.value = ''; }
 }
 

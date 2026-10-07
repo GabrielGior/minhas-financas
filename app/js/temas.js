@@ -1,4 +1,4 @@
-// Minhas Finanças — Temas especiais por categoria (os da versão 1.46 em diante).
+// Cofrim — Temas especiais por categoria (os da versão 1.46 em diante).
 // Carregado antes de dados.js: aqui ficam só dados. dados.js monta as cores completas de cada tema (SKINS) e
 // config.js junta os mascotes (MASCOTES) e as falas (FUN_TEMA).
 // Os temas são "inspirados em": os nomes são neutros (descrevem o assunto, sem citar nem imitar marcas) e os

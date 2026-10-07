@@ -1,4 +1,4 @@
-// Minhas Finanças — Mais temas especiais (versão 1.53): temas gerais, animes, jogos, desenhos, filmes e séries.
+// Cofrim — Mais temas especiais (versão 1.53): temas gerais, animes, jogos, desenhos, filmes e séries.
 // Carregado logo depois de temas.js (antes de dados.js) e no mesmo formato: aqui só entram dados, que se juntam aos
 // de temas.js. Os nomes são neutros ("inspirados em", sem paródia nem marca) e os personagens são próprios.
 

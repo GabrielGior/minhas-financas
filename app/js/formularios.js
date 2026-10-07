@@ -1,4 +1,4 @@
-// Minhas Finanças — Formulários, seletores, confirmações e comprovantes.
+// Cofrim — Formulários, seletores, confirmações e comprovantes.
 // Carregado pelo index.html, nesta ordem: dados.js, telas.js, assistente.js, formularios.js, config.js, inicio.js.
 // ---------- Formulários ----------
 // Cada formulário: fields (lista ou função que devolve a lista), e opcionalmente defaults, load (ajusta os
@@ -112,23 +112,52 @@ const FORMS = {
     },
     commit:commitRecurring('expenses'),
     before:() => formVale ? '' : photoSection()},
-  installments: { title:'compra parcelada', fem:true, defaults:() => ({cat:'compras', pay:'credito', mode:'total', n:'', paid:'0', start:curYM}), fields:[
-    {k:'desc', label:'Descrição', type:'text', ph:'Ex.: Celular'},
+  // Compra parcelada, financiamento ou empréstimo (formTipo, ver openForm): o mesmo formulário, com credor, conta de
+  // débito e taxa nos dois últimos. Depois de um abatimento, prazo e valores mudam só pelo botão Abater (seg).
+  installments: { title:() => PARC_TIPOS[formTipo] ? PARC_TIPOS[formTipo].toLowerCase() : 'compra parcelada', fem:() => !formTipo,
+    defaults:() => formTipo ? {cat:formTipo === 'emprestimo' ? 'emprestimo' : 'transporte', mode:'parcela', n:'', paid:'0', start:curYM}
+      : {cat:'compras', pay:'credito', mode:'total', n:'', paid:'0', start:curYM},
+    fields:() => [
+    {k:'desc', label:formTipo ? 'Nome' : 'Descrição', type:'text', ph:formTipo === 'emprestimo' ? 'Ex.: Empréstimo pessoal' : formTipo ? 'Ex.: Financiamento do carro' : 'Ex.: Celular'},
+    ...(formTipo ? [
+      {k:'credor', label:'Credor (banco ou financeira, opcional)', type:'text', ph:'Ex.: Caixa', optional:true, sug:bankSuggestions},
+      {k:'conta', label:'Conta de débito', type:'select', optional:true, options:() => [['', 'Não informar'], ...db.accounts.map(a => [a.name, a.name])]}] : []),
     {k:'cat', label:'Categoria', type:'select', options:() => opts(CAT_GASTO)},
-    ...WHERE_FIELDS(),
-    {k:'n', label:'Número de parcelas', type:'int'},
-    {k:'mode', label:'Informar', type:'select', options:[['total','Valor total da compra'],['parcela','Valor de cada parcela']]},
-    {k:'total', label:v => v.mode === 'parcela' ? 'Valor da parcela' : 'Valor total da compra', type:'money'},
-    {k:'paid', label:'Parcelas já pagas', type:'int', zero:true},
-    {k:'start', label:'Mês da 1ª parcela', type:'month'}],
-    // Em compra nova, deduz o mês da 1ª parcela a partir de quantas já foram pagas.
-    onChange(k, v, isNew, touched){ if (isNew && k === 'paid' && !touched.start) v.start = addMonths(curYM, -(parseInt(v.paid)||0)); },
+    ...(formTipo ? [] : WHERE_FIELDS()),
+    {k:'n', label:'Número de parcelas', type:'int', showIf:semAbat},
+    {k:'mode', label:'Informar', type:'select', showIf:semAbat, options:[['total', formTipo ? 'Valor total' : 'Valor total da compra'],['parcela','Valor de cada parcela']]},
+    {k:'total', label:v => v.mode === 'parcela' ? 'Valor da parcela' : formTipo ? 'Valor total' : 'Valor total da compra', type:'money', showIf:semAbat},
+    {k:'paid', label:'Parcelas já pagas', type:'int', zero:true, showIf:semAbat},
+    {k:'start', label:'Mês da 1ª parcela', type:'month', showIf:semAbat},
+    {k:'due', label:'Dia do vencimento (opcional)', type:'int', optional:true},
+    ...(formTipo ? [{k:'taxa', label:'Taxa de juros ao mês, em % (opcional)', type:'num', ph:'Ex.: 1,2', optional:true}] : [])],
+    // Em compra nova, deduz o mês da 1ª parcela a partir de quantas já foram pagas. No financiamento, a categoria
+    // acompanha o nome (imóvel → Moradia; carro, moto → Transporte) enquanto a pessoa não escolhe outra.
+    onChange(k, v, isNew, touched){
+      if (isNew && k === 'paid' && !touched.start) v.start = addMonths(curYM, -(parseInt(v.paid)||0));
+      if (formTipo === 'financiamento' && k === 'desc' && !touched.cat){
+        const t = plain(v.desc);
+        if (/imovel|casa|apartamento|apto|terreno|lote/.test(t)) v.cat = 'moradia'; else if (/carro|moto|veiculo|caminhao/.test(t)) v.cat = 'transporte';
+      }
+    },
     // O campo "total" guarda o valor digitado; no modo "parcela" ele é o valor de uma parcela.
     load(v, item){ v.mode = item.mode || 'total'; if (v.mode === 'parcela') v.total = moneyStr(item.total/item.n); },
-    hint:v => { const n = parseInt(v.n), p = parseInt(v.paid)||0, x = parseMoney(v.total), t = v.mode === 'parcela' ? x*n : x;
+    hint:v => { if (!semAbat()) return 'Depois de um abatimento, o prazo e o valor das parcelas mudam pelo botão Abater, na tela da parcela.';
+      const n = parseInt(v.n), p = parseInt(v.paid)||0, x = parseMoney(v.total), t = v.mode === 'parcela' ? x*n : x;
       return t > 0 && n > 0 ? `Total ${fmt(t)} · ${n}x de ${fmt(t/n)} · pago ${fmt(t/n*Math.min(p,n))} · falta ${fmt(t/n*Math.max(n-p,0))}` : ''; },
-    check(v){ if (v.paid > v.n) return 'As parcelas pagas não podem passar do total de parcelas.';
-      if (v.mode === 'parcela') v.total = round2(v.total*v.n); }},
+    check(v){
+      if (v.paid > v.n) return 'As parcelas pagas não podem passar do total de parcelas.';
+      if (v.taxa !== '' && v.taxa > 20) return 'A taxa de juros deve ser de 0 a 20% ao mês.';
+      if (v.mode === 'parcela') v.total = round2(v.total*v.n);
+      return dayOk(v, 'due', 'O dia do vencimento');
+    },
+    commit(v, id, newId){
+      if (formTipo) v.tipo = formTipo;
+      if (!id) return void db.installments.push(touch({id:newId, ...v}));
+      const old = db.installments.find(x => x.id === id);
+      if (old.seg) for (const k of ['n', 'mode', 'total', 'paid', 'start']) delete v[k]; // campos escondidos: mantém o que está gravado
+      Object.assign(touch(old), v);
+    }},
   // Dois formulários em um: categorias com cotação (QUOTE_SRC) registram uma compra (ativo, quantidade, preço);
   // as demais pedem valor e taxa de rendimento.
   investments: { title:'investimento', defaults:() => ({cat:'rendafixa', index:'cdi', pct:'100', date:now.toLocaleDateString('sv')}), fields:[
@@ -141,7 +170,8 @@ const FORMS = {
     {k:'value', label:'Valor investido hoje', type:'money', showIf:v => !QUOTE_SRC[v.cat]},
     {k:'index', label:'Rendimento atrelado a', type:'select', options:Object.entries(INDEX), showIf:v => !QUOTE_SRC[v.cat]},
     {k:'pct', label:v => v.index === 'ipca' ? 'Taxa acima do IPCA (% a.a.)' : v.index === 'pre' ? 'Taxa (% a.a.)' : '% do ' + INDEX[v.index], type:'num', zero:true, showIf:v => !QUOTE_SRC[v.cat]},
-    {k:'monthly', label:'Aporte mensal (opcional)', type:'money', optional:true, showIf:v => !QUOTE_SRC[v.cat]}],
+    {k:'monthly', label:'Aporte mensal (opcional)', type:'money', optional:true, showIf:v => !QUOTE_SRC[v.cat]},
+    {k:'broker', label:'Corretora (opcional)', type:'text', ph:'Ex.: XP Investimentos', optional:true, max:40, sug:brokerSuggestions}],
     onChange(k, v){
       if (k === 'cat'){ v.ticker = ''; F.asset = null; if (!v.index) v.index = 'cdi'; if (QUOTE_SRC[v.cat]) searchAssets(''); }
       if (k === 'ticker') searchAssets(v.ticker);
@@ -157,7 +187,7 @@ const FORMS = {
     check(v){ if (QUOTE_SRC[v.cat] && (!F.asset || F.asset.code !== v.ticker)) return 'Escolha o ativo na lista de resultados.'; },
     commit(v, id){
       if (!QUOTE_SRC[v.cat]){ // renda fixa e afins: um registro por investimento
-        const rec = {name:v.name, cat:v.cat, value:v.value, index:v.index, pct:v.pct, monthly:v.monthly};
+        const rec = {name:v.name, cat:v.cat, value:v.value, index:v.index, pct:v.pct, monthly:v.monthly, broker:normBroker(v.broker)};
         if (id) Object.assign(touch(db.investments.find(x => x.id === id)), rec, {ticker:'', lots:undefined});
         else db.investments.push(touch({id:uid(), accYM:curYM, ...rec}));
         return;
@@ -167,6 +197,7 @@ const FORMS = {
       let inv = db.investments.find(x => x.ticker === a.code && x.cat === v.cat);
       if (!inv) db.investments.push(inv = {id:uid(), cat:v.cat, ticker:a.code, name:a.code, assetName:a.name, lots:[], index:'pre', pct:0, monthly:0});
       inv.lots.push({qty:v.qty, paid:v.paid, date:v.date});
+      if (v.broker) inv.broker = normBroker(v.broker); // a corretora é do ativo; compra sem ela não apaga a que já havia
       inv.quote = a.quote; inv.quoteAt = Date.now();
       recalc(inv); touch(inv);
     }},
@@ -266,7 +297,7 @@ const FORMS = {
     {k:'color', label:'Cor (aparece com a opção "Uma cor por categoria")', type:'colors', optional:true}],
     commit(v, id){
       const [type, key] = id.split(':'), k = key || 'c' + uid();
-      db.cats[type][k] = Object.assign(db.cats[type][k] || {}, {name:v.name, icon:v.icon, color:v.color});
+      db.cats[type][k] = catLimpa(Object.assign(db.cats[type][k] || {}, {name:v.name, icon:v.icon, color:v.color}));
       db.cfgMod = Date.now(); applyCats();
     },
     after:() => openCats()},
@@ -278,6 +309,9 @@ const FORMS = {
       <div class="btns"><button class="btn" onclick="updateRatesNow()">${I('refresh')}Atualizar taxas agora</button></div>`}
 };
 let formVale = false; // o formulário que está abrindo é de vale (ver openForm e os campos de incomes/expenses)
+let formTipo = ''; // parcelas: '' (compra parcelada), 'financiamento' ou 'emprestimo' (ver openForm)
+// Parcelas: o registro aberto ainda não teve abatimento (depois de um, prazo e valores mudam só por Abater).
+const semAbat = () => !(F && F.id && (db.installments.find(x => x.id === F.id) || {}).seg);
 const EMP_FIELD = {k:'emp', label:'Empresa do vale', type:'select', optional:true, options:() => [['', 'Não informar'], ...VALE_EMPRESAS.map(e => [e, e])]};
 // Novo lançamento num vale: lado = 'gastos' ou 'ganhos'; k = qual vale. A empresa usada por último já vem escolhida.
 function novoVale(lado, k){
@@ -292,7 +326,9 @@ function addNew(){
   const vale = Object.keys(VALES).find(temVale) || 'va';
   if (state.tab === 'gastos' && state.gsub === 'vale') return novoVale('gastos', vale);
   if (state.tab === 'ganhos' && state.isub === 'vale') return novoVale('ganhos', vale);
-  const col = {ganhos:'incomes', gastos:state.gsub === 'parc' ? 'installments' : 'expenses', invest:'investments'}[state.tab]; if (col) openForm(col);
+  // Em Parceladas, o + pergunta o que cadastrar.
+  if (state.tab === 'gastos' && state.gsub === 'parc') return pickList('Adicionar', [['', 'Compra parcelada'], ['financiamento', 'Financiamento'], ['emprestimo', 'Empréstimo']], null, t => openForm('installments', null, {tipo:t}));
+  const col = {ganhos:'incomes', gastos:'expenses', invest:'investments'}[state.tab]; if (col) openForm(col);
 }
 const ARCH_MSG = 'Este lançamento está no arquivo de anos antigos e não pode ser editado. Para editar, traga os anos de volta em Configurações > Dados e ajustes.';
 function edit(col, id){
@@ -346,7 +382,7 @@ function fieldHtml(f){
   // Valor de um gasto em vermelho e de um ganho em verde, para confirmar o que está sendo lançado.
   const cor = !['value', 'total'].includes(f.k) || !F ? '' : F.col === 'incomes' ? 'in' : ['expenses', 'installments'].includes(F.col) ? 'out' : '';
   if (f.big) return `<div class="bigVal ${cor}"><span>R$</span><input id="${id}" type="text" inputmode="numeric" placeholder="0,00" autocomplete="off"></div>${somaHtml(f.k)}`;
-  return `<input id="${id}" type="text" ${f.type === 'money' ? `inputmode="numeric" class="${cor}"` : f.type === 'num' ? 'inputmode="decimal"' : f.type === 'int' ? 'inputmode="numeric"' : ''} placeholder="${f.type === 'money' ? '0,00' : f.ph || ''}" autocomplete="off">` +
+  return `<input id="${id}" type="text" ${f.type === 'money' ? `inputmode="numeric" class="${cor}"` : f.type === 'num' ? 'inputmode="decimal"' : f.type === 'int' ? 'inputmode="numeric"' : ''} placeholder="${f.type === 'money' ? '0,00' : f.ph || ''}"${f.max ? ` maxlength="${f.max}"` : ''} autocomplete="off">` +
     (f.type === 'money' ? somaHtml(f.k) : '') +
     (f.type === 'asset' ? '<div id="assetList"></div>' : '') +
     (f.sug ? `<div class="chips sug" id="sug_${f.k}" hidden></div>` : '');
@@ -450,6 +486,7 @@ function onToast(text){ toast(text); }
 function openForm(col, item, preset = {}){
   // Lançamento num vale (gasto pago com vale ou crédito de vale): formulário enxuto, só com o que importa para vales.
   formVale = !!preset.vale || !!item && (col === 'expenses' ? valeGasto(item) : col === 'incomes' && valeGanho(item));
+  formTipo = col === 'installments' ? preset.tipo || item && item.tipo || '' : '';
   const cfg = FORMS[col], fields = typeof cfg.fields === 'function' ? cfg.fields() : cfg.fields;
   const vals = Object.assign(cfg.defaults ? cfg.defaults() : {}, preset.vals);
   if (item) for (const f of fields){ const v = item[f.k]; vals[f.k] = f.type === 'money' ? moneyStr(v) : f.k === 'fixed' ? (v === 'y' ? 'y' : v ? '1' : '') : v == null ? '' : String(v).replace('.', f.type === 'num' ? ',' : '.'); }
@@ -459,7 +496,7 @@ function openForm(col, item, preset = {}){
   // Lançamento rápido: num registro novo, os campos "more" começam recolhidos.
   const hasMore = fields.some(f => f.more);
   F.more = !hasMore || !!F.id || !!preset.more;
-  showSheet(`<h3>${preset.title || cfg.fullTitle || (item ? 'Editar ' : cfg.fem ? 'Nova ' : 'Novo ') + (formVale ? (col === 'incomes' ? 'crédito de vale' : 'gasto no vale') : cfg.title)}</h3>` +
+  showSheet(`<h3>${preset.title || cfg.fullTitle || (item ? 'Editar ' : (typeof cfg.fem === 'function' ? cfg.fem() : cfg.fem) ? 'Nova ' : 'Novo ') + (formVale ? (col === 'incomes' ? 'crédito de vale' : 'gasto no vale') : typeof cfg.title === 'function' ? cfg.title() : cfg.title)}</h3>` +
     (!F.id && cfg.top ? cfg.top() : '') +
     fields.map(f => `<div id="w_${f.k}"><label for="f_${f.k}"></label>${fieldHtml(f)}</div>`).join('') +
     (cfg.before ? `<div id="w__before">${cfg.before()}</div>` : '') +
@@ -581,7 +618,8 @@ function submitForm(){
     if (!raw){ if (f.optional){ out[f.k] = f.type === 'money' ? 0 : ''; continue; } return err('Preencha: ' + name.toLowerCase(), f); }
     if (f.type === 'money' || f.type === 'num' || f.type === 'int'){
       const n = f.type === 'int' ? (/^\d+$/.test(raw) ? parseInt(raw) : NaN) : parseMoney(raw);
-      if (isNaN(n) || n < 0 || (n === 0 && !f.zero)) return err('Valor inválido em: ' + name.toLowerCase(), f);
+      // Campo opcional com 0 (ex.: aporte mensal "0,00" ao editar) vale como não informado.
+      if (isNaN(n) || n < 0 || (n === 0 && !f.zero && !f.optional)) return err('Valor inválido em: ' + name.toLowerCase(), f);
       if (f.type === 'money'){ out[f.k] = round2(n); continue; }
       out[f.k] = n;
     } else out[f.k] = raw;
@@ -648,8 +686,8 @@ async function syncPhotos(){
 const photoKey = id => 'financas-foto-' + id;
 const nativePhotos = () => window.Android && Android.fotoSalvar;
 function photoLoad(id){ if (nativePhotos()) return Android.fotoLer(id); try { return localStorage.getItem(photoKey(id)) || ''; } catch(e){ return ''; } }
-function photoSave(id, data){ if (nativePhotos()) Android.fotoSalvar(id, data); else try { localStorage.setItem(photoKey(id), data); } catch(e){} }
-function photoDelete(id){ if (nativePhotos()) Android.fotoApagar(id); else try { localStorage.removeItem(photoKey(id)); } catch(e){} }
+function photoSave(id, data){ if (demoOn) return; if (nativePhotos()) Android.fotoSalvar(id, data); else try { localStorage.setItem(photoKey(id), data); } catch(e){} }
+function photoDelete(id){ if (demoOn) return; if (nativePhotos()) Android.fotoApagar(id); else try { localStorage.removeItem(photoKey(id)); } catch(e){} }
 // No celular há dois caminhos: a câmera (aberta pelo app, ver tirarFoto em MainActivity) e a galeria (seletor de arquivos).
 const canCam = () => window.Android && Android.tirarFoto;
 function photoSection(){
@@ -690,6 +728,7 @@ function photoSwap(){ if (canCam()){ F.pick = true; photoDraw(); } else document
 // Rascunho do formulário: o Android pode fechar o app enquanto a câmera está aberta; na volta, o formulário é remontado.
 const DRAFT = 'financas-rascunho';
 function photoCam(){
+  if (demoBloqueia()) return;
   try { localStorage.setItem(DRAFT, JSON.stringify({col:F.col, id:F.id || null, vals:F.vals, touched:F.touched, tab:state.tab, month:state.month})); } catch(e){}
   Android.tirarFoto();
 }
@@ -710,6 +749,7 @@ function onFoto(){
   photoSet(data);
 }
 function photoChosen(input){
+  if (demoOn){ input.value = ''; return demoBloqueia(); }
   const file = input.files[0]; input.value = '';
   if (!file) return;
   const img = new Image();

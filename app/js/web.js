@@ -1,4 +1,4 @@
-// Minhas Finanças — Versão web (navegador e iPhone, pelo "Adicionar à Tela de Início").
+// Cofrim — Versão web (navegador e iPhone, pelo "Adicionar à Tela de Início").
 // Carregado pelo index.html antes do inicio.js. No APK não faz nada: lá o lado nativo já define window.Android.
 // Aqui ele faz o papel do lado nativo só no que é conta Google — drive(), driveFamilia(), conta(), nome(), sair(),
 // copiar(). Lembretes, widget, notificações do banco e câmera nativa não existem na web, e o app já se ajusta pela
@@ -10,24 +10,38 @@ const WEB_CLIENT_ID = '357521269892-ja1te6htb465odtcp73vqu4e7j80330k.apps.google
 // No PC (localhost) a prévia continua em modo de demonstração; ?web=1 testa a versão web (e a volta do Google, com #).
 const WEB_APP = !window.Android && location.protocol !== 'file:' && (location.hostname !== 'localhost' || /[?&]web=1/.test(location.search) || /^#(access_token|error)=/.test(location.hash) || /[#&]state=/.test(location.hash));
 if (WEB_APP) (() => {
-  const K = 'financas-web', AUTH = 'https://accounts.google.com/o/oauth2/v2/auth';
+  const K = 'financas-web', KS = 'financas-web-acesso', AUTH = 'https://accounts.google.com/o/oauth2/v2/auth';
   const BASE = 'openid email profile https://www.googleapis.com/auth/drive.appdata';
   const FAM = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
-  // st: {t (acesso), exp, fam (já autorizou a conta compartilhada), email, name, state, after, silentAt}
+  const ESCOPO_DRIVE = 'https://www.googleapis.com/auth/drive.appdata';
+  // st: {t (acesso), exp, fam (já autorizou a conta compartilhada), email, name, state, after, silentAt,
+  //      pedirConsent (a pessoa desmarcou alguma permissão: na próxima ida ao Google, mostrar as caixas de novo)}
+  // O acesso (t, exp) fica no sessionStorage: some ao fechar o navegador ou o app e não fica gravado no aparelho; o resto
+  // (e-mail, pedirConsent, state da ida ao Google…) fica no localStorage. A volta do Google acontece na mesma aba, então o
+  // sessionStorage continua lá; sem ele (app reaberto), a renovação silenciosa pede um acesso novo.
   let st = {};
   try { st = JSON.parse(localStorage.getItem(K)) || {}; } catch(e){}
-  const keep = () => { try { localStorage.setItem(K, JSON.stringify(st)); } catch(e){} };
+  try { Object.assign(st, JSON.parse(sessionStorage.getItem(KS)) || {}); } catch(e){}
+  const keep = () => {
+    const {t, exp, ...resto} = st;
+    try { localStorage.setItem(K, JSON.stringify(resto)); } catch(e){}
+    try { if (t) sessionStorage.setItem(KS, JSON.stringify({t, exp})); else sessionStorage.removeItem(KS); } catch(e){}
+  };
+  keep(); // versões anteriores guardavam o acesso no localStorage: passa para o sessionStorage
+  // state da ida ao Google: 16 bytes aleatórios do navegador (crypto), em hexadecimal.
+  const novoState = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
   const valid = fam => st.t && st.exp > Date.now() + 60e3 && (!fam || st.fam);
   const voltaPara = () => location.origin + location.pathname;
 
   // Vai ao Google. after: o que fazer quando voltar (entrar, sincronizar, continuar a conta compartilhada).
   function redirect(fam, after, silencioso){
     if (!WEB_CLIENT_ID) return false;
-    st.state = Math.random().toString(36).slice(2); st.after = after; keep();
+    st.state = novoState(); st.after = after; keep();
     const p = new URLSearchParams({client_id:WEB_CLIENT_ID, redirect_uri:voltaPara(), response_type:'token', include_granted_scopes:'true',
       scope:BASE + (fam || st.fam ? ' ' + FAM : ''), state:st.state});
     if (st.email) p.set('login_hint', st.email);
-    if (silencioso) p.set('prompt', 'none'); else if (!st.email) p.set('prompt', 'select_account');
+    if (st.pedirConsent) p.set('prompt', 'consent'); // o Google mostra de novo as caixas de permissão
+    else if (silencioso) p.set('prompt', 'none'); else if (!st.email) p.set('prompt', 'select_account');
     location.assign(AUTH + '?' + p);
     return true;
   }
@@ -49,8 +63,16 @@ if (WEB_APP) (() => {
     if (h.get('state') === st.state){
       depois = st.after || {k:'sync'};
       if (h.has('access_token')){
-        st.t = h.get('access_token'); st.exp = Date.now() + (+h.get('expires_in') || 3600) * 1000;
-        if (FAM.split(' ').every(s => (h.get('scope') || '').includes(s))) st.fam = true;
+        // Na tela do Google dá para desmarcar a permissão do Drive: o login funciona, mas sem ela nada sincroniza
+        // (403 "insufficient authentication scopes"). Sem o Drive, o acesso não é guardado e a pessoa é avisada.
+        const escopo = (h.get('scope') || '').split(' ');
+        if (!escopo.includes(ESCOPO_DRIVE)){ st.pedirConsent = true; depois = {...depois, erro:'escopo'}; }
+        else {
+          st.t = h.get('access_token'); st.exp = Date.now() + (+h.get('expires_in') || 3600) * 1000; st.pedirConsent = false;
+          if (FAM.split(' ').every(s => escopo.includes(s))) st.fam = true;
+          // Pediu a conta compartilhada e desmarcou as caixas dela: avisa (famNegado), em vez de voltar ao Google sem fim.
+          else if (['start', 'invite', 'join', 'sheet'].includes(depois.k)) depois = {...depois, erro:'escopo'};
+        }
       } else depois = {...depois, erro:h.get('error')};
     }
     st.state = ''; st.after = null; keep();
@@ -73,7 +95,15 @@ if (WEB_APP) (() => {
     try {
       const r = await fetch(url, {method, headers:{Authorization:'Bearer ' + st.t, ...(body ? {'Content-Type':ctype} : {})}, body:body || undefined});
       if (r.status === 401){ st.t = ''; keep(); return call(id, method, url, body, ctype, interactive, fam); }
-      onDrive(id, r.status, await r.text());
+      const texto = await r.text();
+      // Acesso sem a permissão necessária (caixa desmarcada no Google): -5, para o app pedir de novo com as caixas.
+      if (r.status === 403 && /insufficient.*scope|ACCESS_TOKEN_SCOPE_INSUFFICIENT/i.test(texto)){
+        logErr('permissão do Google', '403 ' + texto.slice(0, 300));
+        if (fam) st.fam = false; else { st.t = ''; st.pedirConsent = true; }
+        keep();
+        return onDrive(id, -5, 'escopo');
+      }
+      onDrive(id, r.status, texto);
     } catch(e){ onDrive(id, 0, String(e.message || e)); }
   }
 
@@ -82,12 +112,13 @@ if (WEB_APP) (() => {
     driveFamilia:(id, m, u, b, c, i) => { call(id, m, u, b, c, i, true); },
     conta:() => st.email || '',
     nome:() => st.name || '',
-    sair(){ if (st.t) fetch('https://oauth2.googleapis.com/revoke?token=' + encodeURIComponent(st.t), {method:'POST'}).catch(() => {}); st = {}; keep(); },
+    sair(){ if (st.t) fetch('https://oauth2.googleapis.com/revoke?token=' + encodeURIComponent(st.t), {method:'POST'}).catch(() => {}); st = {}; keep(); if (window.onSair) onSair(true); },
     copiar:t => { if (navigator.clipboard) navigator.clipboard.writeText(t).catch(() => {}); }
   };
 
   // Ao abrir o app com o acesso vencido (dura 1 hora), renova sem pedir nada; no máximo uma vez a cada 10 min.
-  if (!voltou && st.email && !valid() && navigator.onLine && Date.now() - (st.silentAt || 0) > 10 * 60e3){
+  // Com uma permissão pendente (pedirConsent) não adianta: a renovação silenciosa não mostra as caixas.
+  if (!voltou && st.email && !st.pedirConsent && !valid() && navigator.onLine && Date.now() - (st.silentAt || 0) > 10 * 60e3){
     st.silentAt = Date.now(); keep();
     redirect(false, {k:'sync'}, true);
   }
@@ -97,8 +128,9 @@ if (WEB_APP) (() => {
     if (!depois) return;
     const d = depois; depois = null;
     if (d.erro){
-      if (d.k === 'login') document.getElementById('gateMsg').textContent = 'Não foi possível entrar com o Google. Tente de novo.';
+      if (d.k === 'login') document.getElementById('gateMsg').textContent = d.erro === 'escopo' ? MSG_ESCOPO : 'Não foi possível entrar com o Google. Tente de novo.';
       else if (['start', 'invite', 'join', 'sheet'].includes(d.k)) famNegado();
+      else if (d.erro === 'escopo') tell(MSG_ESCOPO);
       return; // renovação silenciosa que falhou: o status da sincronização avisa que é preciso entrar de novo
     }
     if (d.k === 'login') loginGoogle();

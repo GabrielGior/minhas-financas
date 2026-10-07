@@ -1,4 +1,4 @@
-// Minhas Finanças — idiomas (português, inglês e espanhol).
+// Cofrim — idiomas (português, inglês e espanhol).
 // Carregado pelo index.html, nesta ordem: dados.js, telas.js, assistente.js, formularios.js, config.js, idioma.js, inicio.js.
 //
 // O app é escrito em português. Em inglês ou espanhol, depois que uma tela é desenhada, tr() troca os trechos de texto
@@ -188,7 +188,7 @@ const T = {
   'Criar, renomear ou esconder categorias':['Create, rename or hide categories','Crear, renombrar u ocultar categorías'], 'Anos antigos':['Older years','Años anteriores'], 'Arquivar anos antigos':['Archive older years','Archivar años anteriores'],
   'Trazer de volta':['Bring back','Traer de vuelta'], 'Arquivado até':['Archived up to','Archivado hasta'], 'Lançamentos excluídos':['Deleted entries','Movimientos eliminados'], 'Backup em arquivo':['File backup','Copia en archivo'],
   'Exportar':['Export','Exportar'], 'Importar':['Import','Importar'], 'Apagar tudo':['Delete everything','Borrar todo'], 'Apagar todos os meus dados':['Delete all my data','Borrar todos mis datos'],
-  'Minhas Finanças':['My Finances','Mis Finanzas'], 'versão':['version','versión'], 'Categorias de ganho':['Income categories','Categorías de ingreso'],
+  'versão':['version','versión'], 'Categorias de ganho':['Income categories','Categorías de ingreso'],
   'O assistente entende perguntas só em português. Os valores continuam em reais':['The assistant understands questions in Portuguese only. Amounts stay in Brazilian reais','El asistente solo entiende preguntas en portugués. Los valores siguen en reales'],
   'Gastos separados':['Expenses split up','Gastos separados'], 'assinatura':['subscription','suscripción'],
   'Na aba Gastos, os lançamentos ficam em Assinaturas, Fixos e Ocasionais, cada grupo com o seu total. A busca procura nos três':['In the Expenses tab, entries are grouped into Subscriptions, Fixed and One-off, each with its total. Search looks in all three','En la pestaña Gastos, los movimientos se dividen en Suscripciones, Fijos y Ocasionales, cada grupo con su total. La búsqueda mira en los tres'],

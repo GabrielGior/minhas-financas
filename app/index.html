@@ -2,6 +2,10 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<!-- Content Security Policy: o que a página pode carregar e com quem pode falar. 'unsafe-inline' porque o app usa
+     onclick="" e style="" nas telas (e, no APK atualizado, tudo vem embutido num arquivo só). connect-src: Google
+     (Drive, Planilhas, login), GitHub (atualização), cotações, taxas do Banco Central e notícias. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; worker-src 'self'; manifest-src 'self'; base-uri 'none'; object-src 'none'; connect-src 'self' https://www.googleapis.com https://sheets.googleapis.com https://oauth2.googleapis.com https://raw.githubusercontent.com https://economia.awesomeapi.com.br https://brapi.dev https://api.bcb.gov.br https://news.google.com https://www.bing.com https://exame.com">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <script>
 // Em celulares, o layout é sempre desenhado com 390 px de largura e o sistema o redimensiona
@@ -13,14 +17,14 @@ ajustarLargura();
 addEventListener('orientationchange', () => setTimeout(ajustarLargura, 150)); // celular deitado ou tablet: usa a largura real
 </script>
 <meta name="theme-color" content="#0f172a">
-<title>Minhas Finanças</title>
+<title>Cofrim</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Finanças">
+<meta name="apple-mobile-web-app-title" content="Cofrim">
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
@@ -46,6 +50,10 @@ try {
 <div class="sheet" id="picker" role="dialog" aria-modal="true"></div>
 <div id="dlg" hidden><div class="box"><div id="dlgMsg"></div><div class="btns" id="dlgBtns"></div></div></div>
 <div id="snack" hidden></div>
+<!-- Modo demonstração: faixa fixa no topo (ver demoFaixa em js/config.js). -->
+<div id="demo" hidden role="status"></div>
+<!-- Sem internet / internet de volta (ver netMostrar em js/config.js): discreto, não bloqueia os toques. -->
+<div id="net" hidden role="status" aria-live="polite"></div>
 <!-- Carregando: faixa no topo durante qualquer espera de rede e cartão com texto nas ações demoradas (ver cargaDraw). -->
 <div id="carga" hidden aria-hidden="true"><i></i></div>
 <div id="cargaCx" hidden role="status"><span></span><b></b></div>
@@ -59,9 +67,10 @@ try {
 </div></div>
 <div id="gate" hidden>
   <div class="logo" id="gateLogo"></div>
-  <h1>Minhas Finanças</h1>
+  <h1>Cofrim</h1>
   <p>Entre com sua conta Google para começar. Seus dados ficam guardados no seu próprio Google Drive.</p>
   <button onclick="loginGoogle()">Entrar com Google</button>
+  <button class="sec" onclick="demoLigar()">Testar sem conta (modo demonstração)</button>
   <small id="gateMsg"></small>
 </div>
 <input type="file" id="file" accept="application/json,.json" hidden onchange="importData(this)">

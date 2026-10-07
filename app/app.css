@@ -171,6 +171,13 @@ html[data-anim=off] *{animation:none!important;transition:none!important}
 #gate h1{display:block;font-size:28px;margin:0 0 8px}
 #gate p{opacity:.9;max-width:300px;margin:0 0 26px}
 #gate button{background:#fff;color:#1e293b;font-weight:700;padding:14px 22px;border-radius:14px;font-size:16px;width:100%;max-width:300px}
+#gate button.sec{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.75);margin-top:10px;font-size:15px;font-weight:600}
+/* Modo demonstração: faixa fixa no topo, em âmbar em todos os temas; o conteúdo desce para não ficar por baixo dela. */
+#demo{position:fixed;top:0;left:0;right:0;z-index:23;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:calc(6px + env(safe-area-inset-top)) 12px 6px;background:#fbbf24;color:#1c1917;font-size:13px;font-weight:700;text-align:center}
+#demo button{background:#1c1917;color:#fff;border-radius:10px;padding:6px 10px;font-size:12.5px;font-weight:700}
+html.demo #app{padding-top:58px}
+html.demo #topbar{top:44px}
+html.demo #net{top:calc(50px + env(safe-area-inset-top))}
 #gate small{display:block;margin-top:14px;min-height:36px;max-width:300px;opacity:.95}
 #lockAsk{position:fixed;inset:0;z-index:25;background:rgba(2,6,23,.6);display:flex;align-items:center;justify-content:center;padding:24px}
 #lockAsk .box{position:relative;background:var(--card);border-radius:22px;padding:26px 22px 20px;max-width:340px;text-align:center;box-shadow:var(--shadow)}
@@ -317,6 +324,9 @@ h1{flex-wrap:wrap;gap:4px 8px}
   .badges button.on span{box-shadow:none}
 }
 .offline{display:flex;align-items:center;gap:6px;background:var(--line);color:var(--muted);border-radius:12px;padding:8px 12px;font-size:12.5px;font-weight:600;margin:0 0 12px}
+/* Sem internet / internet de volta: no topo, por cima das telas, sem pegar os toques. */
+#net{position:fixed;left:12px;right:12px;top:calc(6px + env(safe-area-inset-top));z-index:21;max-width:460px;margin:0 auto;pointer-events:none;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:8px 12px;font-size:12.5px;font-weight:600;line-height:1.35;text-align:center;box-shadow:var(--shadow)}
+#net.voltou{color:var(--in)}
 /* Atalhos do Resumo */
 .quick{display:flex;gap:8px;margin-bottom:12px}
 .quick button{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border-radius:18px;background:var(--card);border:1px solid var(--line);font-weight:600;font-size:13px;transition:transform .12s ease-out}
@@ -838,3 +848,24 @@ html[data-troca=gira] #app.enter{animation:trGira .38s ease-out;transform-origin
 .graf .chart.curva small{height:26px;line-height:30px;font-size:11.5px;text-transform:lowercase}
 .graf .chart.curva .col.atual::after{display:none}
 .graf .chart.curva .col.sel small,.graf .chart.curva .col.atual small{color:var(--brand);font-weight:700}
+/* Parceladas: tela de detalhe (topo, progresso em segmentos, grupos e linhas com ícone de situação) */
+.detTop{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.detTop .btn{flex:0 0 auto;padding:9px 14px}
+.detTop .iconbtn{font-size:22px;font-weight:700;width:42px;height:42px}
+.segs{display:flex;gap:3px;height:8px;margin:12px 0 4px}
+.segs i{flex:1;border-radius:3px;background:rgba(255,255,255,.28)}
+.segs i.on{background:#fff}
+.pGrp{font-size:11.5px;letter-spacing:.07em;font-weight:700;color:var(--muted);margin:14px 0 2px}
+.pGrp:first-child{margin-top:0}
+.pGrp.out{color:var(--out)}
+.parcRow{gap:10px}
+.parcRow .ico{width:34px;height:34px;border-radius:11px}
+.parcRow .val{text-align:right}
+.parcRow .val small{display:block;font-weight:500;font-size:11.5px;color:var(--muted)}
+.parcRow .val small.out{color:var(--out)}
+.stIco{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--line);color:var(--muted)}
+.stIco.vencida{background:color-mix(in srgb,var(--out) 16%,transparent);color:var(--out)}
+.stIco.paga{background:color-mix(in srgb,var(--in) 16%,transparent);color:var(--in)}
+.grid2 + h2{margin-top:22px}
+/* Link discreto (ex.: "Ver mais informações no resumo") */
+.linkBtn{color:var(--brand);font-weight:600;font-size:13.5px;padding:8px 10px}

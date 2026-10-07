@@ -1,4 +1,4 @@
-// Minhas Finanças — Planilha do Google ligada ao app.
+// Cofrim — Planilha do Google ligada ao app.
 // Carregado pelo index.html depois do config.js (usa fam(), SHEETS e a sincronização de lá).
 // A pessoa cria, pelo app, uma planilha na própria conta Google com as abas Gastos e Ganhos. A cada sincronização
 // (sheetSync, chamada pelo syncNow) o app lê a planilha, traz para o app o que foi mexido nela e regrava as abas com
@@ -62,6 +62,7 @@ function sheetRead(c, col){
 let sheetBusy = false;
 // Lê a planilha, traz as mudanças para o app e regrava as abas. Devolve quantas alterações vieram da planilha.
 async function sheetSync(interactive){
+  if (demoOn) return 0;
   const id = sheetId();
   if (!id || !canSync() || !Android.driveFamilia || sheetBusy) return 0;
   sheetBusy = true;
@@ -119,22 +120,23 @@ async function sheetSync(interactive){
   } catch(e){
     if (e.status === undefined) logErr('planilha', e);
     sync.sheetErr = e.status === 404 ? 'A planilha não foi encontrada (foi apagada?).' : e.status === 403 ? 'Sem acesso à planilha com esta conta Google.'
-      : e.status === -1 ? 'É preciso autorizar o acesso às planilhas (toque em "Sincronizar com a planilha").' : e.status === 0 ? 'Sem conexão com a internet.' : 'Não foi possível sincronizar com a planilha.';
+      : e.status === -1 || e.status === -5 ? 'É preciso autorizar o acesso às planilhas (toque em "Sincronizar com a planilha").' : e.status === 0 ? 'Sem conexão com a internet.' : 'Não foi possível sincronizar com a planilha.';
     return 0;
   } finally { sheetBusy = false; saveSync(); }
 }
 
 // Cria a planilha na conta Google da pessoa, com cabeçalhos, formatos e listas de escolha, e liga ao app.
 const sheetCreate = umaVez(async function(semPerguntar){
+  if (demoBloqueia()) return;
   if (!semPerguntar && !await famPrepare()) return;
   try {
     const tabs = Object.keys(SHEET_TABS);
-    const corpo = {properties:{title:'Minhas Finanças (planilha ligada ao app)', locale:'pt_BR'}, sheets:[
+    const corpo = {properties:{title:'Cofrim (planilha ligada ao app)', locale:'pt_BR'}, sheets:[
       ...tabs.map((col, i) => ({properties:{sheetId:i + 1, title:SHEET_TABS[col].nome, gridProperties:{frozenRowCount:1}}})),
       {properties:{sheetId:8, title:'Como usar'}}, {properties:{sheetId:9, title:'_app', hidden:true}}]};
     const id = JSON.parse(ok(await fam('POST', SHEETS, JSON.stringify(corpo), 'application/json', true)).text).spreadsheetId;
     sync.famOk = true;
-    const ajuda = ['Esta planilha está ligada ao app Minhas Finanças.', 'Para lançar por aqui, escreva numa linha vazia das abas Gastos ou Ganhos: mês, descrição e valor bastam.',
+    const ajuda = ['Esta planilha está ligada ao app Cofrim.', 'Para lançar por aqui, escreva numa linha vazia das abas Gastos ou Ganhos: mês, descrição e valor bastam.',
       'Mês no formato AAAA-MM (ex.: 2026-10); em branco, vale o mês atual. Categoria, Pagamento e Tipo têm lista de escolha.',
       'Você pode editar e apagar linhas: a mudança chega ao app na próxima sincronização (o que for apagado vai para a lixeira do app).',
       'O app regrava as abas a cada sincronização: não mude a ordem das colunas nem os títulos; fórmulas e anotações ficam melhor em outra aba.'];
@@ -161,17 +163,19 @@ const sheetCreate = umaVez(async function(semPerguntar){
     toast('Planilha criada e ligada ao app.');
   } catch(e){
     logErr('criar planilha', e.status ? e.status + ' ' + String(e.text).slice(0, 300) : e);
-    if (e.status === -1) return famNegado();
+    if (e.status === -1 || e.status === -5) return famNegado();
     tell(/Sheets/.test(sharedMsg(e)) ? sharedMsg(e) : e.status === 0 ? 'Sem conexão com a internet.' : 'Não foi possível criar a planilha agora.');
   }
 });
 function sheetOpenUrl(){ if (window.Android && Android.abrir) Android.abrir(sheetUrl()); else window.open(sheetUrl(), '_blank', 'noopener'); }
 async function sheetNow(){
+  if (demoBloqueia()) return;
   const n = await comCarga('Sincronizando com a planilha…', () => sheetSync(true));
   if (sync.sheetErr) tell(sync.sheetErr); else if (!n) toast('Planilha e app estão iguais.');
   if (sheetOpen() && document.getElementById('shLink')) openSheetLink();
 }
 async function sheetUnlink(){
+  if (demoBloqueia()) return;
   if (!await ask('Desligar a planilha do app?\n\nA planilha continua no seu Google Drive, mas deixa de ser atualizada, e o que for escrito nela não vem mais para o app.', 'Desligar', true)) return;
   db.prefs.sheet = ''; db.cfgMod = Date.now(); save(); openSheetLink();
 }

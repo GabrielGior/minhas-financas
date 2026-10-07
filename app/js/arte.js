@@ -1,4 +1,4 @@
-// Minhas Finanças — Desenhos do ícone do app e a animação de abertura.
+// Cofrim — Desenhos do ícone do app e a animação de abertura.
 // Carregado pelo index.html depois de config.js (usa pigSvg, MASCOTES, ICONES e SKINS).
 // Os mesmos desenhos viram os arquivos do Android (android/res) pelo arte.ps1, para o ícone e os widgets do
 // celular ficarem iguais ao que o app mostra.
@@ -88,7 +88,7 @@ function abertura(){
   document.getElementById('abreIn').innerHTML = (comMascote
     ? `${sk && ATOS[sk] ? `<svg class="abreAto at-${ATOS[sk][1]}" viewBox="0 0 40 40">${ATOS[sk][0]}</svg>` : ''}<div class="abreM">${mascoteEm(sk, 'feliz', 0, 0, 150, true)}</div>`
     : `<svg viewBox="28 28 52 52" width="132" height="132" aria-hidden="true">${[[33, 58, 16, .7], [47.5, 47, 27, .85], [62, 34, 40, 1]].map(([x, y, h, o], i) => `<rect class="abreBar" style="animation-delay:${i * 90}ms" x="${x}" y="${y}" width="13" height="${h}" rx="2" fill="#fff" opacity="${o}"/>`).join('')}</svg>`)
-    + `<b>${esc(window.Android && Android.iconeNome && APP_NOMES[Android.iconeNome()] || 'Minhas Finanças')}</b>`;
+    + `<b>${esc(window.Android && Android.iconeNome && APP_NOMES[Android.iconeNome()] || 'Cofrim')}</b>`;
   let acabou = false;
   const fim = () => { if (acabou) return; acabou = true; el.classList.add('fim'); setTimeout(() => { el.remove(); abreFila.splice(0).forEach(f => f()); }, 400); };
   setTimeout(fim, 1750); // entrada mais demorada, para dar tempo de ver

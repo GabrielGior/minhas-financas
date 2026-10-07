@@ -1,4 +1,4 @@
-// Minhas Finanças — Assistente, relatório do mês e importação de extrato.
+// Cofrim — Assistente, relatório do mês e importação de extrato.
 // Carregado pelo index.html, nesta ordem: dados.js, telas.js, assistente.js, formularios.js, config.js, inicio.js.
 // ---------- Assistente: responde perguntas sobre os dados do app ----------
 // Não usa IA nem internet: reconhece na pergunta o assunto (gastos, ganhos, saldo, parcelas, investimentos…),
@@ -111,7 +111,7 @@ function chatExpenses(t, P){
   if (word) items = items.filter(x => plain(x.desc).includes(word));
   if (bank) items = items.filter(x => x.bank === bank);
   if (pay) items = items.filter(x => x.pay === pay);
-  const what = [cat && 'com ' + CAT_GASTO[cat][1].toLowerCase(), word && `com "${esc(word)}"`, bank && 'no ' + esc(bank), pay && 'em ' + PAY[pay].toLowerCase()].filter(Boolean).join(' ');
+  const what = [cat && 'com ' + esc(CAT_GASTO[cat][1].toLowerCase()), word && `com "${esc(word)}"`, bank && 'no ' + esc(bank), pay && 'em ' + PAY[pay].toLowerCase()].filter(Boolean).join(' ');
   return {items, what, filtered:!!(cat || word || bank || pay)};
 }
 function answer(q){
@@ -151,7 +151,7 @@ function answer(q){
   if (/parcela|falta pagar|quanto devo|divida/.test(t)){
     const open = db.installments.filter(p => p.paid < p.n);
     if (!open.length) return 'Você não tem compras parceladas em aberto.';
-    const left = p => p.total / p.n * (p.n - p.paid);
+    const left = parcFalta;
     return `Falta pagar <b>${fmt(sum(open, left))}</b> em ${open.length} compra${open.length > 1 ? 's' : ''} parcelada${open.length > 1 ? 's' : ''}. Neste mês as parcelas somam ${fmt(sum(expensesOf(curYM).filter(x => x.kind === 'installment'), x => x.value))}.` +
       chatRows(open.map(p => [`${p.desc} · ${p.paid}/${p.n} · até ${monthName(addMonths(p.start, p.n - 1))}`, left(p)]));
   }
@@ -211,14 +211,14 @@ function answer(q){
   if (/ganh(ei|o|os|ar)|receb|renda|salario|entrou|entrada|\bvale (alimentacao|refeicao)/.test(t) && !/gast|pagu?ei|pago/.test(t)){
     const cat = findKey(t, INC_WORDS);
     const items = P.months.flatMap(m => incomesOf(m)).filter(x => !cat || x.cat === cat);
-    if (!items.length) return `Não encontrei ganhos ${cat ? 'de ' + CAT_GANHO[cat][1].toLowerCase() + ' ' : ''}${P.label}.`;
-    return `${future ? 'A previsão é receber' : 'Você recebeu'} <b>${fmt(sum(items, x => x.value))}</b> ${cat ? 'de ' + CAT_GANHO[cat][1].toLowerCase() + ' ' : ''}${P.label}.` + chatRows(topBy(items, x => x.desc));
+    if (!items.length) return `Não encontrei ganhos ${cat ? 'de ' + esc(CAT_GANHO[cat][1].toLowerCase()) + ' ' : ''}${P.label}.`;
+    return `${future ? 'A previsão é receber' : 'Você recebeu'} <b>${fmt(sum(items, x => x.value))}</b> ${cat ? 'de ' + esc(CAT_GANHO[cat][1].toLowerCase()) + ' ' : ''}${P.label}.` + chatRows(topBy(items, x => x.desc));
   }
   const ex = chatExpenses(t, P);
   if (/onde .*gast|maior(es)? gasto|mais gast|gast\w* mais|categoria/.test(t) && !ex.filtered){
     if (!ex.items.length) return `Não encontrei gastos ${P.label}.`;
     const total = sum(ex.items, x => x.value), top = topBy(ex.items, x => (CAT_GASTO[x.cat] || CAT_GASTO.outros)[1]);
-    return `Seu maior gasto ${P.label} foi com <b>${top[0][0].toLowerCase()}</b>: ${fmt(top[0][1])}, ${Math.round(top[0][1] / total * 100)}% do total de ${fmt(total)}.` + chatRows(top);
+    return `Seu maior gasto ${P.label} foi com <b>${esc(top[0][0].toLowerCase())}</b>: ${fmt(top[0][1])}, ${Math.round(top[0][1] / total * 100)}% do total de ${fmt(total)}.` + chatRows(top);
   }
   if (/gast|pagu?ei|pago|despesa|custo|custa/.test(t) || ex.filtered){
     if (!ex.items.length) return `Não encontrei gastos ${ex.what} ${P.label}.`;
@@ -317,7 +317,7 @@ function renderIn(){
   funCount();
 }
 // antesChat = a tela de onde o assistente foi aberto: é para ela que o "voltar" do assistente leva.
-function go(t){ if (t === 'chat' && state.tab !== 'chat') state.antesChat = state.tab; state.tab = t; renderIn(); scrollTo(0,0); if (t === 'invest') refreshQuotes(); }
+function go(t){ if (t === 'chat' && state.tab !== 'chat') state.antesChat = state.tab; state.tab = t; state.parcDet = ''; renderIn(); scrollTo(0,0); if (t === 'invest') refreshQuotes(); }
 const sairChat = () => go(visTabs().includes(state.antesChat) ? state.antesChat : visTabs()[0]);
 // Botão "voltar" do Android (chamado pelo APK). Retorna false quando o app deve fechar.
 function onBack(){
@@ -328,6 +328,7 @@ function onBack(){
   if (!document.getElementById('lockAsk').hidden){ answerLock(false); return true; }
   if (pickerOpen()){ closePicker(); return true; }
   if (sheetOpen()){ closeForm(); return true; }
+  if (state.tab === 'gastos' && state.parcDet){ fecharParc(); return true; } // detalhe de uma parcela: volta para a lista
   if (state.tab === 'chat'){ sairChat(); return true; }
   if (state.tab !== visTabs()[0]){ go(visTabs()[0]); return true; }
   return false;
@@ -360,7 +361,6 @@ function pickMonth(y = +state.month.slice(0, 4)){
     <div class="filters">${MESES.map((n,i) => { const m = ymOf(y, i); return `<button class="btn ${m === state.month ? 'primary' : ''}" style="text-transform:capitalize${m === curYM ? ';outline:2px solid var(--brand)' : ''}" onclick="state.month='${m}';closeForm();render()">${n.slice(0,3)}</button>`; }).join('')}</div>
     <div class="btns"><button class="btn" onclick="state.month=curYM;closeForm();render()">Mês atual</button><button class="btn" onclick="closeForm()">Cancelar</button></div>`);
 }
-function pay(id, d){ const p = db.installments.find(x => x.id === id); p.paid = Math.max(0, Math.min(p.n, p.paid + d)); touch(p); save(); render(); }
 
 // Na aba Gastos, deslizar o dedo para os lados troca o mês.
 // Dentro da lista de lançamentos o gesto é do item (ver abaixo), então a troca de mês vale só fora dela.
@@ -399,6 +399,10 @@ document.addEventListener('touchend', () => {
   else if (s.dx > 90 && s.it.dataset.bill === '1') togglePaid(s.it.dataset.sw, state.month);
 }, {passive:true});
 
+// Célula do CSV. Texto que começa com =, +, -, @, tab ou \r vira fórmula ao abrir no Excel ou no Planilhas (CSV
+// injection): recebe um ' na frente, que o importador (parseStatement) tira de volta. Números continuam números.
+const CSV_FORMULA = /^[=+\-@\t\r]/;
+const csvCell = v => typeof v === 'number' ? v.toFixed(2).replace('.', ',') : '"' + (CSV_FORMULA.test(String(v)) ? "'" : '') + String(v).replace(/"/g, '""') + '"';
 // Planilha (CSV) com todos os ganhos e gastos do ano da aba Gastos; abre no Excel e no Google Planilhas.
 function exportCsv(){
   const y = state.month.slice(0, 4), rows = [['Mês', 'Tipo', 'Descrição', 'Categoria', 'Banco', 'Forma de pagamento', 'Detalhe', 'Valor']];
@@ -406,10 +410,9 @@ function exportCsv(){
     const m = ymOf(+y, i);
     for (const x of incomesAll(m)) rows.push([m, 'Ganho', x.desc, (CAT_GANHO[x.cat] || CAT_GANHO.outros)[1], '', '', x.fixed === 'y' ? 'anual' : x.fixed ? 'fixo' : 'avulso', x.value]);
     for (const x of expensesAll(m)) rows.push([m, 'Gasto', x.desc, (CAT_GASTO[x.cat] || CAT_GASTO.outros)[1], x.bank || '', PAY[x.pay] || '',
-      x.kind === 'installment' ? `parcela ${x.num}/${x.n}` : x.fixed === 'y' ? 'anual' : x.fixed ? 'fixo' : 'avulso', x.value]);
+      x.kind === 'installment' ? parcTag(x) : x.fixed === 'y' ? 'anual' : x.fixed ? 'fixo' : 'avulso', x.value]);
   }
-  const cell = v => typeof v === 'number' ? v.toFixed(2).replace('.', ',') : '"' + String(v).replace(/"/g, '""') + '"';
-  const csv = '﻿' + rows.map(r => r.map(cell).join(';')).join('\r\n'), name = `financas-${y}.csv`;
+  const csv = '﻿' + rows.map(r => r.map(csvCell).join(';')).join('\r\n'), name = `financas-${y}.csv`;
   if (window.Android && Android.exportar) return Android.exportar(csv, name);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
@@ -422,21 +425,21 @@ function printReport(){
   const m = state.month, ins = incomesOf(m), outs = expensesOf(m), tin = sum(ins, x => x.value), tout = sum(outs, x => x.value);
   const table = (head, rows, total) => `<table><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}
     ${total != null ? `<tr class="sum"><td colspan="${head.length - 1}">Total</td><td>${fmt(total)}</td></tr>` : ''}</table>`;
-  const kind = x => x.kind === 'installment' ? `parcela ${x.num}/${x.n}` : x.fixed === 'y' ? 'anual' : x.fixed ? 'fixo' : x.day ? 'dia ' + x.day : 'avulso';
+  const kind = x => x.kind === 'installment' ? parcTag(x) : x.fixed === 'y' ? 'anual' : x.fixed ? 'fixo' : x.day ? 'dia ' + x.day : 'avulso';
   const cats = topBy(outs, x => (CAT_GASTO[x.cat] || CAT_GASTO.outros)[1], 99), budgets = budgetStatus(m), inv = invoices(m);
   const title = monthName(m);
   document.getElementById('report').innerHTML = `
     <div class="capa"><h1>Relatório de ${title.replace(' ', ' de ')}</h1>
-    <small>Minhas Finanças${myName() ? ' · ' + esc(myName()) : ''} · gerado em ${now.toLocaleDateString('pt-BR')}</small></div>
+    <small>Cofrim${myName() ? ' · ' + esc(myName()) : ''} · gerado em ${now.toLocaleDateString('pt-BR')}</small></div>
     <div class="boxes"><div class="in"><small>Ganhos</small><b>${fmt(tin)}</b></div><div class="out"><small>Gastos</small><b>${fmt(tout)}</b></div><div class="${tin - tout < 0 ? 'out' : 'in'}"><small>Saldo</small><b>${fmt(tin - tout)}</b></div></div>
     <h2>Gastos por categoria</h2>${cats.length ? table(['Categoria', '% do total', 'Valor'], cats.map(([n, v]) => [esc(n), Math.round(v / tout * 100) + '%', fmt(v)]), tout) : '<small>Nenhum gasto.</small>'}
-    ${budgets.length ? `<h2>Orçamento</h2>${table(['Categoria', 'Limite', 'Usado'], budgets.map(b => [(CAT_GASTO[b.cat] || CAT_GASTO.outros)[1], fmt(b.lim), `${fmt(b.used)} (${Math.round(b.pct)}%)`]))}` : ''}
+    ${budgets.length ? `<h2>Orçamento</h2>${table(['Categoria', 'Limite', 'Usado'], budgets.map(b => [esc((CAT_GASTO[b.cat] || CAT_GASTO.outros)[1]), fmt(b.lim), `${fmt(b.used)} (${Math.round(b.pct)}%)`]))}` : ''}
     ${inv.length ? `<h2>Faturas do cartão</h2>${table(['Banco', 'Valor'], inv.map(([b, v]) => [esc(b), fmt(v)]), sum(inv, x => x[1]))}` : ''}
-    <h2>Ganhos</h2>${ins.length ? table(['Descrição', 'Categoria', 'Valor'], ins.map(x => [esc(x.desc), (CAT_GANHO[x.cat] || CAT_GANHO.outros)[1], fmt(x.value)]), tin) : '<small>Nenhum ganho.</small>'}
-    <h2>Gastos</h2>${outs.length ? table(['Descrição', 'Categoria', 'Banco / pagamento', 'Tipo', 'Valor'], outs.map(x => [esc(x.desc), (CAT_GASTO[x.cat] || CAT_GASTO.outros)[1], [x.bank && esc(x.bank), PAY[x.pay]].filter(Boolean).join(' · '), kind(x), fmt(x.value)]), tout) : '<small>Nenhum gasto.</small>'}
+    <h2>Ganhos</h2>${ins.length ? table(['Descrição', 'Categoria', 'Valor'], ins.map(x => [esc(x.desc), esc((CAT_GANHO[x.cat] || CAT_GANHO.outros)[1]), fmt(x.value)]), tin) : '<small>Nenhum ganho.</small>'}
+    <h2>Gastos</h2>${outs.length ? table(['Descrição', 'Categoria', 'Banco / pagamento', 'Tipo', 'Valor'], outs.map(x => [esc(x.desc), esc((CAT_GASTO[x.cat] || CAT_GASTO.outros)[1]), [x.bank && esc(x.bank), PAY[x.pay]].filter(Boolean).join(' · '), kind(x), fmt(x.value)]), tout) : '<small>Nenhum gasto.</small>'}
     ${db.accounts.length && m === curYM ? `<h2>Saldo das contas hoje</h2>${table(['Conta', 'Saldo'], db.accounts.map(a => [esc(a.name), fmt(accountBalance(a))]), sum(db.accounts, accountBalance))}` : ''}
     ${db.investments.length && m === curYM ? `<h2>Investimentos hoje</h2>${table(['Investimento', 'Valor'], db.investments.map(v => [esc(v.name), fmt(v.value)]), sum(db.investments, v => v.value))}` : ''}
-    <div class="rodape">Relatório gerado pelo app Minhas Finanças</div>`;
+    <div class="rodape">Relatório gerado pelo app Cofrim</div>`;
   const name = 'relatorio-' + m;
   if (window.Android && Android.imprimir) Android.imprimir(name); else window.print();
 }
@@ -470,7 +473,7 @@ function parseStatement(text){
   const lines = text.split(/\r?\n/).filter(l => l.trim());
   if (lines.length < 2) return null;
   const delim = (lines[0].match(/;/g) || []).length >= (lines[0].match(/,/g) || []).length ? ';' : ',';
-  const split = l => { const out = []; let cur = '', q = false; for (const ch of l){ if (ch === '"') q = !q; else if (ch === delim && !q){ out.push(cur); cur = ''; } else cur += ch; } out.push(cur); return out.map(c => c.trim()); };
+  const split = l => { const out = []; let cur = '', q = false; for (const ch of l){ if (ch === '"') q = !q; else if (ch === delim && !q){ out.push(cur); cur = ''; } else cur += ch; } out.push(cur); return out.map(c => c.trim()).map(c => /^'[=+\-@\t\r]/.test(c) ? c.slice(1) : c); }; // ' posto por csvCell
   const head = split(lines[0]).map(plain), col = (...names) => head.findIndex(h => names.some(n => h.includes(n)));
   const ci = {date:col('data', 'date'), desc:col('descri', 'histor', 'title', 'titulo', 'estabelecimento', 'lancamento', 'memo'), amount:col('valor', 'amount', 'quantia')};
   if (ci.date < 0 || ci.amount < 0) return null;
@@ -481,20 +484,31 @@ function parseStatement(text){
   return rows;
 }
 let stmt = null; // extrato em revisão: {rows:[{date, desc, amount, on, cat, dup}], flip, bank, pay}
+// O extrato precisa ser texto (OFX ou CSV). PDF, planilhas do Excel e fotos não são lidos, nem arquivos grandes demais
+// (o celular pode ficar sem memória). Qualquer erro vira aviso e vai para o Diagnóstico: a importação nunca derruba a tela.
+const STMT_MAX = 5 * 1024 * 1024, LER_ERRO = 'Não foi possível ler este arquivo.';
+const stmtFalhou = (onde, e) => { logErr('importar extrato', onde + ': ' + ((e && (e.stack || e.message)) || e)); tell(LER_ERRO); };
 function importStatement(input){
-  const file = input.files[0]; if (!file) return;
+  const file = input.files && input.files[0];
+  input.value = ''; // deixa escolher o mesmo arquivo de novo
+  if (!file) return; // escolha cancelada
+  if (/\.(pdf|xlsx?|ods|docx?|zip|rar|jpe?g|png|gif|heic|webp)$/i.test(file.name || '') || /^(image|video|audio)\/|pdf|zip|spreadsheet|excel|officedocument/i.test(file.type || ''))
+    return tell(LER_ERRO + '\n\nO extrato precisa estar em OFX ou CSV (no app ou no site do banco, procure "exportar extrato"). PDF, planilhas do Excel e fotos não são lidos.');
+  if (file.size > STMT_MAX) return tell(LER_ERRO + '\n\nEle é grande demais (mais de 5 MB). Exporte um período menor, como um mês.');
   const r = new FileReader();
+  r.onerror = () => stmtFalhou('leitura', r.error);
   r.onload = () => {
-    input.value = '';
-    let text;
-    try { text = new TextDecoder('utf-8', {fatal:true}).decode(r.result); } catch(e){ text = new TextDecoder('windows-1252').decode(r.result); } // extratos antigos não usam UTF-8
-    const rows = parseStatement(text);
-    if (!rows) return tell('Não reconheci o formato deste arquivo. Use o extrato em OFX, ou um CSV com colunas de data e valor.');
-    if (!rows.length) return tell('Não encontrei lançamentos neste arquivo.');
-    stmt = {rows:rows.map(x => ({...x, on:true, cat:guessCat(x.desc)})), flip:false, bank:'', pay:''};
-    openStatement();
+    try {
+      let text;
+      try { text = new TextDecoder('utf-8', {fatal:true}).decode(r.result); } catch(e){ text = new TextDecoder('windows-1252').decode(r.result); } // extratos antigos não usam UTF-8
+      const rows = parseStatement(text);
+      if (!rows) return tell('Não reconheci o formato deste arquivo. Use o extrato em OFX, ou um CSV com colunas de data e valor.');
+      if (!rows.length) return tell('Não encontrei lançamentos neste arquivo.');
+      stmt = {rows:rows.map(x => ({...x, on:true, cat:guessCat(x.desc)})), flip:false, bank:'', pay:''};
+      openStatement();
+    } catch(e){ stmtFalhou('arquivo ' + (file.type || file.name.split('.').pop()) + ' de ' + Math.round(file.size / 1024) + ' KB', e); }
   };
-  r.readAsArrayBuffer(file);
+  try { r.readAsArrayBuffer(file); } catch(e){ stmtFalhou('leitura', e); }
 }
 const stmtIsExpense = x => (stmt.flip ? -x.amount : x.amount) < 0;
 // Já existe um lançamento igual (mesma descrição, valor e mês)? Vem desmarcado para não duplicar.

@@ -1,4 +1,4 @@
-// Minhas Finanças — Dados, aparência, utilidades, regras de cálculo, cotações, taxas, orçamento, planejamento e contas.
+// Cofrim — Dados, aparência, utilidades, regras de cálculo, cotações, taxas, orçamento, planejamento e contas.
 // Carregado pelo index.html, nesta ordem: dados.js, telas.js, assistente.js, formularios.js, config.js, inicio.js.
 // ---------- Dados ----------
 // window.TESTE: página de testes automáticos (ver testes.js); usa outra chave para não tocar nos dados de verdade.
@@ -6,6 +6,18 @@ const KEY = window.TESTE ? 'financas-teste' : 'financas-v1';
 // Versão do formato dos dados. Sobe quando um campo muda de significado; um backup ou uma conta com versão
 // maior que esta foi gravado por um app mais novo e é recusado, para não estragar o que este app não entende.
 const DB_VER = 2;
+// Modo demonstração (ver demoLigar em config.js): dados fictícios só na memória. demoOn nunca é gravado, então o app
+// sempre abre com os dados reais. Com ele ligado nada é gravado neste aparelho nem enviado à conta Google; como rede de
+// segurança, o localStorage não aceita gravações.
+let demoOn = false;
+const DEMO_MSG = 'Disponível ao entrar com sua conta Google.';
+const demoBloqueia = () => { if (!demoOn) return false; tell(DEMO_MSG); return true; };
+{
+  let ls = null; try { ls = localStorage; } catch(e){}
+  const grava = Storage.prototype.setItem, apaga = Storage.prototype.removeItem;
+  Storage.prototype.setItem = function(k, v){ if (demoOn && this === ls) return; return grava.call(this, k, v); };
+  Storage.prototype.removeItem = function(k){ if (demoOn && this === ls) return; return apaga.call(this, k); };
+}
 // Registro de erros (tela Diagnóstico): os últimos 60, só neste aparelho.
 const ERR_KEY = 'financas-erros';
 function logErr(onde, e){
@@ -17,7 +29,7 @@ function logErr(onde, e){
 }
 addEventListener('error', e => logErr('erro na tela', (e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0)));
 addEventListener('unhandledrejection', e => logErr('promessa', e.reason));
-const APP_VERSION = '1.66'; // manter igual ao versionName do build.gradle
+const APP_VERSION = '1.70'; // manter igual ao versionName do build.gradle
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 // Ícones do app: desenhos em dois tons (traço + preenchimento translúcido nas partes com class="d"),
 // todos numa grade de 24×24. I('nome', tamanho) devolve o <svg>; a cor vem do texto ao redor (currentColor).
@@ -54,6 +66,7 @@ const ICONS = {
   income:'<circle class="d" cx="12" cy="12" r="9"/><path d="M14.6 9.3c-.4-.9-1.4-1.5-2.6-1.5-1.5 0-2.6.8-2.6 2 0 2.9 5.3 1.5 5.3 4.4 0 1.2-1.1 2-2.7 2-1.3 0-2.3-.6-2.7-1.6M12 6v1.8M12 16.2V18"/>',
   gear:'<path class="d" d="M12 2.5l2 2.6 3.2-.5.9 3.1 3 1.3-1.3 3 1.3 3-3 1.3-.9 3.1-3.2-.5-2 2.6-2-2.6-3.2.5-.9-3.1-3-1.3 1.3-3-1.3-3 3-1.3.9-3.1 3.2.5z"/><circle cx="12" cy="12" r="3"/>',
   search:'<circle class="d" cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+  clock:'<circle class="d" cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
   calendar:'<rect class="d" x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16M8 3v4M16 3v4"/>',
   alert:'<path class="d" d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/>',
   target:'<circle class="d" cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12h.01"/>',
@@ -152,10 +165,16 @@ const CAT_INV = {
   acoes:['chart','Ações','#059669'], fiis:['building','Fundos imobiliários','#f59e0b'], moeda:['exchange','Moedas (dólar, euro…)','#0d9488'], cripto:['coin','Cripto','#eab308'],
   previdencia:['umbrella','Previdência','#8b5cf6'], outros:['diamond','Outros','#64748b']
 };
+// Tipos de parcelamento além da compra parcelada (campo tipo em db.installments; ver Financiamentos mais abaixo).
+const PARC_TIPOS = {financiamento:'Financiamento', emprestimo:'Empréstimo'};
 const PAY = {credito:'Crédito', debito:'Débito', pix:'Pix', dinheiro:'Dinheiro', boleto:'Boleto', va:'Vale-alimentação', vr:'Vale-refeição', vt:'Vale-transporte', outro:'Outro'};
 const BANKS = ['Nubank','Itaú','Bradesco','Banco do Brasil','Caixa','Santander','Inter','C6 Bank','PicPay','Mercado Pago',
   'Alelo','Pluxee (Sodexo)','Ticket','VR','Flash','Caju','iFood Benefícios','Swile','Ben Visa Vale']; // os últimos são cartões de vale-alimentação/refeição
 // Sugestões do campo "Banco / conta": os que você já usou primeiro, depois os mais comuns.
+// Corretora dos investimentos (texto livre, até 40 letras): as já usadas viram sugestões, e um nome que só muda nas
+// maiúsculas ("Xp" com "XP" já cadastrada) fica com a grafia que já existe, para não duplicar.
+const brokerSuggestions = () => [...new Map(db.investments.map(v => String(v.broker || '').trim()).filter(Boolean).map(b => [b.toLowerCase(), b])).values()];
+const normBroker = s => { const t = String(s ?? '').trim().slice(0, 40); return brokerSuggestions().find(b => b.toLowerCase() === t.toLowerCase()) || t; };
 const bankSuggestions = () => [...new Set([...db.accounts.map(a => a.name), ...[...db.expenses, ...db.installments].map(x => x.bank).filter(Boolean), ...BANKS])];
 // Trecho " · Nubank · Crédito" mostrado nas listas.
 const whereLabel = x => [x.bank && esc(x.bank), PAY[x.pay]].filter(Boolean).map(s => ' · ' + s).join('');
@@ -168,15 +187,53 @@ const INDEX = {cdi:'CDI', selic:'Selic', ipca:'IPCA +', pre:'Prefixado'};
 // junta os aparelhos registro por registro usando u, e db.tomb guarda o que foi excluído (id → momento).
 const COLS = ['incomes', 'expenses', 'installments', 'investments', 'goals', 'accounts', 'transfers'];
 // Completa campos que versões antigas do app (ou um backup antigo) não tinham.
+// Categoria personalizada com valores seguros (usada pelo fixDb e pelo formulário catEdit). Só corrige o que veio:
+// sem ícone ou cor, a categoria de fábrica continua com os dela.
+function catLimpa(c){
+  if (c.icon != null && !Object.hasOwn(ICONS, c.icon)) c.icon = 'tag';
+  if (c.color && !/^#[0-9a-f]{6}$/i.test(c.color)) c.color = '#64748b';
+  if (c.name != null) c.name = String(c.name).slice(0, 40);
+  return c;
+}
 function fixDb(d){
   for (const c of COLS) if (!Array.isArray(d[c])) d[c] = [];
   for (const k of ['tomb', 'budgets', 'cardClose', 'cardDue', 'cardAcc', 'cardLimit', 'yieldLog', 'netLog', 'catMemo', 'cats', 'membros']) if (!d[k] || typeof d[k] !== 'object') d[k] = {};
-  for (const t of ['gasto', 'ganho']) if (!d.cats[t]) d.cats[t] = {};
+  for (const t of ['gasto', 'ganho']) if (!d.cats[t] || typeof d.cats[t] !== 'object') d.cats[t] = {};
+  // Os dados chegam também da planilha da conta compartilhada e de backups importados, que qualquer um pode editar.
+  // Ids e chaves de categoria entram em onclick="...('id')" nas telas: ficam só com letras, números, _ e -.
+  // Categorias: ícone conhecido, cor #rrggbb e nome de até 40 letras (sem tirar caracteres: "Bares & Restaurantes").
+  const limpaId = v => typeof v === 'string' && /[^\w-]/.test(v) ? v.replace(/[^\w-]/g, '') : v;
+  for (const c of COLS) d[c] = d[c].filter(r => r && typeof r === 'object');
+  for (const c of COLS) for (const r of d[c]){ r.id = limpaId(r.id); if (r.pid) r.pid = limpaId(r.pid); if (r.cat) r.cat = limpaId(r.cat); }
+  for (const t of ['gasto', 'ganho']){
+    const cs = d.cats[t];
+    for (const k of Object.keys(cs)){
+      const c = cs[k] && typeof cs[k] === 'object' ? catLimpa(cs[k]) : {}, nk = limpaId(k);
+      if (nk !== k) delete cs[k];
+      if (nk) cs[nk] = c;
+    }
+  }
   if (typeof d.archUntil !== 'string') d.archUntil = '';
   // Lixeira: o que foi excluído fica 30 dias, só neste aparelho. [{col, rec, at}]
   d.trash = (Array.isArray(d.trash) ? d.trash : []).filter(t => t.at > Date.now() - 30*864e5);
   d.rates = Object.assign({cdi:14.9, selic:15, ipca:4.5, auto:'1'}, d.rates);
   for (const v of d.investments) if (v.ticker && !v.lots) v.lots = [{qty:v.qty, paid:v.paid, date:v.date || ''}];
+  for (const v of d.investments) if (v.broker != null) v.broker = String(v.broker).slice(0, 40); // corretora: texto, até 40 letras
+  // Parcelas: tipo (financiamento ou empréstimo; sem ele, compra parcelada), credor e conta de débito (texto), dia do
+  // vencimento (1 a 31), taxa de juros ao mês (até 20%), seg = valor das parcelas a partir de cada uma (depois de um
+  // abatimento) e ab = abatimentos [{d:'AAAA-MM-DD', v, modo}]. Vêm também da conta compartilhada e de backups.
+  for (const p of d.installments){
+    if (!PARC_TIPOS[p.tipo]) delete p.tipo;
+    for (const k of ['credor', 'conta']) if (p[k] != null) p[k] = String(p[k]).slice(0, 60);
+    const due = Number(p.due);
+    if (Number.isInteger(due) && due >= 1 && due <= 31) p.due = due; else delete p.due;
+    const taxa = Number(p.taxa);
+    if (taxa > 0 && taxa <= 20) p.taxa = taxa; else delete p.taxa;
+    const seg = (Array.isArray(p.seg) ? p.seg : []).filter(s => s && Number.isInteger(s.de) && s.de >= 0 && Number(s.v) > 0).map(s => ({de:s.de, v:Number(s.v)})).sort((a, b) => a.de - b.de);
+    if (seg.length && seg[0].de === 0) p.seg = seg; else delete p.seg;
+    const ab = (Array.isArray(p.ab) ? p.ab : []).filter(a => a && /^\d{4}-\d{2}-\d{2}$/.test(a.d) && Number(a.v) > 0).map(a => ({d:a.d, v:Number(a.v), modo:a.modo === 'parcela' ? 'parcela' : 'prazo'}));
+    if (ab.length) p.ab = ab; else delete p.ab;
+  }
   return d;
 }
 // Onde os dados ficam:
@@ -199,6 +256,7 @@ function readDb(){
 }
 // Grava o texto dos dados; devolve true se ficou guardado em algum lugar.
 function writeDb(json){
+  if (demoOn) return true; // demonstração: nada vai para o arquivo do app nem para o IndexedDB
   const st = fileStore();
   if (st && st.dadosSalvar(json)){
     if (fileChecked) return true;
@@ -256,6 +314,8 @@ function later(k, fn, ms = 400){
 function flushLater(){ for (const k of Object.keys(laterF)){ clearTimeout(laterT[k]); const fn = laterF[k]; delete laterF[k]; fn(); } }
 document.addEventListener('visibilitychange', () => { if (document.hidden) flushLater(); }); // saindo do app: grava o que estava esperando
 db = readDb();
+// Havia dados guardados neste aparelho antes desta abertura: é atualização, não instalação nova (ver lembMigrar).
+const dadosNoAparelho = Object.keys(db).length > 0;
 fixDb(db);
 // Categorias personalizadas: db.cats = {gasto:{chave:{name, icon, hidden}}, ganho:{...}} renomeia ou esconde as
 // categorias de fábrica e acrescenta novas. applyCats() refaz CAT_GASTO/CAT_GANHO a partir das de fábrica + db.cats;
@@ -278,7 +338,9 @@ function applyCats(){
 applyCats();
 // touch = false para gravações que não são alteração do usuário (abrir o app, atualizar taxas e cotações).
 const save = (touch = true) => {
+  if (demoOn){ dirty(); return; } // demonstração: só na memória
   dirty();
+  resumoAutoLiga();
   db.yieldLog[curYM] = yieldOf(curYM);                    // histórico do rendimento estimado, mês a mês
   db.netLog[curYM] = sum(db.investments, v => v.value);   // histórico do total investido, mês a mês
   if (touch){ db.mod = Date.now(); scheduleSync(); autoFile(); }
@@ -287,6 +349,18 @@ const save = (touch = true) => {
   if (saveFailed !== !ok){ saveFailed = !ok; saveWarn(); }
   later('avisos', () => shown(() => { scheduleReminders(); updateWidget(); updateAlerts(); }));
 };
+// Resumo ainda no padrão enxuto: o primeiro vale liga o bloco Vales e o primeiro parcelamento liga o bloco Parcelas,
+// uma vez cada, enquanto a pessoa não tiver mexido nesses blocos em Personalizar.
+function resumoAutoLiga(){
+  const p = db.prefs;
+  if (!Array.isArray(p.resumoAuto) || !p.resumoAuto.length) return;
+  for (const [k, tem] of [['vales', temVales], ['parcelas', () => db.installments.length > 0]]){
+    if (!p.resumoAuto.includes(k) || !tem()) continue;
+    const b = p.resumo.find(x => x.k === k);
+    if (b) b.on = true;
+    p.resumoAuto = p.resumoAuto.filter(x => x !== k);
+  }
+}
 // A gravação pode falhar (armazenamento cheio). O aviso fica na tela até uma gravação dar certo.
 let saveFailed = false;
 function saveWarn(){
@@ -353,7 +427,7 @@ for (const [k, [nome, escuro, c1, c2, h1, h2, h, s]] of Object.entries(TEMAS_NOV
     escuro ? hslHex(h, s * .38, 19) : hslHex(h, s * .5, 90), escuro ? hslHex(h, s * .22, 68) : hslHex(h, s * .2, 37), escuro ? hslHex(h, s * .3, 96) : hslHex(h, s * .5, 12), h, s];
 // Cores do ícone do app: as do tema e as dos temas especiais (cada uma tem um ícone pronto no APK).
 const ICONES = {...COLORS, ...Object.fromEntries(Object.entries(SKINS).map(([k, s]) => [k, [s[0], s[4], s[2]]]))};
-const APP_NOMES = ['Minhas Finanças', 'Finanças', 'Carteira', 'Meu Dinheiro']; // nomes que o app pode ter na tela inicial (lista fixa no APK)
+const APP_NOMES = ['Cofrim', 'Finanças', 'Carteira', 'Meu Dinheiro']; // nomes que o app pode ter na tela inicial (lista fixa no APK)
 function hslHex(h, s, l){
   s /= 100; l /= 100;
   const a = s * Math.min(l, 1 - l), f = n => { const k = (n + h / 30) % 12; return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))).toString(16).padStart(2, '0'); };
@@ -399,6 +473,15 @@ function ensurePrefs(){
     const r = (list || []).filter(b => defs[b.k]), novo = Object.entries(defs).filter(([k]) => !r.some(b => b.k === k)), item = ([k, d]) => ({k, on:!!d[1]});
     return novo.filter(([, d]) => d[2]).map(item).concat(r, novo.filter(([, d]) => !d[2]).map(item));
   };
+  // Resumo de quem abre o app pela primeira vez (sem lista salva): só os blocos essenciais, nesta ordem; os outros ficam
+  // em Personalizar, desligados (os do modo divertido seguem o modo divertido, como antes). resumoEnxuto mostra o link
+  // "Ver mais informações no resumo" até a primeira personalização; resumoAuto = blocos que ainda ligam sozinhos com o
+  // primeiro vale ou parcelamento (ver resumoAutoLiga). Quem já tem a lista salva não muda nada.
+  if (!Array.isArray(p.resumo)){
+    const ess = ['atalhos', 'destaque', 'alertas', 'rosca', 'contas'];
+    p.resumo = ['mascote', ...ess, ...Object.keys(RESUMO).filter(k => k !== 'mascote' && !ess.includes(k))].map(k => ({k, on:ess.includes(k) || FUN_BLOCKS.includes(k)}));
+    p.resumoEnxuto = true; p.resumoAuto = ['vales', 'parcelas'];
+  }
   p.resumo = fill(p.resumo, RESUMO);
   // grpOrder = ordem dos grupos da lista de gastos (assinaturas, fixos, parceladas, ocasionais).
   p.grpOrder = [...(p.grpOrder || []).filter(k => GRUPOS[k]), ...Object.keys(GRUPOS).filter(k => !(p.grpOrder || []).includes(k))];
@@ -453,7 +536,7 @@ applyTheme();
 let now = new Date();
 let curYM = ymOf(now.getFullYear(), now.getMonth());
 const todayLabel = () => now.toLocaleDateString(LOCALES[lang()], {weekday:'long', day:'numeric', month:'long', year:'numeric'});
-const state = {tab:visTabs()[0], year:now.getFullYear(), month:curYM, sel:'', q:'', fcat:'', fbank:'', fpay:'', ftag:'', limit:60, gsub:'mes', isub:'todos'}; // gsub: parte da aba Gastos (do mês / parceladas / vales); isub: parte da aba Ganhos (todos / vales)
+const state = {tab:visTabs()[0], year:now.getFullYear(), month:curYM, sel:'', q:'', fcat:'', fbank:'', fpay:'', ftag:'', limit:60, gsub:'mes', isub:'todos', parcDet:''}; // gsub: parte da aba Gastos (do mês / parceladas / vales); isub: parte da aba Ganhos (todos / vales)
 
 // ---------- Utilidades ----------
 function ymOf(y, m0){ return y + '-' + String(m0+1).padStart(2,'0'); }
@@ -542,9 +625,12 @@ function expensesRaw(ym){
   // Gasto dividido: value passa a ser só a sua parte; full guarda o total que saiu da sua conta;
   // got diz se a parte da outra pessoa já foi recebida (nos gastos fixos, mês a mês, em x.sm).
   const list = [...db.expenses, ...archRecs('expenses', ym)].filter(x => activeIn(x, ym)).map(x => ({...x, kind:'expense', full:x.value, value:x.value - (x.share || 0), got:x.fixed ? (x.sm || []).includes(ym) : !!x.settled}));
+  // Parcelas: cada uma no mês dela, paga ou não ("Pagar" só muda o status). Financiamento e empréstimo saem da conta de
+  // débito. Os abatimentos entram como gasto no mês em que foram feitos.
   for (const p of [...db.installments, ...archRecs('installments', ym)]){
-    const i = monthDiff(ym, p.start);
-    if (i >= 0 && i < p.n) list.push({id:p.id, kind:'installment', desc:p.desc, cat:p.cat, bank:p.bank, pay:p.pay, by:p.by, value:p.total/p.n, num:i+1, n:p.n, paid:i < p.paid});
+    const i = monthDiff(ym, p.start), onde = isFin(p) ? {bank:p.conta || '', pay:'debito'} : {bank:p.bank, pay:p.pay};
+    if (i >= 0 && i < p.n) list.push({id:p.id, kind:'installment', desc:p.desc, cat:p.cat, ...onde, by:p.by, value:parcVal(p, i), num:i+1, n:p.n, paid:i < p.paid});
+    for (const a of p.ab || []) if (a.d.slice(0, 7) === ym) list.push({id:p.id, kind:'installment', abat:true, desc:p.desc, cat:p.cat, ...onde, by:p.by, value:a.v, day:+a.d.slice(8)});
   }
   return list;
 }
@@ -651,13 +737,13 @@ function checkPriceAlerts(){
     if (lado && v.alertHit !== lado) hits.push(`${v.ticker} ${lado === 'up' ? 'passou de' : 'caiu abaixo de'} ${fmtQ(lado === 'up' ? v.alertUp : v.alertDown)} (agora ${fmtQ(v.quote)})`);
     v.alertHit = lado;
   }
-  if (hits.length){ toast(hits.join(' · ')); if (window.Android && Android.notificar) Android.notificar('Alerta de preço', hits.join('\n')); }
+  if (hits.length){ toast(hits.join(' · ')); if (window.Android && Android.notificar && podeNotificar('preco')) Android.notificar('Alerta de preço', hits.join('\n')); }
   return hits;
 }
 // Entrega ao lado nativo os alertas de preço, para ele conferir de hora em hora mesmo com o app fechado (só no APK).
 let alertsSent = '';
 function updateAlerts(){
-  if (!(window.Android && Android.alertas)) return;
+  if (!(window.Android && Android.alertas) || demoOn) return;
   const json = JSON.stringify(db.investments.filter(v => v.ticker && (v.alertUp || v.alertDown)).map(v => ({code:v.ticker, src:QUOTE_SRC[v.cat] || 'b3', up:+v.alertUp || 0, down:+v.alertDown || 0})));
   if (json !== alertsSent){ alertsSent = json; Android.alertas(json); }
 }
@@ -767,10 +853,10 @@ function unusual(){
     .filter(r => r.avg > 0 && r.cur > r.avg * 1.3 && r.cur - r.avg >= 50).sort((a, b) => b.cur - a.cur);
 }
 const oddHtml = odd => odd.length ? `<div class="card"><b><span class="warn">${I('alert')}</span> Gastos acima do seu padrão</b>${odd.map(r => `
-    <div class="hint">${(CAT_GASTO[r.cat] || CAT_GASTO.outros)[1]}: ${fmt(r.cur)} neste mês, ${Math.round((r.cur / r.avg - 1) * 100)}% acima da sua média de 6 meses (${fmt(r.avg)}).</div>`).join('')}</div>` : '';
+    <div class="hint">${esc((CAT_GASTO[r.cat] || CAT_GASTO.outros)[1])}: ${fmt(r.cur)} neste mês, ${Math.round((r.cur / r.avg - 1) * 100)}% acima da sua média de 6 meses (${fmt(r.avg)}).</div>`).join('')}</div>` : '';
 // Limite do cartão (db.cardLimit): quanto já está comprometido = parcelas que ainda faltam + compras no crédito deste mês.
 function cardUsed(bank){
-  return sum(db.installments.filter(p => p.bank === bank && p.pay === 'credito'), p => p.total / p.n * Math.max(0, p.n - p.paid))
+  return sum(db.installments.filter(p => !isFin(p) && p.bank === bank && p.pay === 'credito'), parcFalta)
     + sum(expensesOf(curYM).filter(e => e.kind === 'expense' && e.bank === bank && e.pay === 'credito'), e => e.full || e.value);
 }
 
@@ -782,16 +868,77 @@ function reserve(){
   const have = sum(db.accounts, a => Math.max(0, accountBalance(a))) + sum(db.investments, v => v.value || 0);
   return {have, avg, months:avg ? have / avg : null};
 }
+// ---------- Financiamentos, empréstimos e compras parceladas ----------
+// Tudo em db.installments; financiamento e empréstimo têm tipo. As parcelas não são gravadas uma a uma: saem de total,
+// n, paid, start, seg e due. j = índice da parcela (0 = a primeira).
+const isFin = p => !!PARC_TIPOS[p.tipo];
+// Etiqueta de uma parcela na lista do mês: "parcela 3/10" ou "abatimento".
+const parcTag = x => x.abat ? 'abatimento' : `parcela ${x.num}/${x.n}`;
+// Valor da parcela j: total/n; depois de um abatimento, seg diz o valor a partir de cada parcela (as já passadas não mudam).
+function parcVal(p, j){
+  let v = p.total / p.n;
+  for (const s of p.seg || []) if (s.de <= j) v = s.v;
+  return v;
+}
+const parcSoma = (p, de, ate) => { let s = 0; for (let j = Math.max(0, de); j < ate; j++) s += parcVal(p, j); return s; };
+const parcFalta = p => parcSoma(p, p.paid, p.n);          // soma das parcelas que faltam (sem juros)
+const parcPago = p => parcSoma(p, 0, Math.min(p.paid, p.n));
+const abatido = p => sum(p.ab || [], a => a.v);
+// Saldo devedor hoje: sem taxa, a soma das parcelas que faltam; com taxa i ao mês, o valor presente delas (tabela Price:
+// com parcelas iguais, P × (1 − (1+i)^−n) ÷ i).
+function saldoDevedor(p){
+  const i = (+p.taxa || 0) / 100;
+  if (!i) return parcFalta(p);
+  let s = 0;
+  for (let j = p.paid, k = 1; j < p.n; j++, k++) s += parcVal(p, j) / Math.pow(1 + i, k);
+  return s;
+}
+// Vencimento da parcela j: {ym, dia}. Dia cadastrado; senão, numa compra no crédito, o vencimento da fatura do banco;
+// senão só o mês (dia 0). Em meses mais curtos, o último dia do mês.
+function parcVenc(p, j){
+  const ym = addMonths(p.start, j), d = +p.due || (!isFin(p) && p.pay === 'credito' && +db.cardDue[p.bank]) || 0;
+  return {ym, dia:d ? Math.min(d, daysIn(ym)) : 0};
+}
+const vencData = v => v.dia ? v.ym + '-' + String(v.dia).padStart(2, '0') : '';
+const vencTxt = v => v.dia ? fmtDate(vencData(v)) : MESES[+v.ym.slice(5) - 1].slice(0, 3) + '/' + v.ym.slice(0, 4);
+// Dias até o vencimento (negativo = vencida). Só com o mês, conta até o último dia dele.
+function diasAte(v){
+  const [y, m] = v.ym.split('-').map(Number), hoje = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((new Date(y, m - 1, v.dia || daysIn(v.ym)) - hoje) / 864e5);
+}
+// Situação de cada parcela: paga, vencida (data passou e não foi paga) ou a vencer.
+const parcLinhas = p => [...Array(p.n)].map((_, j) => { const v = parcVenc(p, j), dias = diasAte(v); return {j, v, dias, val:parcVal(p, j), st:j < p.paid ? 'paga' : dias < 0 ? 'vencida' : 'avencer'}; });
+// Abater A (amortização antecipada, só financiamento e empréstimo). modo 'prazo': a parcela fica igual e o número de
+// parcelas que faltam diminui (arredondado para cima: todas as parcelas continuam iguais); 'parcela': o prazo fica igual e
+// a parcela diminui. Com taxa, pela tabela Price; sem taxa, na proporção do saldo. Devolve {saldo, r, parc} depois do abatimento.
+function abaterCalc(p, A, modo){
+  const i = (+p.taxa || 0) / 100, r = p.n - p.paid, P = parcVal(p, p.paid), saldo = Math.max(0, saldoDevedor(p) - A);
+  if (modo === 'prazo'){
+    const nr = i ? -Math.log(1 - saldo * i / P) / Math.log(1 + i) : saldo / P;
+    return {saldo, r:Math.min(r, Math.max(1, Math.ceil(nr - 1e-9))), parc:P};
+  }
+  return {saldo, r, parc:round2(i ? saldo * i / (1 - Math.pow(1 + i, -r)) : saldo / r)};
+}
+// Grava o abatimento: as parcelas pagas guardam o valor que tinham; as restantes passam ao valor novo.
+function abater(p, A, modo, dia){
+  const c = abaterCalc(p, A, modo), seg = (p.seg || [{de:0, v:p.total / p.n}]).filter(s => s.de < p.paid);
+  seg.push({de:p.paid, v:c.parc});
+  p.seg = seg; p.n = p.paid + c.r;
+  p.total = round2(parcSoma(p, 0, p.n));
+  p.ab = [...(p.ab || []), {d:dia, v:round2(A), modo}];
+  touch(p);
+  return c;
+}
 const subsList = () => db.expenses.filter(x => isMonthly(x) && activeIn(x, curYM)).sort((a, b) => b.value - a.value);
 function debts(){
-  const list = db.installments.filter(p => p.paid < p.n).map(p => ({p, left:p.total / p.n * (p.n - p.paid), end:addMonths(p.start, p.n - 1)})).sort((a, b) => a.end.localeCompare(b.end));
+  const list = db.installments.filter(p => p.paid < p.n).map(p => ({p, left:parcFalta(p), end:addMonths(p.start, p.n - 1)})).sort((a, b) => a.end.localeCompare(b.end));
   return {list, total:sum(list, d => d.left), end:list.length ? list[list.length - 1].end : ''};
 }
 // Adiantar k parcelas: quanto custa agora, quando a compra termina e quantas parcelas ainda ficam.
 function payoffCalc(p, k){
   const rem = p.n - p.paid, oldEnd = addMonths(p.start, p.n - 1);
   k = Math.max(0, Math.min(parseInt(k) || 0, rem));
-  return {cost:round2(p.total / p.n * k), oldEnd, newEnd:addMonths(oldEnd, -k), left:rem - k};
+  return {cost:round2(parcSoma(p, p.n - k, p.n)), oldEnd, newEnd:addMonths(oldEnd, -k), left:rem - k};
 }
 function planHtml(){
   const r = reserve(), meses = r.months == null ? '' : r.months.toLocaleString('pt-BR', {maximumFractionDigits:1});
@@ -827,7 +974,7 @@ function openDebts(){
     ${d.list.length ? `<div class="hero" style="margin-top:4px"><small>Saldo devedor</small><div class="big">${fmt(d.total)}</div>
         <div class="row"><div><small>Parcelas deste mês</small><b>${fmt(mes)}</b></div><div><small>Tudo termina em</small><b style="text-transform:capitalize">${monthName(d.end)}</b></div></div></div>
       ${d.list.map(({p, left, end}) => { const c = CAT_GASTO[p.cat] || CAT_GASTO.outros; return `<div class="item" style="cursor:default">${ico(c)}<div class="mid"><b>${esc(p.desc)}</b>
-        <small>${p.n - p.paid} de ${p.n} parcelas de ${fmt(p.total / p.n)} · até ${monthName(end)}</small>
+        <small>${p.n - p.paid} de ${p.n} parcelas de ${fmt(parcVal(p, p.paid))} · até ${monthName(end)}</small>
         <div class="bar" style="margin:6px 0 0;height:6px"><i style="width:${p.paid / p.n * 100}%"></i></div></div><div class="val out">${fmt(left)}</div></div>`; }).join('')}`
     : empty('checked', 'Nenhuma compra parcelada em aberto.')}
     <div class="btns foot">${d.list.length ? '<button class="btn" onclick="openPayoff()">Simular quitação</button>' : ''}<button class="btn primary" onclick="closeForm()">Fechar</button></div>`);
@@ -844,14 +991,14 @@ function openPayoff(id){
   showSheet(`<h3>Simular quitação</h3>
     <label>Compra</label>
     <button type="button" class="pickBtn" onclick="pickList('Compra', payoffOpts(), payoff.id, openPayoff)"><span>${esc(p.desc)}</span>${I('chev')}</button>
-    <label for="payK">Parcelas a adiantar (faltam ${p.n - p.paid}, de ${fmt(p.total / p.n)} cada)</label>
+    <label for="payK">Parcelas a adiantar (faltam ${p.n - p.paid}, de ${fmt(parcVal(p, p.paid))} cada)</label>
     <input id="payK" type="text" inputmode="numeric" autocomplete="off" value="${payoff.k}" oninput="payoff.k=parseInt(this.value)||0;drawPayoff()">
     <div id="payOut"></div>
     <div class="btns foot"><button class="btn primary" onclick="closeForm()">Fechar</button></div>`);
   drawPayoff();
 }
 function drawPayoff(){
-  const p = db.installments.find(x => x.id === payoff.id), r = payoffCalc(p, payoff.k), parc = p.total / p.n, k = p.n - p.paid - r.left;
+  const p = db.installments.find(x => x.id === payoff.id), r = payoffCalc(p, payoff.k), parc = parcVal(p, p.n - 1), k = p.n - p.paid - r.left;
   document.getElementById('payOut').innerHTML = k < 1 ? '<div class="hint">Digite quantas parcelas você quer adiantar.</div>' : `
     <div class="card" style="background:var(--bg);box-shadow:none;margin-top:12px">
       <div class="catrow" style="margin-top:0"><div class="top"><span>Você paga agora (${k}x)</span><b class="out">${fmt(r.cost)}</b></div></div>
@@ -895,10 +1042,42 @@ const creditBanks = () => [...new Set([...db.expenses, ...db.installments].filte
 // Lembretes no celular (só no APK): monta a lista de avisos dos próximos meses e entrega ao lado nativo,
 // que agenda as notificações. db.prefs.remind = quantos dias antes avisar (0 = desligado).
 const hashId = s => { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); };
+// ---------- Lembretes: interruptor deste aparelho ----------
+// "Lembretes ativos neste aparelho" fica só no aparelho (no APK, nas preferências nativas; no navegador, no localStorage):
+// nunca nos dados da conta, no backup, na sincronização ou na conta compartilhada. Uma notificação só é agendada ou
+// mostrada com ele ligado E com aquele tipo de aviso ligado nas preferências da conta (db.prefs). O lado nativo confere
+// o mesmo interruptor antes de mostrar qualquer notificação (ReminderReceiver.ligado).
+const LEMB_KEY = 'financas-lembretes-aparelho', LEMB_AVISO = 'financas-lembretes-aviso';
+// '1' ligado, '0' desligado, '' ainda não decidido (só até lembMigrar rodar).
+function aparelhoLemb(){
+  if (window.Android && Android.lembretesAparelho) return Android.lembretesAparelho();
+  try { return localStorage.getItem(LEMB_KEY) || ''; } catch(e){ return ''; }
+}
+function setAparelhoLemb(on){
+  if (window.Android && Android.setLembretesAparelho) Android.setLembretesAparelho(!!on);
+  else try { localStorage.setItem(LEMB_KEY, on ? '1' : '0'); } catch(e){}
+}
+// Android 13 ou mais novo: as notificações precisam da permissão (retirada nas configurações, o interruptor aparece desligado).
+const notifLiberada = () => !(window.Android && Android.notificacaoLiberada) || Android.notificacaoLiberada();
+const lembLigados = () => aparelhoLemb() === '1' && notifLiberada();
+// Preferências da conta que geram notificação: contas a vencer, parcelas de financiamentos e empréstimos, alertas de preço
+// dos investimentos e avisos da conta compartilhada.
+const lembTipos = p => ({contas:!!p.notify, fin:!!(p.notifyFin ?? p.notify), preco:db.investments.some(v => v.ticker && (v.alertUp || v.alertDown)),
+  compart:!!sync.shared && p.avisoComp !== false});
+// Decide se um tipo de aviso pode virar notificação: com o interruptor do aparelho desligado, sempre não.
+const podeNotificar = tipo => !demoOn && lembLigados() && !!lembTipos(db.prefs)[tipo];
+// Primeira abertura desta versão: instalação nova começa desligada (mesmo entrando numa conta com lembretes); quem
+// atualizou o app (havia dados neste aparelho) continua como estava: ligado se já tinha algum lembrete ativo.
+function lembMigrar(antes = dadosNoAparelho){
+  if (aparelhoLemb() !== '') return;
+  setAparelhoLemb(antes && Object.values(lembTipos(db.prefs)).some(Boolean));
+}
 function scheduleReminders(){
+  if (demoOn) return;
   if (!(window.Android && Android.lembretes)) return;
   const p = db.prefs, list = [];
-  if (p.notify) for (const x of db.expenses){
+  if (!lembLigados()) return void Android.lembretes('[]'); // interruptor do aparelho desligado: nada agendado
+  if (podeNotificar('contas')) for (const x of db.expenses){
     if (!x.fixed || !x.due || p.notifyCats[x.cat] === false) continue;
     for (const m of [curYM, addMonths(curYM, 1), addMonths(curYM, 2)]){
       if (!activeIn(x, m) || isPaid(x, m)) continue;
@@ -908,12 +1087,21 @@ function scheduleReminders(){
       list.push({id:hashId(x.id + m + 'b'), at, title:p.fun ? 'Oinc! Conta vence hoje' : 'Conta vence hoje', text:`${x.desc} (${fmt(x.value)}) vence hoje, ${dm}.`});
     }
   }
+  // Financiamentos e empréstimos com dia de vencimento: aviso no dia, por volta das 9h, das próximas parcelas.
+  if (podeNotificar('fin')) for (const q of db.installments){
+    if (!isFin(q) || !q.due) continue;
+    for (let j = q.paid; j < Math.min(q.n, q.paid + 3); j++){
+      const v = parcVenc(q, j), [y, mo] = v.ym.split('-').map(Number);
+      list.push({id:hashId(q.id + j + 'f'), at:new Date(y, mo - 1, v.dia, 9, 0).getTime(), title:p.fun ? 'Oinc! Parcela vence hoje' : 'Parcela vence hoje',
+        text:`${q.desc}: parcela ${j + 1}/${q.n} (${fmt(parcVal(q, j))}) vence hoje, ${fmtDate(vencData(v)).slice(0, 5)}.`});
+    }
+  }
   Android.lembretes(JSON.stringify(list.filter(n => n.at > Date.now()).sort((a,b) => a.at - b.at).slice(0, 60)));
 }
 
 // Widget da tela inicial (só no APK): entrega ao lado nativo os números do mês atual, já formatados.
 function updateWidget(){
-  if (!(window.Android && Android.widget)) return;
+  if (!(window.Android && Android.widget) || demoOn) return;
   const tin = totalIn(curYM), tout = totalOut(curYM), m = monthName(curYM), humor = funMood();
   const frase = {feliz:'Oinc! Mês no azul', ok:'Tudo sob controle', triste:'Segura o cartão…'}[humor];
   const curto = v => fmt(v).replace(/^R\$\s?/, '').replace(/,\d\d$/, ''); // sem "R$" nem centavos: cabe no widget de saldo, que é estreito
@@ -933,7 +1121,7 @@ function widgetGastos(){
   const m = monthName(curYM).split(' ')[0];
   return {listaTitulo:(g ? g[0] : 'Gastos') + ' de ' + m, listaSub:l.length ? `${l.length} ${l.length > 1 ? 'lançamentos' : 'lançamento'} · ${fmt(sum(l, x => x.value))}` : '',
     lista:l.slice(0, 40).map(x => { const c = CAT_GASTO[x.cat] || CAT_GASTO.outros;
-      return {t:x.desc, s:c[1] + (x.kind === 'installment' ? ` · parcela ${x.num}/${x.n}` : x.fixed ? (x.fixed === 'y' ? ' · anual' : isSub(x) ? ' · assinatura' : ' · fixo') : x.day ? ' · dia ' + x.day : ''), v:fmt(x.value), c:'out', k:c[2]}; })};
+      return {t:x.desc, s:c[1] + (x.kind === 'installment' ? ' · ' + parcTag(x) : x.fixed ? (x.fixed === 'y' ? ' · anual' : isSub(x) ? ' · assinatura' : ' · fixo') : x.day ? ' · dia ' + x.day : ''), v:fmt(x.value), c:'out', k:c[2]}; })};
 }
 // Linhas do widget Resumo: as escolhidas em Configurações > Widgets, na ordem; as que não têm dado são puladas. [{t, v, c}]
 function widgetLines(){
