@@ -8,6 +8,7 @@
 // a parte que aparece sempre são os 66 do meio. 'p' (porquinho) e 't' (o do tema) são montados em iconeMiolo.
 const ICON_DESENHOS = {
   b:['Barras', '<rect x="33" y="58" width="13" height="16" rx="2" fill="#fff" opacity=".7"/><rect x="47.5" y="47" width="13" height="27" rx="2" fill="#fff" opacity=".85"/><rect x="62" y="34" width="13" height="40" rx="2" fill="#fff"/>'],
+  r:['Barras', '<rect x="33" y="58" width="13" height="16" rx="2" fill="#fff" opacity=".7"/><rect x="47.5" y="47" width="13" height="27" rx="2" fill="#fff" opacity=".85"/><rect x="62" y="34" width="13" height="40" rx="2" fill="#fff"/>'], // nas doze cores, desde que o 'b' delas virou o C do Cofrim
   p:['Porquinho', ''],
   m:['Moeda', '<circle cx="54" cy="54" r="22" fill="#fff" opacity=".2"/><circle cx="54" cy="54" r="22" fill="none" stroke="#fff" stroke-width="5"/><path d="M61.5 46.500c-1.500-3-4.500-4.500-8-4.500-4.500 0-8 2.500-8 6.300 0 8 16.500 3.700 16.500 11.700 0 3.800-3.500 6-8.500 6-4 0-7.300-1.800-8.700-5M54 37.500v33" stroke="#fff" stroke-width="4.500" fill="none" stroke-linecap="round"/>'],
   c:['Carteira', '<path d="M35 39l27-8.500a4 4 0 0 1 5.200 3.800V39z" fill="#fff" opacity=".6"/><rect x="29" y="38" width="48" height="36" rx="7" fill="#fff" opacity=".9"/><rect x="60" y="49" width="23" height="14" rx="7" fill="#fff"/><rect x="60" y="49" width="23" height="14" rx="7" fill="none" stroke="#000" stroke-opacity=".28" stroke-width="2"/><circle cx="68" cy="56" r="2.800" fill="#000" opacity=".4"/>'],
@@ -59,15 +60,30 @@ function iconeMiolo(cor, desenho){
   }
   return (ICON_DESENHOS[desenho] || ICON_DESENHOS.b)[1];
 }
+// Ícone do Cofrim (desenho 'b' nas doze cores): o C com a moeda. Na cor índigo (a padrão), sobre o roxo da marca, como
+// o icon.svg (desenhado em 1024 x 1024) e o Android (ic_launcher: ic_bg_cofrim + ic_fg_cofrim); nas outras cores, sobre
+// o degradê da cor (ic_launcher_<cor>: ic_bg_<cor> + ic_fg_cofrim). Posto na área de 108 x 108.
+// 'ID' vira um sufixo próprio em cada uso, para os ids dos degradês não se repetirem na página.
+const ICONE_COFRIM = {defs:'<radialGradient id="cfBgID" cx="0" cy="0" r="152.9" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#6b33b4"/><stop offset=".35" stop-color="#4c1e7f"/><stop offset=".5" stop-color="#41176b"/><stop offset=".7" stop-color="#351257"/><stop offset="1" stop-color="#240b3b"/></radialGradient><linearGradient id="cfMoID" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f9e2a7"/><stop offset="1" stop-color="#e0b25a"/></linearGradient><linearGradient id="cfMiID" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f9e2a7"/><stop offset="1" stop-color="#e6bc68"/></linearGradient><filter id="cfSoID" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#12051f" flood-opacity=".55"/></filter><clipPath id="cfCorteID"><path d="M0 0H1024V232L413 519L1024 806V1024H0Z"/></clipPath>', fundo:'<rect width="108" height="108" fill="url(#cfBgID)"/>',
+  miolo:'<g transform="translate(12.960 12.960) scale(0.080156)"><g filter="url(#cfSoID)"><g clip-path="url(#cfCorteID)"><path fill-rule="evenodd" fill="#faf9f4" d="M210 518a300 300 0 1 0 600 0a300 300 0 1 0 -600 0ZM340 518a170 170 0 1 0 340 0a170 170 0 1 0 -340 0Z"/><path fill-rule="evenodd" fill="#ebe9e0" d="M274 518a236 236 0 1 0 472 0a236 236 0 1 0 -472 0ZM340 518a170 170 0 1 0 340 0a170 170 0 1 0 -340 0Z"/></g></g><g filter="url(#cfSoID)"><circle cx="726.5" cy="519" r="104.5" fill="url(#cfMoID)"/></g><circle cx="726.5" cy="519" r="75" fill="url(#cfMiID)" stroke="#c8923e" stroke-width="3.5"/></g>'};
+let iconeCofrimN = 0;
+const iconeCofrim = (cor, desenho) => desenho === 'b' && !!COLORS[cor];
+// Nome do desenho na lista das Configurações (o 'b' das doze cores é o do Cofrim; nos temas, as barras).
+const iconeNomeDesenho = (cor, k) => iconeCofrim(cor, k) ? 'Cofrim' : ICON_DESENHOS[k][0];
 // Ícone pronto para mostrar na tela (fundo + miolo), do jeito que aparece na tela inicial.
 function iconeSvg(cor, desenho, px = 56){
+  if (iconeCofrim(cor, desenho)){
+    const k = 'c' + (++iconeCofrimN), I = ICONE_COFRIM, s = x => x.replaceAll('ID', k), c = COLORS[cor];
+    const fundo = cor === 'indigo' ? s(I.fundo) : `<linearGradient id="cfCor${k}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c[1]}"/><stop offset="1" stop-color="${c[2]}"/></linearGradient>` + s(I.fundo).replace(`url(#cfBg${k})`, `url(#cfCor${k})`);
+    return `<svg viewBox="18 18 72 72" width="${px}" height="${px}" style="border-radius:26%;display:block" aria-hidden="true"><defs>${s(I.defs)}</defs>${fundo}${s(I.miolo)}</svg>`;
+  }
   const c = ICONES[cor] || ICONES.indigo, id = 'ic' + cor + desenho;
   return `<svg viewBox="18 18 72 72" width="${px}" height="${px}" style="border-radius:26%;display:block" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c[1]}"/><stop offset="1" stop-color="${c[2]}"/></linearGradient></defs><rect x="18" y="18" width="72" height="72" fill="url(#${id})"/>${iconeMiolo(cor, desenho)}</svg>`;
 }
 // Desenhos que existem para uma cor de ícone neste aparelho.
 function iconeDesenhos(cor){
   if (SKINS[cor]) return SKIN_ANTIGOS.includes(cor) ? ['b', 'p', 't'] : ['t']; // os temas por categoria só têm o ícone próprio
-  return ['b', 'p', ...(window.Android && Android.criarAtalho ? ICON_NOVOS : [])];
+  return ['b', 'r', 'p', ...(window.Android && Android.criarAtalho ? ICON_NOVOS : [])];
 }
 
 // ---------- Abertura ----------

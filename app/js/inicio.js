@@ -1,7 +1,7 @@
 // Cofrim — O que roda quando o app abre.
 // Carregado pelo index.html, nesta ordem: dados.js, telas.js, assistente.js, formularios.js, config.js, inicio.js.
 // ---------- Início ----------
-document.getElementById('gateLogo').innerHTML = I('chart', 52);
+document.getElementById('gateLogo').innerHTML = iconeSvg('indigo', 'b', 92); // o ícone do Cofrim
 document.getElementById('lockIcon').innerHTML = I('lock', 48);
 document.getElementById('fabChat').innerHTML = I('chat', 26);
 document.getElementById('ptr').innerHTML = I('refresh', 22);

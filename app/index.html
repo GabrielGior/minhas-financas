@@ -70,7 +70,7 @@ try {
   <h1>Cofrim</h1>
   <p>Entre com sua conta Google para começar. Seus dados ficam guardados no seu próprio Google Drive.</p>
   <button onclick="loginGoogle()">Entrar com Google</button>
-  <button class="sec" onclick="demoLigar()">Testar sem conta (modo demonstração)</button>
+  <button class="demo" onclick="demoLigar()" aria-label="Testar sem conta (modo demonstração)">Demonstração</button>
   <small id="gateMsg"></small>
 </div>
 <input type="file" id="file" accept="application/json,.json" hidden onchange="importData(this)">

@@ -68,6 +68,7 @@ function roscaCats(lista, rotulo, vazio){
     <div>${linhas.map(([c, nome, v]) => `<div class="leg duas"><i class="dot" style="background:${esc(c)}"></i><span>${esc(nome)}<small>${fmtCurto(v)}</small></span><b>${Math.round(v / tot * 100)}%</b></div>`).join('')}</div></div>`;
 }
 
+const mesCurto = ym => monthName(ym).split(' ')[0].slice(0, 3) + '.';
 function viewResumo(){
   // rm = mês escolhido no Resumo (state.rmes), sempre dentro do ano escolhido (state.year).
   const y = state.year, rm = resumoMes(), nomeM = monthName(rm).split(' ')[0], months = [...Array(12)].map((_,i) => ymOf(y,i));
@@ -96,11 +97,12 @@ function viewResumo(){
   atalhos: () => `<div class="quick">${[['expenses','receipt','Gasto'],['incomes','income','Ganho'],['investments','trend','Investir']].map(([col, ic, t]) => `<button onclick="openForm('${col}')"><span>${I(ic, 20)}</span>+ ${t}</button>`).join('')}</div>`,
   // Mês e ano lado a lado, no mesmo cartão de destaque: o gasto em cima, os ganhos embaixo. Tocar leva aos gastos do mês.
   // Em cada um: barra de quanto dos ganhos já foi gasto e um selo (mês: comparação com o mês anterior; ano: sobra ou falta).
+  // O selo fala do mês anterior pelo nome curto ("set."): o cartão é estreito e o texto longo saía do cartão.
   destaque: () => { const mi = totalIn(rm), mo = totalOut(rm), ant = totalOut(addMonths(rm, -1)), dif = ant ? Math.round((mo - ant) / ant * 100) : null;
     const uso = (g, t) => `<div class="uso"><i style="width:${g ? Math.min(100, t / g * 100) : 0}%"></i></div><small>${g ? `${hideVals ? '••' : Math.round(t / g * 100)}% dos ganhos (${fmtCurto(g)})` : 'sem ganhos lançados'}</small>`;
     return `<div class="hero2">
     <div class="hero" onclick="goMonth('${rm}')"><small>Gastos de ${nomeM}</small><div class="big">${fmtCurto(mo)}</div>${uso(mi, mo)}
-      ${dif == null || hideVals ? '' : `<span class="selo">${dif > 0 ? '▲' : dif < 0 ? '▼' : '='} ${Math.abs(dif)}% que no mês anterior</span>`}</div>
+      ${dif == null || hideVals ? '' : `<span class="selo">${dif ? `${dif > 0 ? '▲' : '▼'} ${Math.abs(dif)}% sobre ${mesCurto(addMonths(rm, -1))}` : `= igual a ${mesCurto(addMonths(rm, -1))}`}</span>`}</div>
     <div class="hero ano"><small>Gastos de ${y}</small><div class="big">${fmtCurto(tout)}</div>${uso(tin, tout)}
       ${tin || tout ? `<span class="selo">${tin - tout < 0 ? 'faltou' : 'sobrou'} ${fmtCurto(Math.abs(tin - tout))}</span>` : ''}</div></div>`; },
   // Gastos por categoria do mês escolhido: rosca com o total no centro e as maiores categorias ao lado.
@@ -209,7 +211,7 @@ function viewResumo(){
   };
   return `${greeting() ? `<div class="hello">${greeting()}</div>` : ''}
   <h1 style="margin-bottom:0">Resumo <span>${eyeBtn()}<button class="iconbtn" onclick="openResumoEdit()" aria-label="Personalizar o Resumo">${I('sliders', 24)}</button><button class="iconbtn" onclick="openSettings('')" aria-label="Configurações">${I('gear', 24)}</button></span></h1>
-  <div class="muted" style="margin:0 2px 14px;font-size:13.5px">Hoje é ${todayLabel()}</div>${offlinePill(true)}${trocaContaHtml()}
+  <div class="muted" style="margin:0 2px 14px;font-size:13.5px">Hoje é ${todayLabel()}</div>${offlinePill(true)}${trocaContaHtml()}${typeof avisoInstalar === 'function' ? avisoInstalar() : ''}
   <div class="nav periodo"><button onclick="resMes(-1)" aria-label="Mês anterior">‹</button><b onclick="pickResumo()"><span>${nomeM}</span><small>${y} ▾</small></b><button onclick="resMes(1)" aria-label="Próximo mês">›</button></div>
   ${archBanner(y)}${ativHtml()}${bankNotesHtml()}${blocks('resumo', B)}
   ${db.prefs.resumoEnxuto ? '<div style="text-align:center;margin:2px 0 16px"><button class="linkBtn" onclick="openResumoEdit()">Ver mais informações no resumo</button></div>'

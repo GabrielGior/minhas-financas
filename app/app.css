@@ -17,7 +17,7 @@ body{background:var(--bg);color:var(--text);font:15px/1.4 system-ui,-apple-syste
 #app.hasFab{padding-bottom:calc(170px + env(safe-area-inset-bottom))} /* espaço para rolar o fim da página acima do botão + */
 h1{font-size:22px;margin:4px 0 14px;display:flex;justify-content:space-between;align-items:center}
 h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:22px 4px 8px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
-h2 button{font-size:12.5px;color:var(--brand);font-weight:700;text-transform:none;letter-spacing:0}
+h2 button{font-size:12.5px;color:var(--brand);font-weight:700;text-transform:none;letter-spacing:0;white-space:nowrap;flex:none;margin-left:10px}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--shadow);margin-bottom:12px}
 .hero{background:linear-gradient(135deg,var(--hero1),var(--hero2));color:#fff;border-radius:22px;padding:20px;box-shadow:var(--shadow);margin-bottom:12px}
@@ -167,11 +167,13 @@ html[data-anim=off] *{animation:none!important;transition:none!important}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 /* Tela de login (obrigatória no primeiro uso) e aviso para ligar o bloqueio */
 #gate{position:fixed;inset:0;z-index:30;background:linear-gradient(160deg,var(--hero1),var(--hero2));color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px}
-#gate .logo{width:92px;height:92px;border-radius:26px;background:rgba(255,255,255,.16);display:grid;place-items:center;font-size:44px;margin-bottom:18px}
+#gate .logo{width:92px;height:92px;border-radius:26px;box-shadow:0 10px 28px rgba(0,0,0,.28);overflow:hidden;display:grid;place-items:center;font-size:44px;margin-bottom:18px}
 #gate h1{display:block;font-size:28px;margin:0 0 8px}
 #gate p{opacity:.9;max-width:300px;margin:0 0 26px}
 #gate button{background:#fff;color:#1e293b;font-weight:700;padding:14px 22px;border-radius:14px;font-size:16px;width:100%;max-width:300px}
 #gate button.sec{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.75);margin-top:10px;font-size:15px;font-weight:600}
+/* Modo demonstração: botão pequeno no canto de baixo, para não competir com o "Entrar com Google". */
+#gate button.demo{position:absolute;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));width:auto;max-width:none;padding:8px 13px;border-radius:99px;font-size:13px;font-weight:600;background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.45)}
 /* Modo demonstração: faixa fixa no topo, em âmbar em todos os temas; o conteúdo desce para não ficar por baixo dela. */
 #demo{position:fixed;top:0;left:0;right:0;z-index:23;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:calc(6px + env(safe-area-inset-top)) 12px 6px;background:#fbbf24;color:#1c1917;font-size:13px;font-weight:700;text-align:center}
 #demo button{background:#1c1917;color:#fff;border-radius:10px;padding:6px 10px;font-size:12.5px;font-weight:700}
@@ -869,3 +871,11 @@ html[data-troca=gira] #app.enter{animation:trGira .38s ease-out;transform-origin
 .grid2 + h2{margin-top:22px}
 /* Link discreto (ex.: "Ver mais informações no resumo") */
 .linkBtn{color:var(--brand);font-weight:600;font-size:13.5px;padding:8px 10px}
+/* Versão web: aviso para instalar o app (topo do Resumo) e os passos do iPhone. */
+.instAviso{display:flex;align-items:center;gap:10px;padding:12px 10px 12px 16px}
+.instAviso .mid{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.instAviso small{color:var(--muted);font-size:13px}
+.instAviso .btn{flex:none;padding:10px 14px}
+.instAviso .iconbtn{width:34px;height:34px;font-size:18px}
+ol.passos{margin:6px 0 4px;padding-left:22px;line-height:1.5}
+ol.passos li{margin:6px 0}

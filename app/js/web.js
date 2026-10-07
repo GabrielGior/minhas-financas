@@ -144,13 +144,53 @@ if (WEB_APP) (() => {
 // iPhone e iPad no Safari, fora do app instalado: como instalar na tela de início.
 const iosNoBrowser = () => WEB_APP && /iPhone|iPad|iPod/.test(navigator.userAgent) && !navigator.standalone;
 
+// ---------- Instalar o app (atalho na tela de início) ----------
+// Android e computador (Chrome, Edge, Samsung Internet): o navegador avisa que dá para instalar (beforeinstallprompt) e o
+// botão abre a janela de instalação dele. iPhone: o Safari não deixa uma página instalar sozinha; o botão mostra o caminho
+// (Compartilhar › Adicionar à Tela de Início). Android com outro navegador: o caminho pelo menu dele.
+let pedidoInstalar = null;
+const appInstalado = () => !!navigator.standalone || !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+const ehIphone = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+const podeInstalar = () => WEB_APP && !appInstalado() && (!!pedidoInstalar || ehIphone() || /Android/.test(navigator.userAgent));
+if (WEB_APP) {
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); pedidoInstalar = e; if (typeof renderIn === 'function' && db) renderIn(); });
+  addEventListener('appinstalled', () => { pedidoInstalar = null; if (typeof renderIn === 'function' && db) renderIn(); });
+}
+async function instalarApp(){
+  if (pedidoInstalar){
+    const p = pedidoInstalar; pedidoInstalar = null;
+    try { p.prompt(); await p.userChoice; } catch(e){}
+    if (typeof renderIn === 'function') renderIn();
+    return;
+  }
+  settingsOpen = false; F = null;
+  const safari = !/CriOS|FxiOS|EdgiOS/.test(navigator.userAgent);
+  showSheet(`<h3>Instalar o Cofrim</h3>${ehIphone()
+    ? `<div class="hint" style="margin-top:0">No iPhone e no iPad, o app entra na Tela de Início assim:</div>
+      <ol class="passos"><li>${safari ? 'Toque em <b>Compartilhar</b> (o quadrado com a seta para cima, na barra do Safari).' : 'Toque em <b>Compartilhar</b> (o quadrado com a seta para cima, ao lado do endereço). Se não aparecer, abra esta página no Safari.'}</li>
+      <li>Role a lista e toque em <b>Adicionar à Tela de Início</b>.</li><li>Toque em <b>Adicionar</b>. O Cofrim aparece na Tela de Início, com o ícone do tema em uso.</li></ol>`
+    : `<div class="hint" style="margin-top:0">Este navegador não abriu a instalação sozinho. Faça pelo menu dele:</div>
+      <ol class="passos"><li>Toque no menu do navegador (<b>⋮</b> ou <b>☰</b>).</li><li>Toque em <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.</li><li>Confirme. O Cofrim aparece na tela inicial como um app.</li></ol>
+      <div class="hint">No Chrome do Android a instalação abre direto pelo botão. Para o app completo, com widgets e lembretes, há o app para Android na página do Cofrim.</div>`}
+    <div class="btns foot"><button class="btn primary" onclick="closeForm()">Entendi</button></div>`);
+}
+// Aviso no topo do Resumo, enquanto o app não estiver instalado (some ao instalar ou ao tocar no X).
+const INST_AVISO = 'financas-instalar-fechado';
+function avisoInstalar(){
+  if (!podeInstalar()) return '';
+  try { if (localStorage.getItem(INST_AVISO)) return ''; } catch(e){}
+  return `<div class="card instAviso"><div class="mid"><b>Instale o Cofrim</b><small>Abre direto da tela inicial, como um app.</small></div>
+    <button class="btn primary" onclick="instalarApp()">${I('download')}Instalar</button><button class="iconbtn" aria-label="Fechar" onclick="fecharAvisoInstalar()">${I('close')}</button></div>`;
+}
+function fecharAvisoInstalar(){ try { localStorage.setItem(INST_AVISO, '1'); } catch(e){} renderIn(); }
+
 // Ícone da versão web conforme o tema: o iPhone (e o navegador) usam o ícone que a página indica na hora em que a
 // pessoa adiciona o app à tela de início; depois disso o sistema não deixa trocar. Então a página mantém o ícone
-// indicado igual ao tema em uso: com tema especial, o ícone dele; sem tema, as barras na cor escolhida.
+// indicado igual ao tema em uso: com tema especial, o ícone dele; sem tema, o ícone do Cofrim na cor escolhida.
 function webIcone(){
   if (!WEB_APP || window.TESTE || typeof iconeMiolo !== 'function') return;
   const p = db.prefs, cor = p.skin || p.color, c = ICONES[cor] || ICONES.indigo;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 72 72"><defs><linearGradient id="wi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c[1]}"/><stop offset="1" stop-color="${c[2]}"/></linearGradient></defs><rect x="18" y="18" width="72" height="72" fill="url(#wi)"/>${iconeMiolo(cor, p.skin ? 't' : 'b')}</svg>`;
+  const svg = !p.skin && iconeCofrim(cor, 'b') ? iconeSvg(cor, 'b').replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ') : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 72 72"><defs><linearGradient id="wi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c[1]}"/><stop offset="1" stop-color="${c[2]}"/></linearGradient></defs><rect x="18" y="18" width="72" height="72" fill="url(#wi)"/>${iconeMiolo(cor, p.skin ? 't' : 'b')}</svg>`;
   const img = new Image();
   img.onload = () => {
     try {

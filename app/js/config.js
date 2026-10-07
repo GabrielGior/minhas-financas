@@ -422,7 +422,6 @@ function funCount(){
 const demoOpts = {
   lock:false, time:30, icon:'indigo', esconde:true,
   bloqueio(){ return this.lock; }, setBloqueio(v){ this.lock = v; },
-  widgetEsconde(){ return this.esconde; }, setWidgetEsconde(v){ this.esconde = v; },
   tempoBloqueio(){ return this.time; }, setTempoBloqueio(v){ this.time = v; },
   icone(){ return this.icon; }, setIcone(v){ this.icon = v; }
 };
@@ -452,6 +451,9 @@ function openSettings(sec){
     <div class="btns"><button class="btn" onclick="askName(true)">${I('person')}${myName() ? 'Trocar o nome' : 'Informar o nome'}</button></div>
     <label>Ajuda</label>
     <div class="btns" style="margin-top:0"><button class="btn" onclick="openTour(0, true)">${I('book')}Ver o tutorial</button><button class="btn" onclick="maybeNews(true)">${I('sparkle')}Novidades da versão</button></div>
+    ${typeof podeInstalar === 'function' && podeInstalar() ? `<label>Instalar o app</label>
+    <div class="hint" style="margin-top:0">Põe o Cofrim na tela inicial do celular (ou no computador), para abrir direto, como um app.</div>
+    <div class="btns"><button class="btn primary" onclick="instalarApp()">${I('download')}Instalar o Cofrim</button></div>` : ''}
     ${window.Android && Android.atualizar ? `<label>Atualizações</label>
     <div class="hint" style="margin-top:0">Versão ${APP_VERSION}. O app procura atualizações sozinho ao abrir e as aplica na abertura seguinte.</div>
     <div class="btns"><button class="btn" onclick="procurarAtualizacao()">${I('refresh')}Procurar atualização agora</button></div>` : ''}`],
@@ -496,15 +498,12 @@ function openSettings(sec){
     <label>Cor do ícone do app</label>
     <div class="swatches">${Object.entries(ICONES).filter(([k]) => !SKINS[k] || SKIN_ANTIGOS.includes(k) || (k === p.skin || k === N.icone()) && iconeTem(k)).map(([k,c]) => `<button class="sw ${N.icone() === k ? 'on' : ''}" style="background:linear-gradient(135deg,${c[1]},${c[2]});border-radius:14px" onclick="nativeOpts().setIcone('${k}');openSettings()" aria-label="${c[0]}" title="${c[0]}"></button>`).join('')}</div>
     ${window.Android && Android.setIconeApp ? `<label>Desenho do ícone</label>
-    <div class="icoGrid">${iconeDesenhos(Android.icone()).map(k => `<button class="${Android.iconeDesenho() === k ? 'on' : ''}" onclick="Android.setIconeApp(Android.icone(),'${k}',0);openSettings()">${iconeSvg(Android.icone(), k)}<small>${ICON_DESENHOS[k][0]}</small></button>`).join('')}</div>
+    <div class="icoGrid">${iconeDesenhos(Android.icone()).map(k => `<button class="${Android.iconeDesenho() === k ? 'on' : ''}" onclick="Android.setIconeApp(Android.icone(),'${k}',0);openSettings()">${iconeSvg(Android.icone(), k)}<small>${iconeNomeDesenho(Android.icone(), k)}</small></button>`).join('')}</div>
     ${SKINS[Android.icone()] ? '<div class="hint">Os outros desenhos (moeda, carteira, cofre…) existem para as doze cores comuns: escolha uma delas acima para vê-los.</div>' : Android.criarAtalho ? '' : '<div class="hint">Há mais desenhos (moeda, carteira, cofre…) na versão nova do app: toque em Procurar atualizações.</div>'}` : ''}
     <div class="hint">Ao trocar a cor ou o desenho, o Android fecha o app: é só abrir de novo pelo ícone novo. Se o ícone sumir da tela inicial, adicione de novo pela lista de apps.</div>
     <label>Pedir senha ou biometria ao abrir</label>
     <div class="btns" style="margin-top:0">${[[true, I('lock') + 'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${lockOn === v ? 'primary' : ''}" onclick="nativeOpts().setBloqueio(${v});openSettings()">${t}</button>`).join('')}</div>
     ${lockOn ? '<div class="hint">Para desligar, o app pede a senha ou a biometria. Ao sair da conta Google, o app também pede, e o bloqueio desliga.</div>' : ''}
-    ${N.setWidgetEsconde ? `<label>Esconder valores nos widgets com o bloqueio ligado</label>
-    <div class="btns" style="margin-top:0${lockOn ? '' : ';opacity:.4;pointer-events:none'}">${[[true, 'Ligado'], [false, 'Desligado']].map(([v, t]) => `<button class="btn ${!!N.widgetEsconde() === v ? 'primary' : ''}" onclick="nativeOpts().setWidgetEsconde(${v});openSettings()">${t}</button>`).join('')}</div>
-    <div class="hint">Os widgets da tela inicial mostram R$ •••• no lugar dos valores enquanto o bloqueio estiver ligado.</div>` : ''}
     <label>Pedir de novo depois de ficar fora do app por</label>
     <div class="btns" style="margin-top:0;flex-wrap:wrap${lockOn ? '' : ';opacity:.4;pointer-events:none'}">${[[0,'Sempre'],[30,'30 s'],[60,'1 min'],[300,'5 min'],[900,'15 min']].map(([s,t]) => `<button class="btn ${lockTime === s ? 'primary' : ''}" style="padding:11px 6px" onclick="nativeOpts().setTempoBloqueio(${s});openSettings()">${t}</button>`).join('')}</div>`],
   ['lembretes', 'calendar', 'Lembretes', 'Contas a vencer, parcelas e economia de bateria', !isApp ? '' : `${demo}
@@ -528,10 +527,11 @@ function openSettings(sec){
     <div class="btns" style="margin-top:0">${[[true,'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${!!(p.notifyFin ?? p.notify) === v ? 'primary' : ''}" onclick="setNotifyTipo('notifyFin',${v})">${t}</button>`).join('')}</div>
     <div class="hint">Em alguns celulares (Samsung, Xiaomi, Motorola) a economia de bateria atrasa ou corta os lembretes. Na tela que abre, procure "Cofrim" e escolha "Não otimizar". O app também reagenda os lembretes quando o celular reinicia e quando é atualizado.</div>` : ''}`],
   ['widgets', 'chart', 'Widgets', 'Tela inicial do celular: resumo, saldo e porquinho', !(window.Android && Android.widget) ? '' : `
-    <div class="hint" style="margin-top:0">Widgets são quadros do app na tela inicial do celular. Há cinco: <b>Resumo</b> (você escolhe as linhas), <b>Gastos</b> (a lista dos gastos do mês), <b>Saldo do mês</b>, <b>Contas a vencer</b> e <b>Mascote</b> (a cara do mês e os gastos). O que você muda aqui vale na hora para os widgets que já estão na tela inicial.</div>
+    <div class="hint" style="margin-top:0">Widgets são quadros do app na tela inicial do celular. Há seis: <b>Resumo</b> (você escolhe as linhas), <b>Gastos</b> (a lista dos gastos do mês), <b>Saldo do mês</b>, <b>Contas a vencer</b>, <b>Mascote</b> (a cara do mês e os gastos) e <b>Gastar</b> (só o mascote e o botão de novo gasto, sem valores). O que você muda aqui vale na hora para os widgets que já estão na tela inicial.</div>
     ${Android.setWidgetOculto ? `<label>Valores nos widgets</label>
     <div class="btns" style="margin-top:0">${[[false, 'Mostrar'], [true, 'Esconder']].map(([v, t]) => `<button class="btn ${!!Android.widgetOculto() === v ? 'primary' : ''}" onclick="Android.setWidgetOculto(${v});openSettings()">${t}</button>`).join('')}</div>
-    <div class="hint">Escondendo, os widgets mostram R$ •••• no lugar dos valores. Vale só para este aparelho.${N && N.setWidgetEsconde ? ' Com o bloqueio ligado, eles também podem esconder os valores (Configurações › Ícone e bloqueio).' : ''}</div>` : ''}
+    <div class="hint">Escondendo, os widgets mostram R$ •••• no lugar dos valores. Vale só para este aparelho, com ou sem o bloqueio ligado.</div>` : ''}
+    <div class="hint">Cada widget também tem as próprias configurações: segure o dedo nele na tela inicial e toque em <b>Configurações</b> para escolher a opacidade do fundo, o formato dos cantos e o fundo escuro (Android 12 ou mais novo; nos anteriores, elas aparecem ao pôr o widget).</div>
     <label>Fundo dos widgets</label>
     <div class="btns" style="margin-top:0">${[['tema', p.skin ? 'Tema especial' : 'Cor do app'], ['escuro', 'Escuro']].map(([v, t]) => `<button class="btn ${(p.widgetFundo || 'tema') === v ? 'primary' : ''}" onclick="setPref('widgetFundo','${v}')">${t}</button>`).join('')}</div>
     <label>Mascote nos widgets Resumo, Gastos, Saldo e Contas</label>
@@ -545,7 +545,7 @@ function openSettings(sec){
     <label>Widget Gastos: ordem</label>
     <div class="btns" style="margin-top:0">${[['', 'Como no app'], ['valor', 'Maiores primeiro']].map(([k, t]) => `<button class="btn ${(p.widgetOrdem || '') === k ? 'primary' : ''}" onclick="setPref('widgetOrdem','${k}')">${t}</button>`).join('')}</div>
     ${Android.fixarWidget ? `<label>Pôr na tela inicial</label>
-    <div class="btns" style="margin-top:0;flex-wrap:wrap">${[['resumo', 'Resumo'], ...(Android.criarAtalho ? [['gastos', 'Gastos']] : []), ['saldo', 'Saldo do mês'], ['contas', 'Contas a vencer'], ['porco', 'Mascote']].map(([k, t]) => `<button class="btn" style="padding:11px 6px;flex:1 0 30%" onclick="if(!Android.fixarWidget('${k}'))tell('Esta tela inicial não aceita o pedido. Segure o dedo num espaço vazio da tela inicial, toque em Widgets e procure Cofrim.')">${t}</button>`).join('')}</div>
+    <div class="btns" style="margin-top:0;flex-wrap:wrap">${[['resumo', 'Resumo'], ...(Android.criarAtalho ? [['gastos', 'Gastos']] : []), ['saldo', 'Saldo do mês'], ['contas', 'Contas a vencer'], ['porco', 'Mascote'], ['gastar', 'Gastar']].map(([k, t]) => `<button class="btn" style="padding:11px 6px;flex:1 0 30%" onclick="if(!Android.fixarWidget('${k}'))tell('Esta tela inicial não aceita o pedido. Segure o dedo num espaço vazio da tela inicial, toque em Widgets e procure Cofrim.')">${t}</button>`).join('')}</div>
     <div class="hint">O Android pede sua confirmação. Também dá para adicionar segurando o dedo num espaço vazio da tela inicial › Widgets › Cofrim.</div>` : ''}`],
   ['conta', 'cloud', 'Conta e sincronização', 'Conta Google, sincronização e cópias', syncHtml],
   ['compart', 'people', 'Conta compartilhada', sync.shared ? 'Ligada: vocês veem os mesmos dados' : 'Casal ou família: os mesmos dados em dois celulares', syncHtml ? shareHtml() : ''],
@@ -614,7 +614,15 @@ function setSorteio(modo){
 const sorteioBtn = (modo, texto) => `<div class="btns" style="margin-top:8px"><button class="btn ${db.prefs.sorteio === modo ? 'primary' : ''}" onclick="setSorteio('${modo}')">${I('sparkle')}${texto}: ${db.prefs.sorteio === modo ? 'ligado' : 'desligado'}</button></div>
   ${db.prefs.sorteio === modo ? `<div class="hint">Todo dia o app escolhe ${modo === 'tema' ? 'um tema especial' : 'uma cor'} diferente, sem repetir até passar por ${modo === 'tema' ? 'todos' : 'todas'} (${(db.prefs.sorteioVistos || []).length} de ${Object.keys(modo === 'tema' ? SKINS : COLORS).length}). Hoje: <b>${sorteioNome()}</b>. <button style="color:var(--brand);font-weight:700" onclick="sorteioDoDia(true);render();openSettings()">Sortear outro agora</button></div>` : ''}`;
 // Escolha feita à mão: vale ela, e o sorteio diário para.
-function setCor(k){ db.prefs.sorteio = ''; setPref('color', k); }
+function setCor(k){ db.prefs.sorteio = ''; setPref('color', k); iconeNaCor(k); }
+// O ícone do Cofrim (desenho 'b') acompanha a cor escolhida à mão. Na versão web o ícone indicado pela página já segue a
+// cor (webIcone); no Android, trocar o ícone pode fechar o app, então pergunta antes. Outro desenho ou o ícone de um tema
+// ficam como estão.
+async function iconeNaCor(k){
+  if (!(window.Android && Android.setIconeApp && Android.icone) || demoOn || !COLORS[k]) return;
+  if (Android.iconeDesenho() !== 'b' || !COLORS[Android.icone()] || Android.icone() === k) return;
+  if (await ask(`Usar o ${COLORS[k][0].toLowerCase()} também no ícone do app?\n\nAo trocar o ícone, o Android pode fechar o app: é só abrir de novo.`, 'Trocar o ícone')) Android.setIconeApp(k, 'b', 0);
+}
 async function setSkin(k){
   db.prefs.sorteio = '';
   setPref('skin', k);
@@ -799,10 +807,11 @@ async function lembNegado(){
 }
 // Resposta do pedido de permissão (chamada pelo lado nativo).
 function onPermissaoNotificacao(ok){ const r = permRes; permRes = null; if (r) r(!!ok); }
-// Volta ao app (das configurações do Android, por exemplo): confere a permissão de novo e atualiza a tela.
+// Volta ao app (das configurações do Android, por exemplo): confere a permissão de novo e, se a parte de lembretes
+// das Configurações estiver aberta, atualiza o aviso dela. Outra tela (ou outra parte das Configurações) fica como está.
 function onVoltouApp(){
   if (lembQuerLigar && notifLiberada()) return void ligarLembretes();
-  if (settingsOpen) openSettings('lembretes');
+  if (settingsOpen && setSec === 'lembretes' && settingsShown()) openSettings('lembretes');
 }
 // Entrou numa conta que já tem lembretes, com eles desligados neste aparelho: pergunta uma vez, de forma discreta.
 function avisoLembretes(){
@@ -1492,12 +1501,20 @@ async function logout(){
   }
   clearTimeout(syncTimer);
   db.expenses.filter(x => x.photo).forEach(x => photoDelete(x.id)); // as fotos continuam na conta; aqui saem junto com os dados
-  // Tema e ordem das abas ficam; lançamentos e nome, não. Sem cfgMod, as preferências da próxima conta valem sobre estas.
-  db = fixDb({rates:db.rates, prefs:{...db.prefs, name:'', greet:''}});
-  applyCats();
+  // Tema, cores, abas e o resto das preferências voltam ao padrão (fica só o idioma): a tela de login e quem entrar depois
+  // não herdam o jeito de quem saiu. As preferências de cada conta voltam com ela, da conta Google.
+  db = fixDb({rates:db.rates, prefs:db.prefs.lang ? {lang:db.prefs.lang} : {}});
+  ensurePrefs(); applyCats(); applyTheme();
   chatLog.length = 0;
   Object.assign(sync, {on:false, linked:false, demo:false, err:'', at:0, bk:'', up:[], del:[], shared:null});
   saveSync(); save(false); closeForm(); render(); showGate();
+  iconePadrao();
+}
+// Ícone do app (só no Android) de volta ao padrão: o do Cofrim (cor índigo, desenho b). Pode fechar o app no Android,
+// por isso fica por último, com os dados já apagados e a tela de login à mostra.
+function iconePadrao(){
+  if (!(window.Android && Android.setIconeApp && Android.icone)) return;
+  if (Android.icone() !== 'indigo' || Android.iconeDesenho() !== 'b') Android.setIconeApp('indigo', 'b', 0);
 }
 // Apaga tudo: os arquivos do app na conta Google e os dados deste aparelho; depois volta à tela de login.
 async function wipeAll(semPerguntar){
@@ -1639,7 +1656,7 @@ function demoDados(){
       {id:id(), name:'Tesouro Selic', cat:'tesouro', value:3500, index:'selic', pct:100, monthly:0, broker:'Corretora Beta', accYM:m(-2), u:1},
       {id:id(), name:'LCI Banco Azul', cat:'rendafixa', value:2000, index:'cdi', pct:92, monthly:0, broker:'Corretora Alfa', accYM:m(-2), u:1}],
     transfers:[{id:id(), from:'Banco Verde', to:'Banco Azul', value:500, month:m(-1), day:6, u:1}],
-    budgets:{mercado:700, restaurante:250, transporte:150, cinema:100},
+    budgets:{mercado:700, restaurante:250, transporte:1500, cinema:100},
     cardClose:{'Banco Azul':25}, cardDue:{'Banco Azul':5}, cardAcc:{'Banco Azul':'Banco Azul'}, cardLimit:{'Banco Azul':4000}};
 }
 async function demoLigar(){
