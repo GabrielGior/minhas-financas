@@ -14,6 +14,7 @@ if (WEB_APP) (() => {
   const BASE = 'openid email profile https://www.googleapis.com/auth/drive.appdata';
   const FAM = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
   const ESCOPO_DRIVE = 'https://www.googleapis.com/auth/drive.appdata';
+  const ARQ = 'https://www.googleapis.com/auth/drive.file'; // "Salvar cópia" (pasta Cofrim visível no Drive), pedida só no toque
   // st: {t (acesso), exp, fam (já autorizou a conta compartilhada), email, name, state, after, silentAt,
   //      pedirConsent (a pessoa desmarcou alguma permissão: na próxima ida ao Google, mostrar as caixas de novo)}
   // O acesso (t, exp) fica no sessionStorage: some ao fechar o navegador ou o app e não fica gravado no aparelho; o resto
@@ -30,15 +31,15 @@ if (WEB_APP) (() => {
   keep(); // versões anteriores guardavam o acesso no localStorage: passa para o sessionStorage
   // state da ida ao Google: 16 bytes aleatórios do navegador (crypto), em hexadecimal.
   const novoState = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
-  const valid = fam => st.t && st.exp > Date.now() + 60e3 && (!fam || st.fam);
+  const valid = (fam, arq) => st.t && st.exp > Date.now() + 60e3 && (!fam || st.fam) && (!arq || st.arq || st.fam);
   const voltaPara = () => location.origin + location.pathname;
 
   // Vai ao Google. after: o que fazer quando voltar (entrar, sincronizar, continuar a conta compartilhada).
-  function redirect(fam, after, silencioso){
+  function redirect(fam, after, silencioso, arq){
     if (!WEB_CLIENT_ID) return false;
     st.state = novoState(); st.after = after; keep();
     const p = new URLSearchParams({client_id:WEB_CLIENT_ID, redirect_uri:voltaPara(), response_type:'token', include_granted_scopes:'true',
-      scope:BASE + (fam || st.fam ? ' ' + FAM : ''), state:st.state});
+      scope:BASE + (fam || st.fam ? ' ' + FAM : '') + (arq ? ' ' + ARQ : ''), state:st.state});
     if (st.email) p.set('login_hint', st.email);
     if (st.pedirConsent) p.set('prompt', 'consent'); // o Google mostra de novo as caixas de permissão
     else if (silencioso) p.set('prompt', 'none'); else if (!st.email) p.set('prompt', 'select_account');
@@ -46,8 +47,9 @@ if (WEB_APP) (() => {
     return true;
   }
   // O que estava acontecendo quando foi preciso ir ao Google, para continuar sozinho na volta.
-  function contexto(fam){
+  function contexto(fam, arq){
     if (!document.getElementById('gate').hidden) return {k:'login'};
+    if (arq) return {k:'copia'};
     const email = document.getElementById('shEmail'), code = document.getElementById('shCode');
     if (fam && email) return {k:sync.shared ? 'invite' : 'start', v:email.value};
     if (fam && code) return {k:'join', v:code.value};
@@ -70,6 +72,8 @@ if (WEB_APP) (() => {
         else {
           st.t = h.get('access_token'); st.exp = Date.now() + (+h.get('expires_in') || 3600) * 1000; st.pedirConsent = false;
           if (FAM.split(' ').every(s => escopo.includes(s))) st.fam = true;
+          st.arq = escopo.includes(ARQ);
+          if (depois.k === 'copia' && !st.arq) depois = {...depois, erro:'escopo'};
           // Pediu a conta compartilhada e desmarcou as caixas dela: avisa (famNegado), em vez de voltar ao Google sem fim.
           else if (['start', 'invite', 'join', 'sheet'].includes(depois.k)) depois = {...depois, erro:'escopo'};
         }
@@ -85,21 +89,21 @@ if (WEB_APP) (() => {
     } catch(e){}
   }
   // Mesma resposta do lado nativo: onDrive(id, status, texto). 0 = sem conexão; -1 = precisa entrar na conta; -2 = outro erro.
-  async function call(id, method, url, body, ctype, interactive, fam){
+  async function call(id, method, url, body, ctype, interactive, fam, arq){
     if (!/^https:\/\/(www|sheets)\.googleapis\.com\//.test(url) || (!fam && url.startsWith('https://sheets.'))) return onDrive(id, -2, 'URL não permitida');
-    if (!valid(fam)){
-      if (!interactive || !redirect(fam, contexto(fam))) return onDrive(id, -1, WEB_CLIENT_ID ? 'login' : 'Login web não configurado');
+    if (!valid(fam, arq)){
+      if (!interactive || !redirect(fam, contexto(fam, arq), false, arq)) return onDrive(id, -1, WEB_CLIENT_ID ? 'login' : 'Login web não configurado');
       return; // a página vai ao Google; a ação continua na volta
     }
     if (!st.email) await perfil();
     try {
       const r = await fetch(url, {method, headers:{Authorization:'Bearer ' + st.t, ...(body ? {'Content-Type':ctype} : {})}, body:body || undefined});
-      if (r.status === 401){ st.t = ''; keep(); return call(id, method, url, body, ctype, interactive, fam); }
+      if (r.status === 401){ st.t = ''; keep(); return call(id, method, url, body, ctype, interactive, fam, arq); }
       const texto = await r.text();
       // Acesso sem a permissão necessária (caixa desmarcada no Google): -5, para o app pedir de novo com as caixas.
       if (r.status === 403 && /insufficient.*scope|ACCESS_TOKEN_SCOPE_INSUFFICIENT/i.test(texto)){
         logErr('permissão do Google', '403 ' + texto.slice(0, 300));
-        if (fam) st.fam = false; else { st.t = ''; st.pedirConsent = true; }
+        if (fam) st.fam = false; else if (arq) st.arq = false; else { st.t = ''; st.pedirConsent = true; }
         keep();
         return onDrive(id, -5, 'escopo');
       }
@@ -110,6 +114,7 @@ if (WEB_APP) (() => {
   window.Android = {
     drive:(id, m, u, b, c, i) => { call(id, m, u, b, c, i, false); },
     driveFamilia:(id, m, u, b, c, i) => { call(id, m, u, b, c, i, true); },
+    driveArquivo:(id, m, u, b, c, i) => { call(id, m, u, b, c, i, false, true); },
     conta:() => st.email || '',
     nome:() => st.name || '',
     sair(){ if (st.t) fetch('https://oauth2.googleapis.com/revoke?token=' + encodeURIComponent(st.t), {method:'POST'}).catch(() => {}); st = {}; keep(); if (window.onSair) onSair(true); },
@@ -130,6 +135,7 @@ if (WEB_APP) (() => {
     if (d.erro){
       if (d.k === 'login') document.getElementById('gateMsg').textContent = d.erro === 'escopo' ? MSG_ESCOPO : 'Não foi possível entrar com o Google. Tente de novo.';
       else if (['start', 'invite', 'join', 'sheet'].includes(d.k)) famNegado();
+      else if (d.k === 'copia') tell(MSG_COPIA);
       else if (d.erro === 'escopo') tell(MSG_ESCOPO);
       return; // renovação silenciosa que falhou: o status da sincronização avisa que é preciso entrar de novo
     }
@@ -138,6 +144,7 @@ if (WEB_APP) (() => {
     else if (d.k === 'invite') shareInvite(d.v);
     else if (d.k === 'join') shareJoin(d.v);
     else if (d.k === 'sheet') sheetCreate(true);
+    else if (d.k === 'copia') salvarCopiaDrive();
     else syncNow();
   };
 })();

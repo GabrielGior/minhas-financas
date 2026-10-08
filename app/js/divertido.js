@@ -42,7 +42,7 @@ function savedMsg(col, isNew){
 }
 // Humor do porquinho pelo saldo do mês atual.
 function funMood(){
-  const tin = totalIn(curYM), tout = totalOut(curYM), net = tin - tout;
+  const tin = totalIn(curYM), tout = totalOutPrev(curYM), net = tin - tout; // saldo projetado (com as previsões)
   return !tin && !tout ? 'ok' : net < 0 ? 'triste' : net >= tin * .1 ? 'feliz' : 'ok';
 }
 // Desafio do mês: gastar menos em avulsos do que no mês anterior, na categoria em que mais se gastou (mínimo de R$ 50).
@@ -358,7 +358,7 @@ for (const [k, [feliz, ok, triste]] of Object.entries(FALAS_TEMA)){
 }
 // Bloco do Resumo: o porquinho reage ao saldo do mês atual. Tocar nele troca a fala.
 function funMascot(){
-  const net = totalIn(curYM) - totalOut(curYM), mood = funMood();
+  const net = totalIn(curYM) - totalOutPrev(curYM), mood = funMood();
   const falas = (FUN_TEMA[db.prefs.skin] || FUN_TEMA[''])[mood], ganhas = funBadgeList().filter(b => b[3]).length, nivel = [...FUN_LEVELS].reverse().find(l => ganhas >= l[0])[1];
   return `<div class="card fun" data-onclick="funPoke()"><div class="pigBox">${pigSvg(mood)}</div>
     <div class="mid"><div class="bubble">${esc(comNome(falas[(now.getDate() + funState.tap) % falas.length])).replace('{v}', fmt(Math.abs(net)))}</div>

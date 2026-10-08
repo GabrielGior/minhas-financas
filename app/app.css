@@ -1,6 +1,6 @@
 :root{
   --bg:#f3f5fa; --card:#ffffff; --text:#0f172a; --muted:#64748b; --line:#e5e9f2;
-  --brand:#4f46e5; --brand2:#7c3aed; --hero1:#4f46e5; --hero2:#7c3aed; --in:#047857; --out:#b91c1c; --yield:#92400e;
+  --brand:#6b33b4; --brand2:#4c1e7f; --hero1:#6b33b4; --hero2:#4c1e7f; --in:#047857; --out:#b91c1c; --yield:#92400e;
   --shadow:0 4px 18px rgba(15,23,42,.07); color-scheme:light;
 }
 /* Claro/escuro e cor de destaque são aplicados por applyTheme() (data-mode e variáveis --brand/--hero). */
@@ -123,17 +123,17 @@ input:focus,select:focus{border-color:var(--brand)}
   /* Relatório com cara de documento: faixa de título na cor do app, cabeçalhos coloridos, linhas alternadas e totais
      em destaque. As cores saem na impressão e no PDF (print-color-adjust). */
   #report{display:block;color:#111827;font:12px/1.45 system-ui,sans-serif;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  #report .capa{background:#4f46e5;color:#fff;border-radius:10px;padding:14px 16px;margin-bottom:12px}
+  #report .capa{background:#6b33b4;color:#fff;border-radius:10px;padding:14px 16px;margin-bottom:12px}
   #report h1{display:block;font-size:21px;margin:0 0 2px;color:#fff;text-transform:none}
   #report .capa small{color:#e0e7ff}
-  #report h2{display:block;font-size:13px;color:#312e81;letter-spacing:0;text-transform:none;margin:18px 0 6px;border-left:4px solid #4f46e5;padding:1px 0 1px 8px;break-after:avoid}
+  #report h2{display:block;font-size:13px;color:#3b1666;letter-spacing:0;text-transform:none;margin:18px 0 6px;border-left:4px solid #6b33b4;padding:1px 0 1px 8px;break-after:avoid}
   #report table{width:100%;border-collapse:collapse}
-  #report th{background:#4f46e5;color:#fff;font-weight:600;padding:6px 8px;text-align:left}
+  #report th{background:#6b33b4;color:#fff;font-weight:600;padding:6px 8px;text-align:left}
   #report th:first-child{border-radius:6px 0 0 0}#report th:last-child{border-radius:0 6px 0 0}
   #report td{padding:5px 8px;border-bottom:1px solid #e5e7eb;text-align:left;vertical-align:top}
   #report tr:nth-child(odd) td{background:#f5f6fd}
   #report td:last-child,#report th:last-child{text-align:right;white-space:nowrap}
-  #report .sum td{font-weight:700;background:#e0e7ff!important;color:#312e81;border-top:2px solid #4f46e5;border-bottom:0}
+  #report .sum td{font-weight:700;background:#efe6fb!important;color:#3b1666;border-top:2px solid #6b33b4;border-bottom:0}
   #report tr{break-inside:avoid}
   #report .boxes{display:flex;gap:10px;margin:12px 0}
   #report .boxes div{flex:1;border-radius:10px;padding:10px 12px;background:#f5f6fd;border:1px solid #e0e7ff}
@@ -535,15 +535,16 @@ html[data-fun=on] .ico:active,html[data-fun=on] .item:active .ico{animation:pigP
 [data-skin=espartano] h1{text-transform:uppercase;letter-spacing:.08em}
 [data-skin=espartano] #app.enter{animation:skEspartano .2s ease-out}
 /* Tela de abertura (ver abertura() em js/arte.js): cobre o app por um instante, na cor escolhida ou do tema especial. */
-#abre{position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;overflow:hidden}
+#abre{position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#6b33b4,#4c1e7f);color:#fff;overflow:hidden}
 #abre.fim{animation:abreFim .4s ease-in forwards;pointer-events:none}
 @keyframes abreFim{to{opacity:0;transform:scale(1.14)}}
 #abreIn{text-align:center}
 #abreIn svg{display:block;margin:0 auto;filter:drop-shadow(0 10px 18px rgba(0,0,0,.28))}
 #abreIn b{display:block;margin-top:16px;font-size:22px;letter-spacing:.2px;animation:abreTxt .4s .3s ease-out both}
 @keyframes abreTxt{from{opacity:0;transform:translateY(10px)}}
-.abreBar{transform-box:fill-box;transform-origin:bottom;animation:abreSobe .5s cubic-bezier(.2,1.5,.4,1) both}
-@keyframes abreSobe{from{transform:scaleY(0)}}
+.abreIco{display:inline-block;animation:abreIco .55s cubic-bezier(.2,1.5,.4,1) both}
+.abreIco svg{border-radius:26%}
+@keyframes abreIco{from{opacity:0;transform:scale(.6) rotate(-8deg)}}
 /* O mascote chega de um jeito por família de tema: queda (padrão), velocidade, magia, tecnologia, força e calma. */
 .abreM{animation:abreCai .6s cubic-bezier(.2,1.4,.4,1) both}
 @keyframes abreCai{from{opacity:0;transform:translateY(-70px) scale(.7)}}
@@ -767,6 +768,9 @@ html[data-troca=gira] #app.enter{animation:trGira .38s ease-out;transform-origin
 .avisoComp>div{flex:1;min-width:0}
 .avisoComp b{display:block}
 .avisoComp small{display:block;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conflito{width:100%;border-collapse:collapse;margin:8px 0 2px;font-size:13px}
+.conflito th,.conflito td{text-align:left;padding:4px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.conflito td:first-child{color:var(--muted);white-space:nowrap}
 /* 1.56: qual conta está em uso (pessoal ou compartilhada) e o botão de troca do Resumo */
 .contaPill{display:flex;align-items:center;gap:6px;margin:0 0 12px;padding:8px 12px;border-radius:12px;font-size:13px;cursor:pointer;border:1px solid color-mix(in srgb,var(--brand) 40%,var(--line));background:color-mix(in srgb,var(--brand) 12%,var(--card))}
 .contaPill.pes{border-color:var(--line);background:var(--card)}
@@ -880,3 +884,33 @@ html[data-troca=gira] #app.enter{animation:trGira .38s ease-out;transform-origin
 .instAviso .iconbtn{width:34px;height:34px;font-size:18px}
 ol.passos{margin:6px 0 4px;padding-left:22px;line-height:1.5}
 ol.passos li{margin:6px 0}
+/* Ícone do estado da sincronização, no título das telas principais. */
+.iconbtn.nuvem{color:var(--muted)}
+.iconbtn.nuvem.erro,.nuvemTxt.erro{color:var(--out)}
+.iconbtn.nuvem.sinc svg{animation:nuvemPulsa 1.4s ease-in-out infinite}
+@keyframes nuvemPulsa{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.iconbtn.nuvem.sinc svg{animation:none}}
+/* Com a nuvem, são quatro botões ao lado do título: em telas estreitas eles ficam mais juntos para o título caber. */
+h1 span .iconbtn.nuvem{width:30px}
+@media (max-width:400px){h1 span .iconbtn{width:33px}h1 span .iconbtn.nuvem{width:26px}}
+/* Saúde financeira (aba Gastos): nota grande, classificação na cor da faixa e o ponto mais fraco. */
+.saude{cursor:pointer}
+.saudeTopo{display:flex;align-items:center;gap:14px}
+.saudeTopo>div:last-child{min-width:0}
+.saudeTopo b{display:block;font-size:17px}
+.saudeTopo small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.saudeNota{font-size:40px;font-weight:800;letter-spacing:-.03em;line-height:1;flex:none}
+.saudeTopo .saudeNota small{display:inline;font-size:15px;font-weight:600;color:var(--muted);margin-left:2px}
+.saudeVer{display:flex;align-items:center;justify-content:flex-end;gap:2px;margin-top:10px;font-size:13px;font-weight:600;color:var(--brand)}
+.saudeDica{margin-top:4px;color:var(--text)}
+/* Previsões de gastos (aba Gastos) e o quanto delas entra num valor projetado. */
+.prevItem{cursor:pointer}
+.hero .prevInc{display:block;margin-top:8px;font-size:12px;opacity:.85}
+/* Central de notificações: sino com o número de não lidas e os itens novos desta visita destacados. */
+.iconbtn.sino{position:relative}
+.sinoN{position:absolute;top:3px;right:1px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--brand);color:#fff;font-size:10.5px;font-weight:700;line-height:17px;text-align:center;box-shadow:0 0 0 2px var(--bg)}
+.centralItem{cursor:pointer;border-radius:12px}
+.centralItem.nova{background:color-mix(in srgb,var(--brand) 10%,transparent)}
+.centralIco{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,currentColor 14%,transparent)}
+.centralNova{font-style:normal;font-weight:700;color:var(--brand);margin-left:4px}
+.centralVai{display:flex;color:var(--muted);transform:rotate(-90deg)}

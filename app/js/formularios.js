@@ -282,6 +282,20 @@ const FORMS = {
       db.cfgMod = Date.now();
     },
     extra:() => '<div class="hint">Fechamento: compras avulsas com dia depois dele entram na fatura do mês seguinte. Pagamento: a fatura de um mês sai da conta no mês seguinte, nesse dia (sem dia, no começo do mês).</div>'},
+  // Previsão de gasto numa categoria (ver previsoesDoMes): prevCtx diz o mês e, numa que se repete, se a mudança vale só
+  // para este mês ('este') ou para este e os próximos ('prox').
+  previsoes: { title:'previsão', fem:true, noDelete:true, fields:() => [
+    {k:'cat', label:'Categoria', type:'select', options:() => opts(CAT_GASTO).filter(o => o[0] !== 'emprestimo')},
+    {k:'value', label:'Valor previsto', type:'money', big:true},
+    {k:'dia', label:'Até o dia (conta do dia 1 até este dia)', type:'int', optional:true},
+    ...(prevCtx.modo === 'este' ? [] : [{k:'rep', label:'Repetir todo mês', type:'select', optional:true, options:[['', 'Não, só neste mês'], ['1', 'Sim, todo mês']]}])],
+    check(v){
+      if (v.dia && (v.dia < 1 || v.dia > 31)) return 'O dia final vai de 1 a 31.';
+      const outra = previsoesDoMes(prevCtx.m).find(it => it.cat === v.cat && it.p.id !== (F && F.id));
+      if (outra){ prevJaExiste(outra); return false; }
+    },
+    commit(v, id, novoId){ prevSalvar(v, id, novoId); },
+    extra:() => '<div class="hint">Sem dia, vale até o último dia do mês. Os gastos da categoria até esse dia enchem a barra; o que faltar do previsto já entra no saldo previsto do mês.</div>'},
   // Alerta de preço de uma ação ou moeda (id = o investimento). Vazio desliga.
   priceAlert: { fullTitle:'Alerta de preço', noDelete:true, fields:[
     {k:'alertUp', label:'Avisar quando passar de (R$)', type:'num', optional:true},
@@ -308,6 +322,7 @@ const FORMS = {
     extra:() => `<div class="hint">Taxas ${ratesInfo()}.</div>
       <div class="btns"><button class="btn" data-onclick="updateRatesNow()">${I('refresh')}Atualizar taxas agora</button></div>`}
 };
+let prevCtx = {m:'', modo:''}; // previsão aberta no formulário: mês e modo ('' | 'este' | 'prox')
 let formVale = false; // o formulário que está abrindo é de vale (ver openForm e os campos de incomes/expenses)
 let formTipo = ''; // parcelas: '' (compra parcelada), 'financiamento' ou 'emprestimo' (ver openForm)
 // Parcelas: o registro aberto ainda não teve abatimento (depois de um, prazo e valores mudam só por Abater).
@@ -629,6 +644,7 @@ function submitForm(){
   }
   if (out.end && out.end < out.start) return err('O mês final não pode ser antes do inicial.');
   const msg = F.cfg.check && F.cfg.check(out);
+  if (msg === false) return; // o próprio check já perguntou o que fazer (ex.: previsão que já existe)
   if (msg) return err(msg);
   const newId = uid(), after = F.cfg.after, antes = F.id ? JSON.stringify(db) : null, voltar = welcomeOn;
   const velho = F.id && COLS.includes(F.col) ? {...(db[F.col].find(x => x.id === F.id) || {})} : null;
@@ -650,7 +666,7 @@ function submitForm(){
   if (gastoNovo) gastoAnim(gastoNovo); // animação de novo gasto, com as formas do tema (js/cena.js)
   if (after) after();
   if (voltar) openWelcome();
-  if (antes && done === 'Salvo') showUndo('Alteração salva', () => restoreSnap(antes)); else toast(done);
+  if (antes && done === 'Salvo') showUndo('Alteração salva', () => restoreSnap(antes)); else toast(done, {central:false}); // confirmação do que acabou de salvar
 }
 
 // ---------- Comprovantes (foto anexada a um gasto) ----------
@@ -777,7 +793,7 @@ async function photoView(){
   if (!src) return tell('Não encontrei a foto deste comprovante. Se ela foi anexada em outro aparelho, abra o app nele com internet para enviá-la.');
   box.querySelector('img').src = src; box.hidden = false;
 }
-function removeItem(){ const {col, id} = F; closeForm(); removeRec(col, id); }
+function removeItem(){ if (!F) return; const {col, id} = F; closeForm(); removeRec(col, id); } // segundo toque em "Excluir" depois que o formulário fechou
 // Exclui um lançamento e oferece "Desfazer" por alguns segundos.
 function removeRec(col, id){
   const i = db[col].findIndex(x => x.id === id), rec = db[col][i];
@@ -789,14 +805,14 @@ function removeRec(col, id){
   showUndo('Excluído', () => { db[col].splice(i, 0, touch(rec)); delete db.tomb[id]; db.trash = db.trash.filter(t => t.rec !== rec); save(); render(); });
 }
 // Lixeira: lançamentos excluídos nos últimos 30 dias (neste aparelho), com opção de restaurar.
-const COL_NAMES = {incomes:'Ganho', expenses:'Gasto', installments:'Compra parcelada', investments:'Investimento', goals:'Meta', accounts:'Conta', transfers:'Transferência'};
+const COL_NAMES = {incomes:'Ganho', expenses:'Gasto', installments:'Compra parcelada', investments:'Investimento', goals:'Meta', accounts:'Conta', transfers:'Transferência', previsoes:'Previsão'};
 function openTrash(){
   settingsOpen = false; F = null;
   const list = db.trash.map((t, i) => ({t, i})).reverse();
   showSheet(`<h3>Lixeira</h3>
     <div class="hint" style="margin-top:0">O que você exclui fica aqui por 30 dias, só neste aparelho.</div>
     ${list.length ? list.map(({t, i}) => { const r = t.rec, dias = Math.floor((Date.now() - t.at) / 864e5), v = r.value ?? r.total ?? r.target; return `
-      <div class="item" style="cursor:default"><div class="mid"><b>${esc(r.desc || r.name || r.ticker || (r.from ? r.from + ' → ' + r.to : 'Sem nome'))}</b>
+      <div class="item" style="cursor:default"><div class="mid"><b>${esc(r.desc || r.name || r.ticker || (r.from ? r.from + ' → ' + r.to : t.col === 'previsoes' ? prevNome(r.cat) : 'Sem nome'))}</b>
         <small>${COL_NAMES[t.col] || ''}${v ? ' · ' + fmt(v) : ''} · excluído ${dias ? 'há ' + dias + ' dia' + (dias > 1 ? 's' : '') : 'hoje'}</small></div>
         <button class="btn" style="flex:none;padding:8px 12px" data-onclick="trashRestore(${i});openTrash()">Restaurar</button></div>`; }).join('') : empty('trash', 'A lixeira está vazia.')}
     <div class="btns foot">${list.length ? '<button class="btn danger" data-onclick="trashEmpty()">Esvaziar</button>' : ''}<button class="btn primary" data-onclick="openSettings('dados')">Voltar</button></div>`);
@@ -825,10 +841,13 @@ function restoreSnap(json){
   if (sheetOpen() && !F) closeForm();
 }
 let snackTimer = 0, undoFn = null;
-function showUndo(text, fn){
-  const s = document.getElementById('snack');
-  undoFn = fn;
-  s.innerHTML = `${text} <button data-onclick="const f=undoFn;hideSnack();f()">Desfazer</button>`;
+const showUndo = (text, fn, o) => showAcao(text, 'Desfazer', fn, o);
+// Aviso embaixo com um botão (Desfazer, Ver…); some sozinho depois de alguns segundos. Vai para a central de
+// notificações (o.central === false não vai); desfazer registra "Desfeito: …" quando o aviso foi registrado.
+function showAcao(text, botao, fn, o = {}){
+  const s = document.getElementById('snack'), foi = centralRegistra(text, o);
+  undoFn = foi && botao === 'Desfazer' ? () => { centralAdd('Desfeito: ' + text, 'info'); fn(); } : fn;
+  s.innerHTML = `${text} <button data-onclick="const f=undoFn;hideSnack();f()">${botao}</button>`;
   s.hidden = false;
   clearTimeout(snackTimer);
   snackTimer = setTimeout(hideSnack, 6000);
@@ -854,13 +873,108 @@ const espera = p => { esperas++; cargaDraw(); return Promise.resolve(p).finally(
 // cargaOn devolve a função que encerra o aviso; comCarga cuida disso sozinha em volta de fn.
 function cargaOn(texto){ cargaTxt.push(texto); cargaDraw(); return () => { const i = cargaTxt.lastIndexOf(texto); if (i >= 0) cargaTxt.splice(i, 1); cargaDraw(); }; }
 async function comCarga(texto, fn){ const fim = cargaOn(texto); try { return await fn(); } finally { fim(); } }
-function toast(text){
+// Aviso de rodapé. o: {central:false} não guarda na central; tipo, t (quando aconteceu) e dest (o que abrir ao tocar).
+function toast(text, o = {}){
   const s = document.getElementById('snack');
   undoFn = null;
   s.textContent = text;
   s.hidden = false;
   clearTimeout(snackTimer);
   snackTimer = setTimeout(hideSnack, db.prefs.fun ? 3800 : 1800);
+  centralRegistra(text, o);
 }
+
+// ---------- Central de notificações ----------
+// Os avisos de rodapé (toast, showUndo, showAcao) e alguns acontecimentos sem aviso na tela (sincronização, cópias,
+// previsões, orçamento, sugestões do banco) ficam guardados aqui, NESTE aparelho: fora dos dados, do backup, da
+// sincronização e da conta compartilhada. Na demonstração, numa central só na memória, que some ao sair.
+// Mensagens iguais no mesmo dia viram um item: {txt, tipo, t (a última vez), ts (todas as vezes), novas (não lidas),
+// dest}. Até 100 itens e 30 dias. t é quando o acontecimento foi (ex.: o fim do dia final de uma previsão).
+const CENTRAL_KEY = 'financas-central';
+// Fora da central (só na tela): confirmações instantâneas do que a pessoa acabou de fazer, sem informação nova.
+const CENTRAL_FORA = /^(Copiado\.|Procurando atualização…|Atualizado|Salvo|Alteração salva|Excluído)$/;
+const CENTRAL_TIPOS = {sucesso:['check', 'var(--in)'], aviso:['alert', 'var(--yield)'], erro:['alert', 'var(--out)'], info:['bell', 'var(--brand)']};
+let centralDemo = [], centralNovas = new Set();
+function centralLer(){ if (demoOn) return centralDemo; try { const l = JSON.parse(localStorage.getItem(CENTRAL_KEY)); return Array.isArray(l) ? l : []; } catch(e){ return []; } }
+function centralGuardar(l){
+  const limite = Date.now() - 30*864e5;
+  l = l.filter(x => x.t >= limite).sort((a, b) => a.t - b.t).slice(-100);
+  if (demoOn) centralDemo = l; else try { localStorage.setItem(CENTRAL_KEY, JSON.stringify(l)); } catch(e){}
+  centralDraw();
+}
+const centralTipo = txt => /^(Não |Erro|Sem conexão)|não foi possível|não deu|não consegui/i.test(txt) ? 'erro'
+  : /acima|passou|estourou|editado em dois/i.test(txt) ? 'aviso' : /salv|sincroniz|pronto|enviad|criad|baixad|importad|arquivad|restaurad|trazid|paga\b|registrad|substitu|juntad|ligad/i.test(txt) ? 'sucesso' : 'info';
+const centralDia = t => new Date(t).toLocaleDateString('sv');
+function centralAdd(txt, tipo, t, dest){
+  txt = String(txt || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+  if (!txt) return;
+  t = t || Date.now();
+  const l = centralLer(), igual = l.find(x => x.txt === txt && centralDia(x.t) === centralDia(t));
+  if (igual){ igual.ts = [...igual.ts, t].sort((a, b) => a - b).slice(-50); igual.t = Math.max(igual.t, t); igual.novas = (igual.novas || 0) + 1; if (dest) igual.dest = dest; }
+  else l.push({txt, tipo:tipo || centralTipo(txt), t, ts:[t], novas:1, ...(dest ? {dest} : {})});
+  centralGuardar(l);
+}
+// Registra um aviso de rodapé, salvo as exceções; devolve se registrou.
+function centralRegistra(text, o = {}){
+  if (o.central === false || CENTRAL_FORA.test(String(text).trim())) return false;
+  centralAdd(text, o.tipo, o.t, o.dest);
+  return true;
+}
+const centralNaoLidas = () => sum(centralLer(), x => x.novas || 0);
+// Sino no título do Resumo, com o número de não lidas (some com zero; acima de 9, "9+").
+const sinoBtn = () => { const n = centralNaoLidas();
+  return `<button class="iconbtn sino" data-onclick="openCentral()" aria-label="${n ? `Notificações, ${n} não lida${n > 1 ? 's' : ''}` : 'Notificações'}">${I('bell', 24)}${n ? `<b class="sinoN">${n > 9 ? '9+' : n}</b>` : ''}</button>`; };
+function centralDraw(){ for (const b of document.querySelectorAll('.sino')) b.outerHTML = sinoBtn(); }
+const centralQuando = t => { const d = new Date(t); return `${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}`; };
+let centralItens = [];
+// Abrir marca tudo como lido na hora (o sino zera); o que era novo fica destacado só nesta visita.
+function openCentral(){
+  const l = centralLer();
+  centralNovas = new Set(l.filter(x => x.novas > 0).map(x => x.txt + '|' + centralDia(x.t)));
+  if (centralNovas.size) centralGuardar(l.map(x => ({...x, novas:0})));
+  centralTela();
+}
+function centralTela(){
+  settingsOpen = false; F = null;
+  centralItens = [...centralLer()].sort((a, b) => b.t - a.t);
+  const hoje = centralDia(Date.now()), ontem = centralDia(Date.now() - 864e5);
+  let dia = '', html = '';
+  centralItens.forEach((x, i) => {
+    const d = centralDia(x.t), [ic, cor] = CENTRAL_TIPOS[x.tipo] || CENTRAL_TIPOS.info, nova = centralNovas.has(x.txt + '|' + d);
+    if (d !== dia){ dia = d; html += `<label>${d === hoje ? 'Hoje' : d === ontem ? 'Ontem' : new Date(x.t).toLocaleDateString('pt-BR')}</label>`; }
+    html += `<div class="item centralItem${nova ? ' nova' : ''}" data-onclick="centralToque(${i})"><span class="centralIco" style="color:${cor}">${I(ic, 20)}</span><div class="mid">
+      <b style="white-space:normal">${esc(x.txt)}</b><small>${centralQuando(x.t)}${x.ts.length > 1 ? ` · ${x.ts.length} vezes` : ''}${nova ? ' <em class="centralNova">Nova</em>' : ''}</small></div>${x.dest || x.ts.length > 1 ? `<span class="centralVai">${I('chev', 16)}</span>` : ''}</div>`;
+  });
+  showSheet(`<h3>${I('bell', 22)} Notificações</h3>
+    ${html || '<div class="hint" style="margin-top:0">Nenhuma notificação por aqui.</div>'}
+    <div class="btns foot">${centralItens.length ? '<button class="btn danger" data-onclick="centralLimpar()">Limpar</button>' : ''}<button class="btn primary" data-onclick="closeForm()">Fechar</button></div>`);
+}
+// Tocar: item repetido mostra cada vez que aconteceu; com destino, abre a tela dele.
+function centralToque(i){
+  const x = centralItens[i];
+  if (!x) return;
+  if (x.ts.length > 1){
+    settingsOpen = false; F = null;
+    return showSheet(`<h3>${esc(x.txt)}</h3><div class="hint" style="margin-top:0">${x.ts.length} vezes em ${new Date(x.t).toLocaleDateString('pt-BR')}</div>
+      <div class="card" style="background:var(--bg);box-shadow:none">${[...x.ts].reverse().map(t => `<div class="item" style="cursor:default"><div class="mid"><b>${centralQuando(t)}</b></div></div>`).join('')}</div>
+      <div class="btns foot"><button class="btn" data-onclick="centralTela()">Voltar</button>${x.dest ? `<button class="btn primary" data-onclick="centralAbrir(${i})">Abrir</button>` : ''}</div>`);
+  }
+  if (x.dest) centralAbrir(i);
+}
+function centralAbrir(i){
+  const d = (centralItens[i] || {}).dest;
+  if (!d) return;
+  closeForm();
+  if (d.k === 'prev'){ state.gsub = 'mes'; state.month = d.m; go('gastos'); abrirPrevisao(d.id, d.m); }
+  else if (d.k === 'orc'){ state.gsub = 'mes'; state.month = d.m; go('gastos'); }
+  else if (d.k === 'sync') canSync() && sync.on ? openNuvem() : openSettings('conta');
+  else if (d.k === 'compart') openAtividade();
+  else if (d.k === 'conflito') openConflitos();
+  else if (d.k === 'resumo') go('resumo');
+}
+async function centralLimpar(){
+  if (await ask('Apagar todas as notificações desta central?', 'Limpar', true)){ centralLimparJa(); centralTela(); }
+}
+function centralLimparJa(){ centralGuardar([]); centralNovas = new Set(); }
 function hideSnack(){ document.getElementById('snack').hidden = true; undoFn = null; }
 

@@ -21,10 +21,15 @@ function demoDados(){
     g('Mercado do Bairro', 'mercado', 412.35 + k * 18, k, 6, {bank:'Banco Azul', pay:'credito'}), g('Supermercado Central', 'mercado', 238.6 - k * 11, k, 20, {bank:'Banco Verde', pay:'debito'}),
     g('Padaria Central', 'alimentacao', 46.8, k, 3, {bank:'Banco Verde', pay:'pix'}), g('Combustível', 'combustivel', 180 + k * 12, k, 12, {bank:'Banco Azul', pay:'credito'}),
     g('Transporte por app', 'transporte', 64.5, k, 17, {bank:'Banco Azul', pay:'credito'}), g('Cinema', 'cinema', 58, k, 22, {bank:'Banco Azul', pay:'credito'}),
-    g('Restaurante Sabor', 'restaurante', 96.4, k, 14, {bank:'Banco Azul', pay:'credito'}), g('Farmácia', 'farmacia', 37.9, k, 9, {bank:'Banco Verde', pay:'debito'}));
+    g('Restaurante Sabor', 'restaurante', 96.4, k, 14, {bank:'Banco Azul', pay:'credito'}), g('Farmácia', 'farmacia', 37.9, k, 9, {bank:'Banco Verde', pay:'debito'}),
+    g('Mercado do Bairro', 'mercado', 186.4 + k * 9, k, 11, {pay:'va', emp:'Pluxee'}), g('Almoço no centro', 'restaurante', 38.5, k, 8, {pay:'vr', emp:'Alelo'}));
+  // Um lançamento com histórico de alterações (o que mudou ao editar).
+  expenses[0].h = [{t:Date.now() - 20 * 864e5, d:'valor R$ 1.390,00 → R$ 1.450,00'}];
   return {
     incomes:[{id:id(), desc:'Salário', cat:'salario', value:5200, fixed:true, start:m(-2), end:'', bank:'Banco Verde', day:5, u:1},
-      {id:id(), desc:'Trabalho extra', cat:'freelance', value:650, fixed:false, start:m(-1), end:'', bank:'Banco Verde', day:18, u:1}],
+      {id:id(), desc:'Trabalho extra', cat:'freelance', value:650, fixed:false, start:m(-1), end:'', bank:'Banco Verde', day:18, u:1},
+      {id:id(), desc:'Crédito VA', cat:'va', value:800, fixed:true, start:m(-2), end:'', day:1, emp:'Pluxee', u:1},
+      {id:id(), desc:'Crédito VR', cat:'vr', value:600, fixed:true, start:m(-2), end:'', day:1, emp:'Alelo', u:1}],
     expenses,
     installments:[{id:id(), desc:'Geladeira', cat:'casa', total:2400, n:10, paid:2, start:m(-2), bank:'Banco Azul', pay:'credito', u:1},
       {id:id(), tipo:'financiamento', desc:'Financiamento do carro', credor:'Financeira Exemplo', conta:'Banco Azul', cat:'transporte', total:28800, n:24, paid:12, start:m(-12), due:15, taxa:1.2, u:1}],
@@ -32,8 +37,14 @@ function demoDados(){
     goals:[{id:id(), name:'Reserva de emergência', target:15000, saved:6200, date:m(12), u:1}, {id:id(), name:'Viagem de férias', target:6000, saved:1800, date:m(8), u:1}],
     investments:[{id:id(), name:'CDB Banco Verde', cat:'rendafixa', value:6200, index:'cdi', pct:105, monthly:300, broker:'Corretora Alfa', accYM:m(-2), u:1},
       {id:id(), name:'Tesouro Selic', cat:'tesouro', value:3500, index:'selic', pct:100, monthly:0, broker:'Corretora Beta', accYM:m(-2), u:1},
-      {id:id(), name:'LCI Banco Azul', cat:'rendafixa', value:2000, index:'cdi', pct:92, monthly:0, broker:'Corretora Alfa', accYM:m(-2), u:1}],
+      {id:id(), name:'LCI Banco Azul', cat:'rendafixa', value:2000, index:'cdi', pct:92, monthly:0, broker:'Corretora Alfa', accYM:m(-2), u:1},
+      {id:id(), cat:'acoes', ticker:'EXMP3', name:'EXMP3', assetName:'Empresa Exemplo', quote:27.4, quoteAt:Date.now(), lots:[{qty:40, paid:24.1, date:m(-6) + '-10'}, {qty:20, paid:26.3, date:m(-2) + '-05'}],
+        index:'pre', pct:0, monthly:0, broker:'Corretora Beta', u:1}].map(v => (v.ticker && recalc(v), v)), // ação: quantidade, preço médio e valor
+    quotesAt:Date.now(), // cotação fictícia: não procura na internet
+    // Lixeira: um gasto excluído há dois dias (dá para restaurar).
+    trash:[{col:'expenses', rec:{id:id(), desc:'Lanche duplicado', cat:'alimentacao', value:23.9, start:m(0), day:hoje, fixed:false, end:'', u:1}, at:Date.now() - 2 * 864e5}],
     transfers:[{id:id(), from:'Banco Verde', to:'Banco Azul', value:500, month:m(-1), day:6, u:1}],
+    previsoes:[{id:id(), cat:'combustivel', mes:m(0), value:300, dia:25, rep:true, ex:{}, u:1}, {id:id(), cat:'farmacia', mes:m(0), value:80, dia:31, rep:false, ex:{}, u:1}],
     budgets:{mercado:700, restaurante:250, transporte:1500, cinema:100},
     cardClose:{'Banco Azul':25}, cardDue:{'Banco Azul':5}, cardAcc:{'Banco Azul':'Banco Azul'}, cardLimit:{'Banco Azul':4000}};
 }
@@ -51,13 +62,27 @@ async function demoLigar(){
   loadDb({...demoDados(), prefs:{...db.prefs, name:'', greet:'', resumo:Object.keys(RESUMO).map(k => ({k, on:true})), resumoEnxuto:false, resumoAuto:[]}}); rollover();
   chatLog.length = 0; state.tab = 'resumo'; state.month = curYM; state.year = +curYM.slice(0, 4);
   document.getElementById('gate').hidden = true;
+  demoCentral(); // a central da demonstração (só na memória) já com alguns avisos
   demoFaixa(); render(); scrollTo(0, 0);
+  openTour(0); // o tutorial, toda vez que entra na demonstração (dá para pular)
+}
+// Sugestões pelas notificações do banco na demonstração: só na memória, nada vai para o lado nativo.
+let demoNotas = [];
+function demoCentral(){
+  const t = Date.now(), h = 3600e3;
+  demoNotas = [{t:t - 2 * h, app:'br.exemplo.bancoazul.bank', nome:'Banco Azul', texto:'Compra aprovada — Compra de R$ 32,90 APROVADA em PADARIA CENTRAL'},
+    {t:t - 26 * h, app:'br.exemplo.bancoverde.bank', nome:'Banco Verde', texto:'Pix recebido — Você recebeu um Pix de R$ 120,00'}];
+  centralDemo = [];
+  centralAdd('Sincronização efetuada', 'sucesso', t - 3 * h, {k:'sync'});
+  centralAdd('Orçamento de Mercado: 93% do limite usado (R$ 650,95 de R$ 700,00).', 'aviso', t - 5 * h, {k:'orc', m:curYM});
+  centralAdd('Cópia do dia salva na sua conta Google (Versões salvas).', 'sucesso', t - 28 * h, {k:'sync'});
+  centralAdd('Nova sugestão de lançamento pela notificação do Banco Azul.', 'info', t - 2 * h, {k:'resumo'});
 }
 // Volta aos dados reais, exatamente como estavam (sem gravar nada: eles nunca saíram do aparelho).
 function demoSair(){
   if (!demoOn) return;
   const real = JSON.parse(demoReal);
-  demoReal = null; demoOn = false;
+  demoReal = null; demoOn = false; prevAvisosDemo = {}; centralDemo = []; demoNotas = []; // a central da demonstração some junto
   loadDb(real);
   chatLog.length = 0; state.tab = 'resumo'; state.month = curYM; state.year = +curYM.slice(0, 4);
   closeForm(); demoFaixa(); render(); scrollTo(0, 0);
@@ -172,6 +197,7 @@ function openTour(i, daConfig){
       <button class="btn primary" data-onclick="${ult ? `tourDone(${!!daConfig})` : `openTour(${i + 1},${!!daConfig})`}">${ult ? 'Começar' : 'Próximo'}</button></div>`);
 }
 function tourDone(daConfig){
+  if (demoOn) return closeForm(); // na demonstração não marca o tutorial como visto na conta real
   sync.tour = true; saveSync();
   if (daConfig) openSettings('perfil'); else { closeForm(); startSheets(); }
 }
@@ -195,7 +221,7 @@ function onAtualizacao(tipo, versao, url, novas){
   if (tipo === 'nada') return tell(`Você já está na versão mais recente (${APP_VERSION}).`);
   if (tipo === 'erro') return tell('Não consegui procurar atualizações. Confira a internet e tente de novo.');
   if (tipo !== 'web' && tipo !== 'apk') return;
-  if (tipo === 'apk' && !manual && sync.apkAsk === versao + dayStr(Date.now())) return; // sozinho, no máximo uma vez por dia
+  // A procura roda a cada abertura (e na volta depois de 30 min fora); "Depois" vale só até a próxima, sem guardar nada.
   if (tipo === 'web' && !manual && F) return toast(`Versão ${versao} baixada. Ela entra na próxima vez que você abrir o app.`);
   updPend = {versao, novas, url:tipo === 'apk' ? url : ''};
   updFlush(manual);
@@ -207,8 +233,17 @@ function updFlush(agora){
   if (!updPend) return;
   if (agora !== true && updOcupado()){ updFlush.t = setTimeout(updFlush, 1200); return; }
   const u = updPend; updPend = null;
-  if (u.url){ sync.apkAsk = u.versao + dayStr(Date.now()); saveSync(); }
   openUpdate(u.versao, u.novas, u.url);
+}
+// Versão web, sozinha: ao abrir e na volta depois de 30 min fora, confere em segundo plano a versão publicada (um arquivo
+// pequeno, sem guardar no cache); se for mais nova, mostra o mesmo aviso do APK, com "Atualizar agora" (recarrega e o
+// service worker busca os arquivos novos). Sem internet ou sem novidade, nada aparece.
+async function webVerificar(){
+  if (!WEB_APP || window.TESTE) return;
+  try {
+    const j = await (await fetch('https://raw.githubusercontent.com/cofrim/cofrim-updater/main/versao.json?t=' + Date.now(), {cache:'no-store'})).json();
+    if (verNum(j.versao) > verNum(APP_VERSION)) onAtualizacao('web', j.versao, '', Array.isArray(j.novidades) ? j.novidades : []);
+  } catch(e){}
 }
 // Versão web: confere a versão publicada; se for mais nova, recarrega (o app busca os arquivos novos na rede).
 async function webProcurar(){
@@ -242,7 +277,7 @@ function updateNow(){
   closeForm();
   if (updUrl) return Android.instalarApk ? Android.instalarApk(updUrl) : Android.abrir(updUrl);
   try { localStorage.setItem(VER_KEY, updVer); } catch(e){} // a prévia já mostrou as novidades: não repete ao recarregar
-  Android.recarregar();
+  if (window.Android && Android.recarregar) Android.recarregar(); else location.reload(); // na web, o service worker busca os arquivos novos
 }
 // Andamento do APK novo baixado pelo próprio app (Android.instalarApk): baixando, permissao (a pessoa precisa liberar
 // "instalar apps desconhecidos" na tela que abriu), pronto (abriu a instalação do Android) ou erro.
@@ -272,6 +307,7 @@ function maybeNews(sempre){
   if (!last) last = db.verVista || (db.expenses.length || db.incomes.length ? NOV_SEM_REGISTRO : null);
   if (db.verVista !== APP_VERSION && !demoOn){ db.verVista = APP_VERSION; save(); }
   if (!sempre && !sync.forceNews && (last === APP_VERSION || (!last && !db.expenses.length && !db.incomes.length))) return false;
+  if (!sempre && last && last !== APP_VERSION) centralAdd(`Cofrim atualizado para a versão ${APP_VERSION}.`, 'sucesso');
   if (sync.forceNews){ sync.forceNews = false; saveSync(); }
   settingsOpen = false; F = null;
   // Só o que é novo para esta pessoa: as versões depois da última que ela usou (numa conta nova ou pelas
@@ -305,30 +341,83 @@ function answerLock(on){
 }
 
 // ---------- Backup em arquivo ----------
+// Arquivo JSON legível (indentado): cofrim-backup-AAAA-MM-DD.json. "Salvar no aparelho" baixa o arquivo; "Salvar cópia no
+// meu Google Drive" grava numa pasta "Cofrim" visível no Drive, criada pelo app com a permissão drive.file (só os
+// arquivos que o próprio app cria; nada do resto do Drive), pedida no primeiro toque.
+const backupArquivo = () => `cofrim-backup-${dayStr(Date.now())}.json`;
 function exportData(){
   // No APK, o salvamento do arquivo é feito pelo lado nativo (MainActivity).
-  if (window.Android && Android.exportar) return Android.exportar(JSON.stringify(db, null, 2), 'financas-backup-' + curYM + '.json');
+  if (window.Android && Android.exportar) return Android.exportar(JSON.stringify(db, null, 2), backupArquivo());
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(db, null, 2)], {type:'application/json'}));
-  a.download = 'financas-backup-' + curYM + '.json'; a.click();
+  a.download = backupArquivo(); a.click();
+}
+const MSG_COPIA = 'Para salvar a cópia, o app precisa da permissão de criar arquivos no seu Google Drive (ele só vê os arquivos que ele mesmo cria). Toque de novo em "Salvar cópia no meu Google Drive" e deixe a caixa marcada.';
+async function salvarCopiaDrive(){
+  if (demoBloqueia()) return;
+  if (!(canSync() && sync.on)) return tell('Entre com a sua conta Google para salvar uma cópia no Drive.');
+  const nome = backupArquivo(), PASTA = 'application/vnd.google-apps.folder';
+  const lista = async q => JSON.parse(ok(await arq('GET', `${DRIVE}/drive/v3/files?spaces=drive&q=${encodeURIComponent(q + ' and trashed=false')}&fields=files(id)`)).text).files;
+  try {
+    await comCarga('Salvando a cópia no seu Google Drive…', async () => {
+      let pasta = (await lista(`name='Cofrim' and mimeType='${PASTA}'`))[0];
+      if (!pasta) pasta = JSON.parse(ok(await arq('POST', `${DRIVE}/drive/v3/files?fields=id`, JSON.stringify({name:'Cofrim', mimeType:PASTA}), 'application/json')).text);
+      const f = (await lista(`name='${nome}' and '${pasta.id}' in parents`))[0], json = JSON.stringify(db, null, 2), b = 'cofrim-boundary';
+      if (f) ok(await arq('PATCH', `${DRIVE}/upload/drive/v3/files/${f.id}?uploadType=media`, json, 'application/json'));
+      else ok(await arq('POST', `${DRIVE}/upload/drive/v3/files?uploadType=multipart`,
+        `--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({name:nome, parents:[pasta.id]})}\r\n--${b}\r\nContent-Type: application/json\r\n\r\n${json}\r\n--${b}--`, 'multipart/related; boundary=' + b));
+    });
+    tell(`Cópia salva no seu Google Drive, na pasta Cofrim, com o nome ${nome}.`);
+  } catch(e){
+    if (e.status === -6) return demoBloqueia();
+    if (e.status !== 0 && e.status !== -1) logErr('salvar cópia no Drive', e.status ? e.status + ' ' + String(e.text).slice(0, 300) : e);
+    tell(semPermissao(e) ? MSG_COPIA : e.status === 0 ? 'Sem conexão com a internet. Tente de novo quando a conexão voltar.'
+      : e.status === -1 ? 'É preciso entrar na conta Google.' : 'Não foi possível salvar a cópia no Google Drive. Tente de novo.');
+  }
+}
+// Importar: valida (fixDb), mostra um resumo e pergunta se substitui os dados atuais ou junta com eles. Antes, guarda
+// os dados atuais (neste aparelho, para "Desfazer a importação", e em "Versões salvas" quando há conta).
+let importando = null;
+const mesAbrev = ym => MESES[+ym.slice(5) - 1].slice(0, 3) + '/' + ym.slice(0, 4);
+function importResumo(d){
+  const n = nLanc(d), meses = ['incomes', 'expenses', 'installments'].flatMap(c => d[c].map(r => r.start)).filter(m => /^\d{4}-\d\d$/.test(m || '')).sort();
+  return `Este arquivo tem ${n.toLocaleString('pt-BR')} ${n === 1 ? 'lançamento' : 'lançamentos'}` + (meses.length ? (meses[0] === meses[meses.length - 1] ? `, de ${mesAbrev(meses[0])}` : `, de ${mesAbrev(meses[0])} a ${mesAbrev(meses[meses.length - 1])}`) : '') + '.';
+}
+function importPerguntar(d){
+  importando = d;
+  settingsOpen = false; F = null;
+  showSheet(`<h3>${I('upload', 22)} Importar backup</h3>
+    <div class="hint" style="margin-top:0">${esc(importResumo(d))} Substituir os dados atuais ou juntar com eles?</div>
+    <div class="hint"><b>Substituir</b>: os dados passam a ser exatamente os do arquivo, em todos os aparelhos. <b>Juntar</b>: entra o que só está no arquivo; num lançamento que está nos dois, fica a alteração mais recente. Antes, o app guarda uma cópia dos dados atuais para dar para desfazer.</div>
+    <div class="btns"><button class="btn danger" data-onclick="importarComo('substituir')">Substituir</button><button class="btn primary" data-onclick="importarComo('juntar')">Juntar</button></div>
+    <div class="btns foot"><button class="btn" data-onclick="closeForm()">Cancelar</button></div>`);
+}
+async function importarComo(modo){
+  const d = importando; importando = null;
+  if (!d || demoBloqueia()) return;
+  closeForm();
+  keepBefore('importar');
+  if (canSync() && sync.on) try { await copiaAntes('importar'); } catch(e){ logErr('cópia antes de importar', e.status ? e.status + ' ' + String(e.text).slice(0, 300) : e); } // sem internet, fica a cópia deste aparelho
+  // Substituir, como restaurar uma versão salva: o que veio do arquivo fica como "alterado agora" e o que existe hoje mas
+  // não está nele é marcado como excluído. Sem isso, a próxima sincronização trazia de volta da conta tudo o que não
+  // estava no arquivo, e a troca não valia nos outros aparelhos.
+  if (modo === 'substituir') applySnapshot(d);
+  else { loadDb(mergeDb(db, d)); rollover(); save(); closeForm(); render(); }
+  toast(modo === 'substituir' ? 'Dados substituídos pelos do arquivo.' : 'Arquivo juntado aos seus dados.');
+}
+function importTexto(texto){
+  try {
+    const d = JSON.parse(texto);
+    if (!Array.isArray(d.incomes) || !Array.isArray(d.expenses)) throw 0;
+    if (newerDb(d)) return tell('Este backup foi feito por uma versão mais nova do app. Atualize o app para importar.');
+    importPerguntar(fixDb(d));
+  } catch(e){ if (e !== 0) logErr('importar backup', e); tell('Arquivo de backup inválido.'); }
 }
 function importData(input){
   if (demoOn){ input.value = ''; return demoBloqueia(); }
   const file = input.files && input.files[0]; if (!file) return;
   const r = new FileReader();
   r.onerror = () => { logErr('importar backup', 'leitura: ' + ((r.error && r.error.message) || r.error)); tell(LER_ERRO); input.value = ''; };
-  r.onload = async () => {
-    try {
-      const d = JSON.parse(r.result);
-      if (!Array.isArray(d.incomes) || !Array.isArray(d.expenses)) throw 0;
-      if (newerDb(d)) return tell('Este backup foi feito por uma versão mais nova do app. Atualize o app para importar.');
-      if (!await ask('Substituir todos os dados atuais pelos do backup?', 'Substituir', true)) return;
-      // Como restaurar uma versão salva: o que veio do arquivo fica como "alterado agora" e o que existe hoje mas não está
-      // nele é marcado como excluído. Sem isso, a próxima sincronização trazia de volta da conta tudo o que não estava no
-      // arquivo, e a troca não valia nos outros aparelhos.
-      applySnapshot(fixDb(d));
-    } catch(e){ if (e !== 0) logErr('importar backup', e); tell('Arquivo de backup inválido.'); }
-    input.value = '';
-  };
+  r.onload = () => { importTexto(r.result); input.value = ''; };
   try { r.readAsText(file); } catch(e){ logErr('importar backup', e); tell(LER_ERRO); input.value = ''; }
 }

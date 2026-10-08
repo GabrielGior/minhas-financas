@@ -107,6 +107,8 @@ function openSettings(sec){
       <div class="chips" style="margin:0">${Object.entries(CAT_GASTO).filter(([k]) => k !== 'emprestimo' && (p.notifyCats[k] === false || db.expenses.some(x => x.cat === k && x.fixed))).map(([k,c]) => { const on = p.notifyCats[k] !== false; return `<button style="${on ? 'background:var(--brand);color:' + (theme.dark ? '#0b1020' : '#fff') : 'opacity:.6;text-decoration:line-through'}" data-onclick="toggleNotifyCat('${k}')">${I(c[0], 14)} ${esc(c[1])}</button>`; }).join('')}</div>
     </div>
     <div class="hint">Vale para gastos fixos com dia de vencimento. O app avisa em cada antecedência marcada e de novo no dia do vencimento, por volta das 9h. Sem nenhuma marcada, avisa só no dia.</div>${window.Android && Android.bateria ? `${batLivre ? '' : `<div class="btns"><button class="btn" data-onclick="Android.bateria()">Tirar o app da economia de bateria</button></div>`}
+    <label>Previsões de gastos (80%, passou do previsto e encerramento)</label>
+    <div class="btns" style="margin-top:0">${[[true,'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${!!(p.notifyPrev ?? p.notify) === v ? 'primary' : ''}" data-onclick="setNotifyTipo('notifyPrev',${v})">${t}</button>`).join('')}</div>
     <label>Parcelas de financiamentos e empréstimos (no dia do vencimento)</label>
     <div class="btns" style="margin-top:0">${[[true,'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${!!(p.notifyFin ?? p.notify) === v ? 'primary' : ''}" data-onclick="setNotifyTipo('notifyFin',${v})">${t}</button>`).join('')}</div>
     <div class="hint">Em alguns celulares (Samsung, Xiaomi, Motorola) a economia de bateria atrasa ou corta os lembretes. Na tela que abre, procure "Cofrim" e escolha "Não otimizar". O app também reagenda os lembretes quando o celular reinicia e quando é atualizado.</div>` : ''}`],
@@ -150,7 +152,9 @@ function openSettings(sec){
     <label>Planilha do Google</label>
     <div class="btns" style="margin-top:0"><button class="btn" data-onclick="openSheetLink()">${I('doc')}${sheetId() ? 'Planilha ligada ao app' : 'Criar planilha ligada ao app'}</button></div>
     <label>Backup em arquivo</label>
-    <div class="btns" style="margin-top:0"><button class="btn" data-onclick="exportData()">${I('download')}Exportar</button><button class="btn" data-onclick="if(!demoBloqueia())document.getElementById('file').click()">${I('upload')}Importar</button></div>
+    ${canSync() && sync.on ? `<div class="hint" style="margin-top:0">Seus dados ficam numa área privada do seu Google Drive, que só o Cofrim acessa. Use "Salvar cópia" para ter um arquivo que você pode ver e guardar onde quiser.</div>
+    <div class="btns"><button class="btn" data-onclick="salvarCopiaDrive()">${I('cloud')}Salvar cópia no meu Google Drive</button></div>` : ''}
+    <div class="btns" style="margin-top:${canSync() && sync.on ? 8 : 0}px"><button class="btn" data-onclick="exportData()">${I('download')}Salvar no aparelho</button><button class="btn" data-onclick="if(!demoBloqueia())document.getElementById('file').click()">${I('upload')}Importar</button></div>
     ${sync.fileAt ? `<div class="hint">Cópia automática semanal: a última foi em ${new Date(sync.fileAt).toLocaleDateString('pt-BR')}, na pasta <span style="overflow-wrap:anywhere">${esc(sync.fileDir || '')}</span> do celular (são guardadas as 8 mais recentes; a pasta é apagada se o app for desinstalado).</div>` : ''}
     <label>Apagar tudo</label>
     <div class="btns" style="margin-top:0"><button class="btn danger" style="flex:1" data-onclick="wipeAll()">${I('trash')}Apagar todos os meus dados</button></div>
@@ -244,8 +248,10 @@ function diagTap(){
   diagOpen();
 }
 function diagErrors(){ try { return JSON.parse(localStorage.getItem(ERR_KEY) || '[]'); } catch(e){ return []; } }
-// Texto do relatório: nada de valores nem descrições dos lançamentos, só contagens e o estado do app.
-function diagText(){
+// Texto do relatório: nada de valores nem descrições dos lançamentos, só contagens e o estado do app. O texto inteiro
+// passa por limpaDiag (e-mails, tokens, respostas do Google, valores e códigos longos), também o que veio do lado nativo.
+function diagText(){ return limpaDiag(diagTextoBruto()); }
+function diagTextoBruto(){
   const kb = k => { try { return Math.round((localStorage.getItem(k) || '').length / 1024); } catch(e){ return -1; } };
   const errs = diagErrors();
   return [`Cofrim ${APP_VERSION} · formato dos dados ${db.ver || 1}`,

@@ -13,7 +13,7 @@ const skel = n => `<div class="sk skHero"></div><div class="card">${'<div class=
 // Nome da categoria com o ícone pequeno, para textos corridos.
 const catName = (c, color = 'var(--brand)') => `<span style="color:${esc(color)}">${I(c[0], 16)}</span> ${esc(c[1])}`;
 // Título da aba com os botões de personalizar a tela e de configurações.
-const head = (title, tab) => `<h1>${title} <span>${eyeBtn()}${LAYOUT[tab] ? `<button class="iconbtn" data-onclick="openLayoutEdit('${tab}')" aria-label="Personalizar esta tela">${I('sliders', 24)}</button>` : ''}<button class="iconbtn" data-onclick="openSettings('')" aria-label="Configurações">${I('gear', 24)}</button></span></h1>${offlinePill()}`;
+const head = (title, tab) => `<h1>${title} <span>${nuvemBtn()}${eyeBtn()}${LAYOUT[tab] ? `<button class="iconbtn" data-onclick="openLayoutEdit('${tab}')" aria-label="Personalizar esta tela">${I('sliders', 24)}</button>` : ''}<button class="iconbtn" data-onclick="openSettings('')" aria-label="Configurações">${I('gear', 24)}</button></span></h1>${offlinePill()}`;
 const empty = (icon, t) => `<div class="card empty"><span>${I(icon, 40)}</span>${t}</div>`;
 // Conta compartilhada: quem lançou o registro (by), como etiqueta na linha. Fora dela não aparece.
 const byTag = x => shared() && x.by ? `<span class="tag">${I('user', 11)} ${esc(x.by)}</span>` : '';
@@ -179,16 +179,16 @@ function viewResumo(){
     const pendIn = sum(incomesOf(curYM).filter(x => x.day > now.getDate()), x => x.value);
     const pendOut = sum(expensesOf(curYM).filter(x => x.kind === 'expense' && (x.fixed ? x.due : x.day) > now.getDate()), x => x.value);
     // Um cartão por mês: selo de sobra/falta, barra de quanto dos ganhos os gastos consomem e os dois valores.
-    return `<h2>Previsão dos próximos meses</h2><div class="card prev">${rows.map((m, i) => { const tin = totalIn(m), tout = totalOut(m), net = tin - tout, end = hasAcc ? sum(db.accounts, a => accountBalance(a, monthEnd(m))) : 0; return `
+    return `<h2>Previsão dos próximos meses</h2><div class="card prev">${rows.map((m, i) => { const tin = totalIn(m), tout = totalOutPrev(m), net = tin - tout, end = hasAcc ? sum(db.accounts, a => accountBalance(a, monthEnd(m))) - reservaAte(m) : 0, r = reservaPrevisoes(m); return `
       <div class="prevM ${net < 0 ? 'neg' : ''}">
         <div class="prevCab"><b>${cap(monthName(m).split(' ')[0])}${i ? '' : '<em>este mês</em>'}</b><span class="${net < 0 ? 'out' : 'in'}">${net < 0 ? 'falta' : 'sobra'} ${fmt(Math.abs(net))}</span></div>
         <div class="prevBar"><i style="width:${tin ? Math.min(100, tout / tin * 100) : tout ? 100 : 0}%"></i></div>
-        <div class="prevNum"><span>${I('income', 13)} entra <b>${fmt(tin)}</b></span><span>${I('receipt', 13)} sai <b>${fmt(tout)}</b></span></div>
+        <div class="prevNum"><span>${I('income', 13)} entra <b>${fmt(tin)}</b></span><span>${I('receipt', 13)} sai <b>${fmt(tout)}</b></span></div>${r ? `<div class="hint" style="margin:2px 0 0">Sai ${prevInclui(r)}.</div>` : ''}
         ${hasAcc ? `<div class="prevNum"><span>Saldo das contas no fim do mês</span><b class="${end < 0 ? 'out' : ''}">${fmt(end)}</b></div>` : ''}</div>`; }).join('')}
       ${pendIn || pendOut ? `<div class="hint">Até o fim de ${monthName(curYM).split(' ')[0]} ainda entram ${fmt(pendIn)} e saem ${fmt(pendOut)} (lançamentos com dia depois de hoje).</div>` : ''}
-      <div class="hint">Considera ganhos e gastos fixos, anuais, parcelas e o que já está lançado em cada mês.</div></div>`; },
+      <div class="hint">Considera ganhos e gastos fixos, anuais, parcelas, o que já está lançado em cada mês e o que falta gastar das previsões.</div></div>`; },
   // Resumo do mês: o mesmo cartão de destaque do saldo do ano. Tocar leva aos gastos do mês.
-  mes: () => { const a = totalIn(rm), b = totalOut(rm); return `<div class="hero" style="cursor:pointer" data-onclick="goMonth('${rm}')"><small>Saldo de ${monthName(rm)}</small><div class="big">${fmt(a - b)}</div>
+  mes: () => { const a = totalIn(rm), b = totalOut(rm), r = reservaPrevisoes(rm); return `<div class="hero" style="cursor:pointer" data-onclick="goMonth('${rm}')"><small>Saldo de ${monthName(rm)}</small><div class="big">${fmt(a - b - r)}</div>${r ? `<small class="prevInc">${prevInclui(r)}</small>` : ''}
     <div class="row cores"><div><small>Ganhos</small><b class="hIn">${fmt(a)}</b></div><div><small>Gastos</small><b class="hOut">${fmt(b)}</b></div><div style="margin-left:auto;align-self:flex-end"><small>Ver gastos ›</small></div></div></div>`; },
   faturas: () => `<h2>Faturas de ${monthName(rm)}</h2>${inv.length ? `<div class="card">${inv.map(([bank, v]) => `<div class="item" style="cursor:default">${tile('card')}<div class="mid"><b>${esc(bank)}</b></div><div class="val out">${fmt(v)}</div></div>`).join('')}</div>`
     : '<div class="hint" style="margin:0 4px 12px">Nenhuma compra no crédito neste mês.</div>'}`,
@@ -210,7 +210,7 @@ function viewResumo(){
     : '<div class="hint" style="margin:0 4px 12px">Nenhum investimento cadastrado.</div>'}`
   };
   return `${greeting() ? `<div class="hello">${greeting()}</div>` : ''}
-  <h1 style="margin-bottom:0">Resumo <span>${eyeBtn()}<button class="iconbtn" data-onclick="openResumoEdit()" aria-label="Personalizar o Resumo">${I('sliders', 24)}</button><button class="iconbtn" data-onclick="openSettings('')" aria-label="Configurações">${I('gear', 24)}</button></span></h1>
+  <h1 style="margin-bottom:0">Resumo <span>${sinoBtn()}${nuvemBtn()}${eyeBtn()}<button class="iconbtn" data-onclick="openResumoEdit()" aria-label="Personalizar o Resumo">${I('sliders', 24)}</button><button class="iconbtn" data-onclick="openSettings('')" aria-label="Configurações">${I('gear', 24)}</button></span></h1>
   <div class="muted" style="margin:0 2px 14px;font-size:13.5px">Hoje é ${todayLabel()}</div>${offlinePill(true)}${trocaContaHtml()}${typeof avisoInstalar === 'function' ? avisoInstalar() : ''}
   <div class="nav periodo"><button data-onclick="resMes(-1)" aria-label="Mês anterior">‹</button><b data-onclick="pickResumo()"><span>${nomeM}</span><small>${y} ▾</small></b><button data-onclick="resMes(1)" aria-label="Próximo mês">›</button></div>
   ${archBanner(y)}${ativHtml()}${bankNotesHtml()}${blocks('resumo', B)}
@@ -219,12 +219,41 @@ function viewResumo(){
 }
 // Sugestões de lançamento a partir das notificações de bancos, carteiras digitais e apps de vale (opcional, só no APK;
 // ver BankListener no lado nativo, que marca n.tipo = 'vale' ou 'carteira').
+// ---------- Apps que podem gerar sugestões (o único lugar da lista; o lado nativo recebe a mesma por avisosConfig) ----------
+// Só bancos, carteiras digitais, cartões e vales-benefício. Para ampliar: um pacote novo em BANK_APPS (com o nome) ou
+// uma palavra em APPS_PADROES. APPS_ANUNCIO: texto de propaganda (oferta, cupom, "bora"…), descartado mesmo de um banco.
 const BANK_APPS = {'com.nu.production':'Nubank', 'br.com.intermedium':'Inter', 'com.itau':'Itaú', 'br.com.bb.android':'Banco do Brasil', 'com.bradesco':'Bradesco',
-  'br.com.gabba.Caixa':'Caixa', 'com.santander.app':'Santander', 'com.c6bank.app':'C6 Bank', 'com.picpay':'PicPay', 'com.mercadopago.wallet':'Mercado Pago'};
-function bankNotes(){ if (demoOn) return []; try { return window.Android && Android.avisosBanco ? JSON.parse(Android.avisosBanco()) : []; } catch(e){ return []; } }
+  'br.com.gabba.Caixa':'Caixa', 'br.gov.caixa.tem':'Caixa Tem', 'com.santander.app':'Santander', 'com.c6bank.app':'C6 Bank', 'com.picpay':'PicPay',
+  'com.mercadopago.wallet':'Mercado Pago', 'br.com.uol.ps.myaccount':'PagBank', 'br.com.neon':'Neon', 'br.com.bradesco.next':'Next',
+  'com.btg.pactual.banking':'BTG Pactual', 'br.com.banrisul':'Banrisul', 'br.com.digio':'Digio', 'br.com.willbank':'Will Bank'};
+// Carteiras digitais: podem sugerir, mas não são a conta do lançamento (o campo banco fica em branco).
+const CARTEIRA_APPS = {'com.google.android.apps.walletnfcrel':'Google Carteira', 'com.samsung.android.spay':'Samsung Wallet'};
+const APPS_PADROES = ['(^|\\.)(nu|bank|banco|itau|bradesco|santander|caixa|inter|sicredi|sicoob|picpay|mercadopago|pagbank|pagseguro|neon|next|btg|c6|original|banrisul|safra|digio|bancopan|will|nubank)(\\.|$|bank)',
+  'wallet|(^|\\.)(spay|samsungpay)(\\.|$)', 'alelo|pluxee|sodexo|swile|valecard|greencard|upbrasil|benef|(^|\\.)(ticket|vr|flash|caju)(\\.|$)'];
+const APPS_ANUNCIO = 'oferta|promo[cç]|promo\\b|cupo[nm]|desconto de|\\bbora\\b|aproveit|imperd[ií]ve|frete gr[aá]tis|s[oó] hoje|[uú]ltim[oa]s (dias|horas|unidades)|black friday|liquida[cç]|ganhe at[eé]|pe[cç]a j[aá]|garanta (j[aá]|o seu|a sua)|corre que';
+const APPS_BLOQ_KEY = 'financas-apps-bloqueados';
+function appsBloqueados(){ try { return JSON.parse(localStorage.getItem(APPS_BLOQ_KEY)) || []; } catch(e){ return []; } }
+const appFinanceiro = pacote => !!BANK_APPS[pacote] || !!CARTEIRA_APPS[pacote] || APPS_PADROES.some(p => new RegExp(p, 'i').test(pacote || ''));
+const ehAnuncio = texto => new RegExp(APPS_ANUNCIO, 'i').test(String(texto || ''));
+// Pode virar sugestão: de um app financeiro, que a pessoa não bloqueou, e sem cara de propaganda.
+const notaPermitida = n => !!n && appFinanceiro(n.app) && !appsBloqueados().includes(n.app) && (n.oculto || !ehAnuncio(n.texto));
+// Entrega a lista ao lado nativo (BankListener), para ele nem guardar o que não vale.
+function avisosConfigEnviar(){
+  if (window.Android && Android.avisosConfig) Android.avisosConfig(JSON.stringify({pacotes:Object.keys({...BANK_APPS, ...CARTEIRA_APPS}), padroes:APPS_PADROES, anuncio:APPS_ANUNCIO, bloqueados:appsBloqueados()}));
+}
+// Sugestão nova pela notificação do banco: uma mensagem na central, com o horário do aviso (uma vez cada).
+function centralBanco(list){
+  let visto = 0; try { visto = +localStorage.getItem('financas-central-banco') || 0; } catch(e){}
+  const novas = list.filter(x => x.n.t > visto);
+  if (!novas.length) return;
+  for (const x of novas) centralAdd(`Nova sugestão de lançamento pela notificação do ${x.p.app || 'banco'}.`, 'info', x.n.t, {k:'resumo'});
+  try { localStorage.setItem('financas-central-banco', String(Math.max(...novas.map(x => x.n.t)))); } catch(e){}
+}
+function bankNotes(){ if (demoOn) return demoNotas; try { return window.Android && Android.avisosBanco ? JSON.parse(Android.avisosBanco()).filter(notaPermitida) : []; } catch(e){ return []; } }
 // {value, desc, income, bank, date} a partir do texto da notificação; null se não houver valor.
 // Notificação que chegou escondida (n.oculto, ver BankListener): {hidden, app, title, income, bank, date}, sem valor.
-const bankName = n => BANK_APPS[n.app] || n.nome || 'banco';
+// Nome do app que avisou: o da lista, o que o Android informou ou, sem nenhum, o do pacote (ex.: "mcdonalds").
+const bankName = n => BANK_APPS[n.app] || CARTEIRA_APPS[n.app] || n.nome || (String(n.app || '').split('.').filter(p => !/^(com|br|android|apps?|mobile|mobileapp|production|prod)$/i.test(p)).pop() || 'banco');
 // App de vale: a empresa vem do nome do pacote; o vale (VR ou VA), do texto ou, sem pista, do único vale que a pessoa usa
 // (k = '' quando não dá para saber: o app pergunta).
 const VALE_APPS = [[/alelo/i, 'Alelo'], [/pluxee/i, 'Pluxee'], [/sodexo/i, 'Sodexo'], [/ticket/i, 'Ticket'], [/ifood/i, 'iFood Benefícios'], [/flash/i, 'Flash'],
@@ -248,21 +277,37 @@ function parseBankNote(n){
 }
 function bankNotesHtml(){
   const list = bankNotes().map((n, i) => ({i, n, p:parseBankNote(n)})).filter(x => x.p).slice(-5).reverse();
+  centralBanco(list);
   const hist = `<div class="btns" style="margin:${list.length ? '10px 0 0' : '0 0 12px'}"><button class="btn" data-onclick="openSugestoes()">${I('doc')}Histórico de sugestões</button></div>`;
   // Sem sugestão nova, fica só o botão do histórico (para quem tem a leitura das notificações ligada ou já teve sugestões).
   if (!list.length) return (window.Android && Android.avisosLigado && Android.avisosLigado()) || sugLog().length ? hist : '';
   return list.length ? `<div class="card"><b>${I('sparkle')} Sugestões pelas notificações do banco</b>${list.map(({i, n, p}) => `
     <div class="item" style="cursor:default"><div class="mid">${p.hidden
       ? `<b>Novo aviso do ${esc(p.app)}</b><small style="white-space:normal">${p.title ? esc(p.title) + ' · ' : ''}${new Date(n.t).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'})}. Não deu para ler o valor (o Android esconde avisos com números parecidos com código); confira no app do banco.</small>`
-      : `<b>${esc(p.desc)}</b><small style="white-space:normal">${esc(String(n.texto).slice(0, 90))}</small>`}</div>
+      : `<b>${esc(p.desc)}</b><small style="white-space:normal">${esc(bankName(n))} · ${esc(String(n.texto).slice(0, 90))}</small>`}</div>
       <div style="flex:none;text-align:right"><div class="val ${p.income ? 'in' : 'out'}">${p.hidden ? 'R$ ?' : fmt(p.value)}</div>
-      <button class="btn primary" style="padding:7px 10px;margin-top:4px" data-onclick="noteUse(${+n.t})">Lançar</button> <button class="btn" style="padding:7px 10px;margin-top:4px" data-onclick="noteDrop(${+n.t})">Ignorar</button></div></div>`).join('')}${hist}</div>` : '';
+      <button class="btn primary" style="padding:7px 10px;margin-top:4px" data-onclick="noteUse(${+n.t})">Lançar</button> <button class="btn" style="padding:7px 10px;margin-top:4px" data-onclick="noteIgnorar(${+n.t})">Ignorar</button></div></div>`).join('')}${hist}</div>` : '';
 }
 // Os botões levam a hora do aviso (t), não a posição: a lista pode mudar se chegar um aviso novo com a tela aberta.
 // Uma sugestão que sai da lista (lançada ou ignorada) vai para o histórico (ver openSugestoes, em js/exporta.js).
+// Ignorar: só esta sugestão ou, daqui para frente, nada deste app (guardado neste aparelho; vale também no lado nativo).
+function noteIgnorar(t){
+  const n = bankNotes().find(n => n.t === t);
+  if (!n) return render();
+  pickList('Ignorar', [['esta', 'Ignorar esta sugestão'], ['app', `Não sugerir do ${bankName(n)}`]], '', v => {
+    noteDrop(t); // antes de bloquear: depois o app some da lista e a sugestão não iria para o histórico
+    if (v === 'app'){
+      try { localStorage.setItem(APPS_BLOQ_KEY, JSON.stringify([...new Set([...appsBloqueados(), n.app])])); } catch(e){}
+      avisosConfigEnviar();
+      toast(`O app não vai mais sugerir lançamentos do ${bankName(n)}.`);
+      render();
+    }
+  });
+}
 function noteDrop(t, st = 'ignorada'){
   const n = bankNotes().find(n => n.t === t);
-  if (n){ sugGuardar(n, st); Android.avisosGuardar(JSON.stringify(bankNotes().filter(n => n.t !== t))); }
+  if (n && demoOn){ demoNotas = demoNotas.filter(n => n.t !== t); } // demonstração: só na memória
+  else if (n){ sugGuardar(n, st); Android.avisosGuardar(JSON.stringify(bankNotes().filter(n => n.t !== t))); }
   else if (st === 'lancada') sugGuardar(sugLog().find(n => n.t === t), st); // relançada a partir do histórico
   render();
 }
@@ -421,13 +466,185 @@ function settle(id, m){
   set(true);
   showUndo('Marcado como recebido', () => set(false));
 }
+// ---------- Previsões (bloco da aba Gastos e detalhe) ----------
+// Barra: verde até 80% do previsto, amarela até 100%, vermelha acima (cheia, com o excesso escrito).
+const prevCor = pct => pct > 100 ? 'var(--out)' : pct >= 80 ? 'var(--yield)' : 'var(--in)';
+const prevNome = cat => (CAT_GASTO[cat] || CAT_GASTO.outros)[1];
+function prevPrazo(it){
+  const g = prevGasto(it), dif = round2(g - it.value), hoje = today();
+  if (!prevAtiva(it) && it.m <= hoje[0]) return dif > 0 ? `encerrada · ${fmt(dif)} acima` : dif < 0 ? `encerrada · sobraram ${fmt(-dif)}` : 'encerrada · exatamente o previsto';
+  const falta = it.m === hoje[0] ? it.dia - hoje[1] : null;
+  return `até dia ${it.dia}${falta == null ? '' : falta === 0 ? ' · termina hoje' : ` · falta${falta > 1 ? 'm' : ''} ${falta} dia${falta > 1 ? 's' : ''}`}`;
+}
+function prevBloco(m){
+  const l = previsoesDoMes(m);
+  return `<h2>Previsões <button data-onclick="novaPrevisao()">Nova previsão</button></h2>${l.length ? `<div class="card">${l.map(it => {
+    const g = prevGasto(it), pct = g / it.value * 100, dif = round2(g - it.value);
+    return `<div class="catrow prevItem" data-id="${it.p.id}" data-m="${m}" data-onclick="abrirPrevisao(this.dataset.id,this.dataset.m)"><div class="top"><span>${catName(CAT_GASTO[it.cat] || CAT_GASTO.outros)}</span><b>${fmt(g)} de ${fmt(it.value)}</b></div>
+      <div class="bar" style="margin:6px 0"><i style="width:${Math.min(100, pct)}%;background:${prevCor(pct)}"></i></div>
+      <div class="hint" style="margin-top:0">${prevPrazo(it)}${dif > 0 && prevAtiva(it) ? ` · <span class="out">${fmt(dif)} acima do previsto</span>` : ''}${it.p.rep ? ' · todo mês' : ''}</div></div>`; }).join('')}</div>`
+    : `<div class="card"><div class="hint" style="margin:0">Previsão é um gasto que você espera ter numa categoria até um dia do mês (ex.: R$ 300 de combustível até o dia 25). Diferente do orçamento, que é um limite, ela já entra no saldo previsto do mês.</div>
+      <div class="btns"><button class="btn" data-onclick="novaPrevisao()">${I('plus')}Nova previsão</button></div></div>`}`;
+}
+// Detalhe: os lançamentos que contaram, editar e excluir.
+function abrirPrevisao(id, m){
+  const it = previsoesDoMes(m).find(x => x.p.id === id);
+  if (!it) return;
+  settingsOpen = false; F = null;
+  const l = prevLanc(it), g = prevGasto(it);
+  showSheet(`<h3>Previsão de ${esc(prevNome(it.cat))}</h3>
+    <div class="hint" style="margin-top:0">${monthName(m)} · ${fmt(g)} de ${fmt(it.value)} · ${prevPrazo(it)}${it.p.rep ? ' · repete todo mês' : ''}</div>
+    <label>Lançamentos que contaram (do dia 1 ao dia ${it.dia})</label>
+    ${l.length ? `<div class="card" style="background:var(--bg);box-shadow:none">${l.map(x => `<div class="item" style="cursor:default"><div class="mid"><b>${esc(x.desc || prevNome(x.cat))}</b><small>dia ${diaDe(x, m) || '—'}</small></div><div class="val out">${fmt(x.value)}</div></div>`).join('')}</div>`
+      : '<div class="hint">Nenhum gasto desta categoria até o dia final.</div>'}
+    <div class="btns"><button class="btn danger" data-id="${id}" data-m="${m}" data-onclick="excluirPrevisao(this.dataset.id,this.dataset.m)">Excluir</button><button class="btn" data-id="${id}" data-m="${m}" data-onclick="editarPrevisao(this.dataset.id,this.dataset.m)">Editar</button></div>
+    <div class="btns foot"><button class="btn primary" data-onclick="closeForm()">Fechar</button></div>`);
+}
+// Gravação do formulário. Nova: vale a partir do mês aberto. Numa que se repete, "Só este mês" guarda a mudança em ex
+// (com outra categoria, sai deste mês e vira uma previsão só deste mês); "Este e os próximos" fecha a antiga no mês
+// anterior e começa outra daqui (no primeiro mês dela, muda a própria).
+function prevSalvar(v, id, novoId){
+  const m = prevCtx.m, dados = {cat:v.cat, value:v.value, dia:v.dia || 31}, p = id && db.previsoes.find(x => x.id === id);
+  if (!p) return db.previsoes.push(touch({id:novoId, mes:m, ...dados, rep:!!v.rep, ex:{}}));
+  if (p.rep && prevCtx.modo === 'este'){
+    if (v.cat !== p.cat){ p.ex[m] = {del:1}; db.previsoes.push(touch({id:novoId, mes:m, ...dados, rep:false, ex:{}})); }
+    else p.ex[m] = {value:dados.value, dia:dados.dia};
+    return touch(p);
+  }
+  if (p.rep && m > p.mes){ p.ate = addMonths(m, -1); touch(p); return db.previsoes.push(touch({id:novoId, mes:m, ...dados, rep:!!v.rep, ex:{}})); }
+  Object.assign(touch(p), dados, {rep:!!v.rep});
+}
+function prevJaExiste(it){
+  ask(`Já existe uma previsão de ${prevNome(it.cat)} em ${monthName(it.m)}. Editar a que existe?`, 'Editar').then(sim => { if (sim) editarPrevisao(it.p.id, it.m); });
+}
+// Uma que se repete: perguntar se a mudança vale só para este mês ou para este e os próximos.
+function prevModo(it, titulo, cb){
+  if (!it.p.rep) return cb('');
+  pickList(titulo, [['este', 'Só este mês'], ['prox', 'Este e os próximos']], '', cb);
+}
+function novaPrevisao(){
+  prevCtx = {m:state.month, modo:''};
+  openForm('previsoes', null, {vals:{dia:String(daysIn(state.month)), rep:''}});
+}
+function editarPrevisao(id, m){
+  const it = previsoesDoMes(m).find(x => x.p.id === id);
+  if (it) prevModo(it, 'Editar a previsão', modo => {
+    prevCtx = {m, modo};
+    openForm('previsoes', null, {id, title:'Editar previsão', vals:{cat:it.cat, value:moneyStr(it.value), dia:String(it.dia), rep:it.p.rep && modo !== 'este' ? '1' : ''}});
+  });
+}
+function excluirPrevisao(id, m){
+  const it = previsoesDoMes(m).find(x => x.p.id === id);
+  if (it) prevModo(it, 'Excluir a previsão', async modo => {
+    if (!await ask(`Excluir a previsão de ${prevNome(it.cat)}${modo === 'este' ? ` só em ${monthName(m)}` : modo === 'prox' ? ` de ${monthName(m)} em diante` : ''}?`, 'Excluir', true)) return;
+    const p = it.p;
+    closeForm();
+    if (!p.rep || (modo !== 'este' && m <= p.mes)) return removeRec('previsoes', id);
+    const antes = JSON.stringify(db);
+    if (modo === 'este') (p.ex = p.ex || {})[m] = {del:1}; else p.ate = addMonths(m, -1);
+    touch(p); save(); render();
+    showUndo('Previsão excluída', () => restoreSnap(antes));
+  });
+}
+
+// ---------- Saúde financeira (bloco da aba Gastos e tela "Detalhe da análise") ----------
+// Nota de 0 a 100 calculada na hora com os dados do mês (nada é gravado). Cada componente vai de 0 a 100 e tem um peso;
+// componente sem dados suficientes fica de fora e o peso dele se divide entre os outros. Com menos de 3 componentes
+// com dados, não há nota (semDados). calcSaude não mexe na tela: lê os dados pelos mesmos cálculos das outras telas.
+const SAUDE_FAIXAS = [[80, 'Excelente', 'var(--in)'], [60, 'Boa', 'var(--brand)'], [40, 'Regular', 'var(--yield)'], [0, 'Atenção', 'var(--out)']];
+const saudeFaixa = n => SAUDE_FAIXAS.find(f => n >= f[0]);
+const numBR = (v, casas = 1) => v.toLocaleString('pt-BR', {maximumFractionDigits:casas});
+// Linear entre "ruim" (0) e "bom" (100), limitado aos dois.
+const escala = (v, ruim, bom) => Math.round(Math.max(0, Math.min(1, (v - ruim) / (bom - ruim))) * 100);
+function calcSaude(ym){
+  return cached('S' + ym, () => {
+    const meses3 = [0, 1, 2].map(i => addMonths(ym, -i)), tin = totalIn(ym), tout = totalOutPrev(ym); // com o que falta das previsões
+    const fim = ym < curYM ? [ym, daysIn(ym)] : today(); // saldo das contas no fim do mês (ou hoje, no mês atual)
+    const C = [];
+    const comp = (k, nome, peso, nota, frase, curta, dica, ativar) => C.push({k, nome, peso, nota, frase, curta, dica, ativar});
+    // Poupança: (ganhos − gastos) ÷ ganhos; 20% ou mais = 100.
+    const taxa = tin > 0 ? (tin - tout) / tin * 100 : null;
+    comp('poupanca', 'Poupança', 25, taxa == null ? null : escala(taxa, 0, 20), taxa == null ? '' : `Taxa de poupança em ${numBR(taxa)}% (referência: 20%).`,
+      taxa == null ? '' : taxa <= 0 ? 'Seus gastos passaram dos ganhos neste mês' : `Você guardou ${numBR(taxa)}% dos ganhos`,
+      'Tente separar uma parte dos ganhos assim que eles entram, antes de gastar.', 'Lance os ganhos do mês.');
+    // Reserva: saldo das contas ÷ média de gastos dos últimos 3 meses; 6 meses ou mais = 100.
+    const media = sum(meses3, totalOut) / 3, saldo = sum(db.accounts, a => accountBalance(a, fim)), cobre = db.accounts.length && media > 0 ? Math.max(0, saldo) / media : null;
+    comp('reserva', 'Reserva', 25, cobre == null ? null : escala(cobre, 0, 6), cobre == null ? '' : `Cobre ${numBR(cobre)} ${cobre === 1 ? 'mês' : 'meses'} de despesas (alvo: 3 a 6).`,
+      cobre == null ? '' : `Sua reserva cobre ${numBR(cobre)} ${cobre === 1 ? 'mês' : 'meses'} de despesas`,
+      'Guarde um pouco todo mês numa conta separada até juntar de 3 a 6 meses de gastos.', 'Cadastre suas contas bancárias com o saldo (Investir › Contas).');
+    // Dívidas: vale a pior de três medidas. Uso do limite do cartão (fatura do mês ÷ limite) e compras parceladas do mês
+    // seguinte ÷ renda: até 30% = 100, 100% ou mais = 0. Parcelas de financiamentos e empréstimos do mês seguinte ÷ renda:
+    // até 30% = 100, 60% ou mais = 0.
+    const lims = Object.entries(db.cardLimit || {}).filter(([, l]) => l > 0), fat = Object.fromEntries(invoices(ym));
+    const uso = lims.length ? sum(lims, ([b]) => fat[b] || 0) / sum(lims, ([, l]) => l) * 100 : null;
+    const renda = sum(meses3, totalIn) / 3, prox = expensesOf(addMonths(ym, 1)).filter(x => x.kind === 'installment' && !x.abat);
+    const fins = new Set(db.installments.filter(isFin).map(p => p.id)), ehFin = x => fins.has(x.pid || x.id);
+    const pesoParc = renda > 0 && db.installments.some(p => !isFin(p)) ? sum(prox.filter(x => !ehFin(x)), x => x.value) / renda * 100 : null;
+    const pesoFin = renda > 0 && fins.size ? sum(prox.filter(ehFin), x => x.value) / renda * 100 : null;
+    const notas = [[uso, 100], [pesoParc, 100], [pesoFin, 60]].filter(([v]) => v != null).map(([v, ruim]) => escala(v, ruim, 30));
+    comp('dividas', 'Dívidas', 20, notas.length ? Math.min(...notas) : null,
+      [uso != null && `Uso do cartão em ${numBR(uso)}% do limite.`, pesoParc != null && `Compras parceladas do mês que vem: ${numBR(pesoParc)}% da renda.`,
+        pesoFin != null && `Financiamentos e empréstimos: ${numBR(pesoFin)}% da renda.`].filter(Boolean).join(' '),
+      pesoFin != null && escala(pesoFin, 60, 30) === Math.min(...notas) ? `Financiamentos e empréstimos levam ${numBR(pesoFin)}% da renda`
+        : uso != null ? `O cartão usa ${numBR(uso)}% do limite` : `As parcelas levam ${numBR(pesoParc || 0)}% da renda`,
+      'Use menos de 30% do limite do cartão e evite novas compras parceladas até as atuais terminarem.', 'Informe o limite do cartão (Gastos › Faturas do cartão).');
+    // Orçamento: categorias com orçamento dentro do limite no mês.
+    const orc = budgetStatus(ym), dentro = orc.length ? orc.filter(b => b.pct <= 100).length / orc.length * 100 : null;
+    comp('orcamento', 'Orçamento', 15, dentro == null ? null : Math.round(dentro), dentro == null ? '' : `${numBR(dentro, 0)}% dos orçamentos dentro do limite.`,
+      dentro == null ? '' : `${numBR(dentro, 0)}% dos orçamentos ficaram dentro do limite`,
+      'Reveja as categorias que estouraram: ajuste o limite ou corte um pouco nelas.', 'Defina um orçamento por categoria (Gastos › Orçamento do mês).');
+    // Regularidade: dias do mês (até hoje) com pelo menos um lançamento.
+    const lanc = [...incomesOf(ym), ...expensesOf(ym)], ate = ym === curYM ? now.getDate() : ym < curYM ? daysIn(ym) : 0;
+    const dias = new Set(lanc.map(x => diaDe(x, ym)).filter(d => d >= 1 && d <= ate)), reg = lanc.length && ate ? dias.size / ate * 100 : null;
+    comp('regularidade', 'Regularidade', 10, reg == null ? null : Math.round(reg), reg == null ? '' : `Lançamentos em ${numBR(reg, 0)}% dos dias do mês.`,
+      reg == null ? '' : `Você lançou algo em ${numBR(reg, 0)}% dos dias do mês`,
+      'Anote os gastos no dia em que acontecem: leva segundos e deixa a análise mais certa.', 'Lance seus gastos do mês.');
+    // Fontes de renda: descrições diferentes de ganhos nos últimos 3 meses; 3 ou mais = 100, 2 = 70, 1 = 40, 0 = 0.
+    const fontes = new Set(meses3.flatMap(incomesOf).map(x => plain(String(x.desc || x.cat || '').trim()))).size;
+    comp('fontes', 'Fontes de renda', 5, [0, 40, 70, 100][Math.min(fontes, 3)], `${fontes} ${fontes === 1 ? 'fonte de renda registrada' : 'fontes de renda registradas'}.`,
+      `${fontes} ${fontes === 1 ? 'fonte de renda registrada' : 'fontes de renda registradas'}`,
+      'Uma renda extra (um trabalho por fora, aluguel, dividendos) deixa você menos dependente de uma fonte só.', '');
+    const com = C.filter(c => c.nota != null), peso = sum(com, c => c.peso);
+    if (com.length < 3) return {semDados:true, componentes:C};
+    const nota = Math.round(sum(com, c => c.nota * c.peso) / peso), fraco = [...com].sort((a, b) => a.nota - b.nota || b.peso - a.peso)[0];
+    return {semDados:false, nota, faixa:saudeFaixa(nota)[1], cor:saudeFaixa(nota)[2], fraco, componentes:C};
+  });
+}
+const SAUDE_VAZIO = 'Lance seus ganhos e gastos para ver sua saúde financeira.';
+function saudeBloco(m){
+  const r = calcSaude(m);
+  return `<h2>Saúde financeira</h2><div class="card saude" data-onclick="abrirSaude()">${r.semDados ? `<div class="hint" style="margin:0">${SAUDE_VAZIO}</div>`
+    : `<div class="saudeTopo"><div class="saudeNota" style="color:${r.cor}">${r.nota}<small>/100</small></div><div><b style="color:${r.cor}">${r.faixa}</b><small>${esc(r.fraco.curta)}</small></div></div>`}
+    <div class="saudeVer">Ver detalhe da análise ${I('chev', 14)}</div></div>`;
+}
+function abrirSaude(){ state.gsub = 'saude'; renderIn(); scrollTo(0, 0); }
+function fecharSaude(){ state.gsub = 'mes'; renderIn(); scrollTo(0, 0); }
+function viewSaude(){
+  const m = state.month, r = calcSaude(m), ant = addMonths(m, -1), ra = calcSaude(ant);
+  const dif = !r.semDados && !ra.semDados ? r.nota - ra.nota : null;
+  const topo = `<h1><span class="volta"><button class="iconbtn" data-onclick="fecharSaude()" aria-label="Voltar para Gastos">‹</button>Detalhe da análise</span></h1>`;
+  if (r.semDados) return `${topo}<div class="card"><div class="hint" style="margin:0">${SAUDE_VAZIO}</div></div>${saudeItens(r)}`;
+  return `${topo}
+  <div class="card saude"><div class="saudeTopo"><div class="saudeNota" style="color:${r.cor}">${r.nota}<small>/100</small></div><div><b style="color:${r.cor}">${r.faixa}</b>
+    ${dif != null ? `<small>${dif > 0 ? '+' : ''}${dif === 0 ? 'Igual a' : dif + ' desde'} ${monthName(ant).split(' ')[0]}</small>` : ''}</div></div>
+    <div class="hint" style="margin:8px 0 0">Analisado em ${fmtDate(new Date().toLocaleDateString('sv'))} · análise local · ${monthName(m)}</div></div>
+  ${saudeItens(r)}`;
+}
+const saudeItens = r => `<h2>Composição do score</h2><div class="card">${r.componentes.map(c => c.nota == null
+  ? `<div class="catrow"><div class="top"><span>${c.nome}</span><b class="muted">Sem dados suficientes</b></div>${c.ativar ? `<div class="hint" style="margin-top:2px">${c.ativar}</div>` : ''}</div>`
+  : `<div class="catrow"><div class="top"><span>${c.nome}</span><b style="color:${saudeFaixa(c.nota)[2]}">${c.nota}</b></div>
+    <div class="bar" style="margin:6px 0"><i style="width:${c.nota}%;background:${saudeFaixa(c.nota)[2]}"></i></div><div class="hint" style="margin-top:0">${esc(c.frase)}</div>
+    ${c.nota < 60 ? `<div class="hint saudeDica">${I('sparkle', 13)} ${c.dica}</div>` : ''}</div>`).join('')}</div>
+  <div class="hint" style="text-align:center">Pesos: poupança 25, reserva 25, dívidas 20, orçamento 15, regularidade 10 e fontes de renda 5. O que está sem dados fica de fora da conta.</div>`;
+
 // A aba Gastos tem duas partes: os gastos do mês e as compras parceladas.
 const gastosSeg = () => `<div class="seg">${[['mes','Do mês'],['parc','Parceladas'],['vale','Vales']].map(([k,t]) => `<button class="${state.gsub === k ? 'on' : ''}" data-onclick="state.gsub='${k}';state.parcDet='';renderIn()">${t}</button>`).join('')}</div>`;
 function viewGastos(){
   if (state.gsub === 'parc') return `${head('Gastos', 'gastos')}${gastosSeg()}${viewParcelas()}`;
   if (state.gsub === 'vale') return `${head('Gastos', 'gastos')}${gastosSeg()}${viewVales('gastos')}`;
+  if (state.gsub === 'saude') return viewSaude();
   const m = state.month, list = expensesOf(m), tin = totalIn(m), tout = sum(list, x => x.value);
-  const budgets = budgetStatus(m), inv = invoices(m), cmp = compareMonths(m);
+  const budgets = budgetStatus(m), inv = invoices(m), cmp = compareMonths(m), resPrev = reservaPrevisoes(m); // previsões: só no saldo projetado
   const owed = owedList(); // de qualquer mês
   const uniq = f => [...new Set(list.map(f).filter(Boolean))];
   // Um filtro que não existe neste mês (ex.: depois de trocar de mês) é desfeito, para não esconder tudo sem aviso.
@@ -437,9 +654,11 @@ function viewGastos(){
   const sel = (key, label, options) => { filterOpts[key] = [['', 'Todos'], ...options]; const cur = options.find(o => o[0] === state[key]);
     return `<button type="button" class="pickBtn sm ${cur ? 'on' : ''}" data-onclick="pickFilter('${key}','${label}')"><span>${esc(cur ? cur[1] : label)}</span>${I('chev', 14)}</button>`; };
   const B = {
+  saude: () => saudeBloco(m),
+  previsoes: () => prevBloco(m),
   // O mesmo cartão de destaque das outras abas (Ganhos, Investir, Resumo): o total do mês em cima, o resto embaixo.
   mes: () => `<div class="hero"><small>Gastos em ${monthName(m)}</small><div class="big">${fmt(tout)}</div>
-    <div class="row"><div><small>Ganhos</small><b>${fmt(tin)}</b></div><div><small>Saldo</small><b>${fmt(tin - tout)}</b></div><div><small>Lançamentos</small><b>${list.length}</b></div></div></div>`,
+    <div class="row"><div><small>Ganhos</small><b>${fmt(tin)}</b></div><div><small>Saldo</small><b>${fmt(tin - tout - resPrev)}</b></div><div><small>Lançamentos</small><b>${list.length}</b></div></div>${resPrev ? `<small class="prevInc">Saldo ${prevInclui(resPrev)}</small>` : ''}</div>`,
   orcamento: () => `<h2>Orçamento do mês <button data-onclick="openForm('budgets', db.budgets)">${budgets.length ? 'Alterar' : 'Definir'}</button></h2>
   ${budgets.length ? `<div class="card">${budgets.map(b => { const c = CAT_GASTO[b.cat] || CAT_GASTO.outros; return `
     <div class="catrow"><div class="top"><span>${catName(c)}</span><b>${fmt(b.used)} de ${fmt(b.lim)}</b></div>${b.extra ? `<div class="hint" style="margin-top:2px">inclui ${fmt(b.extra)} que sobraram do mês anterior</div>` : ''}

@@ -165,7 +165,7 @@ function sugGuardar(n, st){
 }
 function openSugestoes(){
   settingsOpen = false; F = null;
-  const todas = [...bankNotes().map(n => ({...n, st:'nova'})), ...sugLog()].sort((a, b) => b.t - a.t).map(n => ({n, p:parseBankNote(n)})).filter(x => x.p);
+  const todas = [...bankNotes().map(n => ({...n, st:'nova'})), ...sugLog()].sort((a, b) => b.t - a.t).filter(notaPermitida).map(n => ({n, p:parseBankNote(n)})).filter(x => x.p);
   const ROT = {nova:['Nova', 'in'], lancada:['Lançada', 'muted'], ignorada:['Ignorada', 'muted']};
   showSheet(`<h3>Histórico de sugestões</h3>
     <div class="hint" style="margin-top:0">O que o app leu das notificações do banco, do mais novo para o mais antigo. Toque em "Lançar gasto" para registrar qualquer uma.</div>

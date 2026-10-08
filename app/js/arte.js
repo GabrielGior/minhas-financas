@@ -49,14 +49,14 @@ function mascoteEm(tema, humor, x, y, w, moeda){
 function iconeMiolo(cor, desenho){
   if (desenho === 'p') return mascoteEm('', 'ok', 24, 25, 60);
   // Do tema: um desenho só, grande e centrado. O cenário fica bem de leve atrás, um halo destaca o personagem (sem
-  // moeda nem sombra de chão) e, no canto, a marca do app: as três barras numa plaquinha com contorno da cor do fundo.
+  // moeda nem sombra de chão) e, no canto, a marca do Cofrim (o C com a moeda) numa plaquinha com contorno da cor do fundo.
   if (desenho === 't' && SKINS[cor]){
     const escuro = SKINS[cor][1] ? SKINS[cor][5] : SKINS[cor][2];
     return `<g opacity=".3">${TEMA_FUNDO[cor] || ''}</g><circle cx="54" cy="54" r="31" fill="#fff" opacity=".13"/>`
       + `<defs><filter id="is${cor}" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="2.500" stdDeviation="2.200" flood-color="#000" flood-opacity=".28"/></filter></defs>`
       + `<g filter="url(#is${cor})">${mascoteEm(cor, 'feliz', 19.500, 20, 69).replace(/<ellipse cx="60" cy="104" rx="30" ry="4"[^>]*>/, '')}</g>`
       + `<rect x="62.500" y="62.500" width="17" height="17" rx="5.500" fill="${escuro}" stroke="${ICONES[cor][2]}" stroke-width="2.600"/>`
-      + '<g fill="#fff"><rect x="66.200" y="72" width="2.800" height="4" rx=".8" opacity=".7"/><rect x="69.600" y="69.500" width="2.800" height="6.500" rx=".8" opacity=".85"/><rect x="73" y="66.500" width="2.800" height="9.500" rx=".8"/></g>';
+      + '<path d="M74 68.400A4.400 4.400 0 1 0 74 73.600" fill="none" stroke="#faf9f4" stroke-width="2.300" stroke-linecap="round"/><circle cx="75.600" cy="71" r="2" fill="#f1cf7e"/>';
   }
   return (ICON_DESENHOS[desenho] || ICON_DESENHOS.b)[1];
 }
@@ -78,6 +78,9 @@ function iconeSvg(cor, desenho, px = 56){
     return `<svg viewBox="18 18 72 72" width="${px}" height="${px}" style="border-radius:26%;display:block" aria-hidden="true"><defs>${s(I.defs)}</defs>${fundo}${s(I.miolo)}</svg>`;
   }
   const c = ICONES[cor] || ICONES.indigo, id = 'ic' + cor + desenho;
+  // Na cor padrão, todos os desenhos ficam sobre o mesmo fundo do ícone do Cofrim (o roxo da marca), como no Android (ic_bg).
+  if (cor === 'indigo'){ const k = 'c' + (++iconeCofrimN), s = x => x.replaceAll('ID', k);
+    return `<svg viewBox="18 18 72 72" width="${px}" height="${px}" style="border-radius:26%;display:block" aria-hidden="true"><defs>${s(ICONE_COFRIM.defs)}</defs>${s(ICONE_COFRIM.fundo)}${iconeMiolo(cor, desenho)}</svg>`; }
   return `<svg viewBox="18 18 72 72" width="${px}" height="${px}" style="border-radius:26%;display:block" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c[1]}"/><stop offset="1" stop-color="${c[2]}"/></linearGradient></defs><rect x="18" y="18" width="72" height="72" fill="url(#${id})"/>${iconeMiolo(cor, desenho)}</svg>`;
 }
 // Desenhos que existem para uma cor de ícone neste aparelho.
@@ -87,8 +90,8 @@ function iconeDesenhos(cor){
 }
 
 // ---------- Abertura ----------
-// Ao abrir, o app mostra por um instante uma tela com as cores escolhidas (ou as do tema especial): as barras do app
-// subindo ou, com tema especial ou modo divertido, o mascote chegando do jeito do tema. As cores ficam guardadas
+// Ao abrir, o app mostra por um instante uma tela com as cores escolhidas (ou as do tema especial): o ícone do Cofrim, na
+// cor escolhida, chegando ou, com tema especial ou modo divertido, o mascote chegando do jeito do tema. As cores ficam guardadas
 // (ABRE_KEY, gravada por applyTheme) para a tela já nascer na cor certa, antes de o resto carregar.
 const ABRE_JEITO = {corrida:'vel', grandprix:'vel', rua:'vel', drift:'vel', fusca:'vel', bruxo:'magia', boneca:'magia', noite:'magia', espaco:'magia',
   hacker:'tec', neon:'tec', retro:'tec', vikings:'forca', espartano:'forca', dragao:'forca', papel:'calma', praia:'calma', floresta:'calma'};
@@ -103,7 +106,7 @@ function abertura(){
   el.dataset.g = sk ? cenaDe(sk)[3] : ''; // o jeito de entrar de cada tema vem da cena dele (js/cena.js)
   document.getElementById('abreIn').innerHTML = (comMascote
     ? `${sk && ATOS[sk] ? `<svg class="abreAto at-${ATOS[sk][1]}" viewBox="0 0 40 40">${ATOS[sk][0]}</svg>` : ''}<div class="abreM">${mascoteEm(sk, 'feliz', 0, 0, 150, true)}</div>`
-    : `<svg viewBox="28 28 52 52" width="132" height="132" aria-hidden="true">${[[33, 58, 16, .7], [47.5, 47, 27, .85], [62, 34, 40, 1]].map(([x, y, h, o], i) => `<rect class="abreBar" style="animation-delay:${i * 90}ms" x="${x}" y="${y}" width="13" height="${h}" rx="2" fill="#fff" opacity="${o}"/>`).join('')}</svg>`)
+    : `<div class="abreIco">${iconeSvg(COLORS[db.prefs.color] ? db.prefs.color : 'indigo', 'b', 132)}</div>`)
     + `<b>${esc(window.Android && Android.iconeNome && APP_NOMES[Android.iconeNome()] || 'Cofrim')}</b>`;
   let acabou = false;
   const fim = () => { if (acabou) return; acabou = true; el.classList.add('fim'); setTimeout(() => { el.remove(); abreFila.splice(0).forEach(f => f()); }, 400); };

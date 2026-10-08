@@ -20,16 +20,28 @@ const demoBloqueia = () => { if (!demoOn) return false; tell(DEMO_MSG); return t
 }
 // Registro de erros (tela Diagnóstico): os últimos 60, só neste aparelho.
 const ERR_KEY = 'financas-erros';
+// O registro de erros vai para o Diagnóstico (que a pessoa pode copiar e mandar para o suporte): nada de dados nele.
+// Resposta do Google (JSON) vira só o código e o motivo; e-mail vira "g***@gmail.com"; token, cabeçalho Authorization,
+// valores em R$ e códigos longos (id de planilha, de arquivo) são escondidos. Vale também para o que já estava guardado.
+function limpaDiag(texto){
+  let s = String(texto == null ? '' : texto);
+  s = s.replace(/\{[\s\S]*"error"[\s\S]*\}/, j => { try { const e = JSON.parse(j).error || {}, r = (e.errors && e.errors[0]) || {};
+    return `Google: ${[e.code, e.status, r.reason || e.message && String(e.message).slice(0, 80)].filter(Boolean).join(' · ')}`; } catch(x){ return 'Google: resposta com dados (omitida)'; } });
+  return s.replace(/Bearer\s+[^\s"',]+/gi, 'Bearer •••').replace(/(Authorization:?\s+)(?!Bearer)[^\s"',]+/gi, '$1•••').replace(/\bya29\.[\w.-]+/g, '•••')
+    .replace(/([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\.[A-Za-z]{2,})/g, '$1***@$2')
+    .replace(/R\$[\s ]?-?\d[\d.]*(,\d{1,2})?/g, 'R$ •••')
+    .replace(/[A-Za-z0-9_-]{28,}/g, m => m.slice(0, 4) + '…');
+}
 function logErr(onde, e){
   try {
     const list = JSON.parse(localStorage.getItem(ERR_KEY) || '[]');
-    list.push({t:Date.now(), v:APP_VERSION, onde, msg:String((e && (e.stack || e.message || e.text)) || e).slice(0, 600)});
+    list.push({t:Date.now(), v:APP_VERSION, onde, msg:limpaDiag(String((e && (e.stack || e.message || e.text)) || e)).slice(0, 600)});
     localStorage.setItem(ERR_KEY, JSON.stringify(list.slice(-60)));
   } catch(x){}
 }
 addEventListener('error', e => logErr('erro na tela', (e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0)));
 addEventListener('unhandledrejection', e => logErr('promessa', e.reason));
-const APP_VERSION = '1.74'; // manter igual ao versionName do build.gradle
+const APP_VERSION = '1.75'; // manter igual ao versionName do build.gradle
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 // Ícones do app: desenhos em dois tons (traço + preenchimento translúcido nas partes com class="d"),
 // todos numa grade de 24×24. I('nome', tamanho) devolve o <svg>; a cor vem do texto ao redor (currentColor).
@@ -72,6 +84,10 @@ const ICONS = {
   target:'<circle class="d" cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12h.01"/>',
   lock:'<rect class="d" x="5" y="10" width="14" height="10" rx="2.5"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10M12 14v2"/>',
   cloud:'<path class="d" d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 10.5 3.75 3.75 0 0 1 17.5 18z"/>',
+  // Estado da sincronização (ícone do topo das telas): nuvem com check, com relógio e com alerta.
+  nuvemOk:'<path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 10.5 3.75 3.75 0 0 1 17.5 18z"/><path d="M9.6 13.6l1.8 1.8 3.3-3.4"/>',
+  nuvemPend:'<path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 10.5 3.75 3.75 0 0 1 17.5 18z"/><circle cx="12" cy="13.8" r="2.9"/><path d="M12 12.5v1.4l.9.7"/>',
+  nuvemErro:'<path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 10.5 3.75 3.75 0 0 1 17.5 18z"/><path d="M12 11.6v2.6M12 16.2h.01"/>',
   refresh:'<path d="M20 12a8 8 0 0 1-14.3 4.9M4 12a8 8 0 0 1 14.3-4.9M18.5 3.5v4h-4M5.5 20.5v-4h4"/>',
   download:'<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14"/>',
   upload:'<path d="M12 15V4M7.5 8.5L12 4l4.5 4.5M5 19h14"/>',
@@ -185,7 +201,7 @@ const INDEX = {cdi:'CDI', selic:'Selic', ipca:'IPCA +', pre:'Prefixado'};
 
 // Listas de lançamentos. Cada registro tem id e u (momento da última alteração); a sincronização
 // junta os aparelhos registro por registro usando u, e db.tomb guarda o que foi excluído (id → momento).
-const COLS = ['incomes', 'expenses', 'installments', 'investments', 'goals', 'accounts', 'transfers'];
+const COLS = ['incomes', 'expenses', 'installments', 'investments', 'goals', 'accounts', 'transfers', 'previsoes'];
 // Completa campos que versões antigas do app (ou um backup antigo) não tinham.
 // Categoria personalizada com valores seguros (usada pelo fixDb e pelo formulário catEdit). Só corrige o que veio:
 // sem ícone ou cor, a categoria de fábrica continua com os dela.
@@ -219,6 +235,16 @@ function fixDb(d){
   d.rates = Object.assign({cdi:14.9, selic:15, ipca:4.5, auto:'1'}, d.rates);
   for (const v of d.investments) if (v.ticker && !v.lots) v.lots = [{qty:v.qty, paid:v.paid, date:v.date || ''}];
   for (const v of d.investments) if (v.broker != null) v.broker = String(v.broker).slice(0, 40); // corretora: texto, até 40 letras
+  // Previsões: categoria, mês AAAA-MM, valor maior que zero, dia final de 1 a 31, se repete, fim (ate) e as mudanças de
+  // um mês só (ex: {AAAA-MM: {value, dia} ou {del:1}}).
+  const ehMes = v => typeof v === 'string' && /^\d{4}-\d\d$/.test(v), diaOk = v => Math.min(31, Math.max(1, parseInt(v) || 31));
+  d.previsoes = d.previsoes.filter(p => p.cat && ehMes(p.mes) && +p.value > 0);
+  for (const p of d.previsoes){
+    Object.assign(p, {value:round2(+p.value), dia:diaOk(p.dia), rep:!!p.rep});
+    if (!ehMes(p.ate)) delete p.ate;
+    p.ex = Object.fromEntries(Object.entries(p.ex && typeof p.ex === 'object' ? p.ex : {}).filter(([k, e]) => ehMes(k) && e && typeof e === 'object' && (e.del || +e.value > 0))
+      .map(([k, e]) => [k, e.del ? {del:1} : {value:round2(+e.value), dia:diaOk(e.dia)}]));
+  }
   // Parcelas: tipo (financiamento ou empréstimo; sem ele, compra parcelada), credor e conta de débito (texto), dia do
   // vencimento (1 a 31), taxa de juros ao mês (até 20%), seg = valor das parcelas a partir de cada uma (depois de um
   // abatimento) e ab = abatimentos [{d:'AAAA-MM-DD', v, modo}]. Vêm também da conta compartilhada e de backups.
@@ -343,11 +369,11 @@ const save = (touch = true) => {
   resumoAutoLiga();
   db.yieldLog[curYM] = yieldOf(curYM);                    // histórico do rendimento estimado, mês a mês
   db.netLog[curYM] = sum(db.investments, v => v.value);   // histórico do total investido, mês a mês
-  if (touch){ db.mod = Date.now(); scheduleSync(); autoFile(); }
+  if (touch){ db.mod = Date.now(); if (sync.on){ sync.pend = (sync.pend || 0) + 1; saveSync(); nuvemDraw(); } scheduleSync(); autoFile(); }
   db.ver = DB_VER;
   const ok = writeDb(JSON.stringify(db));
   if (saveFailed !== !ok){ saveFailed = !ok; saveWarn(); }
-  later('avisos', () => shown(() => { scheduleReminders(); updateWidget(); updateAlerts(); }));
+  later('avisos', () => shown(() => { scheduleReminders(); updateWidget(); updateAlerts(); if (touch) prevAvisos(); }));
 };
 // Resumo ainda no padrão enxuto: o primeiro vale liga o bloco Vales e o primeiro parcelamento liga o bloco Parcelas,
 // uma vez cada, enquanto a pessoa não tiver mexido nesses blocos em Personalizar.
@@ -376,7 +402,7 @@ const touch = r => { if (!r.u && !r.by && myName()) r.by = myName(); else if (r.
 function autoFile(){
   if (!(window.Android && Android.backupArquivo) || Date.now() - (sync.fileAt || 0) < 7*864e5) return;
   const dir = Android.backupArquivo(JSON.stringify(db));
-  if (dir){ sync.fileAt = Date.now(); sync.fileDir = dir; saveSync(); }
+  if (dir){ sync.fileAt = Date.now(); sync.fileDir = dir; saveSync(); centralAdd('Cópia semanal dos dados salva neste celular.', 'sucesso'); }
 }
 // Troca todos os dados pelos de um backup ou pelos que vieram da conta Google.
 function loadDb(d){
@@ -390,7 +416,8 @@ const TABS = {resumo:['chart','Resumo'], ganhos:['income','Ganhos'], gastos:['re
 // nome, par de cores para o modo claro (também usado nos cartões de destaque), par para o modo escuro,
 // e matiz + saturação da cor: delas saem o fundo, os cartões, as linhas e os tons dos gráficos.
 const COLORS = {
-  indigo:['Índigo','#4f46e5','#7c3aed','#818cf8','#a78bfa', 245, 80], esmeralda:['Esmeralda','#047857','#0f766e','#34d399','#2dd4bf', 165, 75],
+  // Cor padrão (chave 'indigo', guardada nos dados de quem já usa): o roxo do ícone do Cofrim (#6b33b4, o centro do icon.svg).
+  indigo:['Cofrim','#6b33b4','#4c1e7f','#b48df0','#c9a6f5', 266, 56], esmeralda:['Esmeralda','#047857','#0f766e','#34d399','#2dd4bf', 165, 75],
   oceano:['Oceano','#0369a1','#1d4ed8','#38bdf8','#60a5fa', 212, 85], rosa:['Rosa','#be185d','#a21caf','#f472b6','#e879f9', 322, 75],
   laranja:['Laranja','#c2410c','#b45309','#fb923c','#fbbf24', 26, 88], grafite:['Grafite','#475569','#1e293b','#cbd5e1','#94a3b8', 215, 14],
   vermelho:['Vermelho','#b91c1c','#be123c','#f87171','#fb7185', 0, 75], roxo:['Roxo','#7e22ce','#6d28d9','#c084fc','#a78bfa', 272, 75],
@@ -449,7 +476,7 @@ const FUN_BLOCKS = ['mascote', 'conquistas']; // só existem com o modo divertid
 const LAYOUT = {
   resumo:RESUMO,
   ganhos:{total:['Total de ganhos do mês', 1], fixos:['Fixos (todo mês)', 1], anuais:['Anuais (uma vez por ano)', 1], avulsos:['Ganhos avulsos', 1]},
-  gastos:{mes:['Ganhos, gastos e saldo do mês', 1], orcamento:['Orçamento do mês', 1], comparativo:['Comparativo por categoria', 1], receber:['A receber de gastos divididos', 1],
+  gastos:{mes:['Ganhos, gastos e saldo do mês', 1], saude:['Saúde financeira', 1, 'mes'], orcamento:['Orçamento do mês', 1], previsoes:['Previsões', 1, 'orcamento'], comparativo:['Comparativo por categoria', 1], receber:['A receber de gastos divididos', 1],
     faturas:['Faturas do cartão', 1], lancamentos:['Lançamentos', 1], acoes:['Importar extrato, relatório e planilha', 1]},
   // Linhas do widget Resumo da tela inicial (não é uma aba: ver updateWidget e Configurações > Widgets).
   widget:{saldo:['Saldo do mês', 1], ganhos:['Ganhos do mês', 1], gastos:['Gastos do mês', 1], conta:['Próxima conta a vencer', 1], contas:['Saldo nas contas', 0], invest:['Total investido', 0],
@@ -468,10 +495,14 @@ function ensurePrefs(){
   if (!SKINS[p.skin]) p.skin = '';
   // Notificações: notify liga/desliga tudo; remind = dias de antecedência; notifyCats[categoria] === false silencia a categoria.
   // resumo = blocos da aba Resumo, na ordem escolhida, cada um ligado ou desligado.
-  // Bloco que ainda não está na lista salva (criado numa versão mais nova) entra no fim, ou no começo se d[2].
+  // Bloco que ainda não está na lista salva (criado numa versão mais nova) entra no fim, no começo se d[2] = 1, ou logo
+  // depois do bloco que d[2] nomeia.
   const fill = (list, defs) => {
     const r = (list || []).filter(b => defs[b.k]), novo = Object.entries(defs).filter(([k]) => !r.some(b => b.k === k)), item = ([k, d]) => ({k, on:!!d[1]});
-    return novo.filter(([, d]) => d[2]).map(item).concat(r, novo.filter(([, d]) => !d[2]).map(item));
+    // d[2] com o nome de um bloco: o novo entra logo depois dele (ou no fim, se ele não estiver na lista).
+    const out = novo.filter(([, d]) => d[2] === 1 || d[2] === true).map(item).concat(r, novo.filter(([, d]) => !d[2]).map(item));
+    for (const n of novo.filter(([, d]) => typeof d[2] === 'string')){ const i = out.findIndex(b => b.k === n[1][2]); out.splice(i < 0 ? out.length : i + 1, 0, item(n)); }
+    return out;
   };
   // Resumo de quem abre o app pela primeira vez (sem lista salva): só os blocos essenciais, nesta ordem; os outros ficam
   // em Personalizar, desligados (os do modo divertido seguem o modo divertido, como antes). resumoEnxuto mostra o link
@@ -548,7 +579,9 @@ const daysIn = ym => { const [y,m] = ym.split('-').map(Number); return new Date(
 const HIDE_KEY = 'financas-olho', MASK = 'R$ ••••';
 let hideVals = false;
 try { hideVals = localStorage.getItem(HIDE_KEY) === '1'; } catch(e){}
-const fmt = v => hideVals ? MASK : (v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const fmt = v => hideVals ? MASK : fmtTexto(v);
+// Sem a máscara de "Esconder valores": para textos guardados (central de notificações) e notificações do Android.
+const fmtTexto = v => (v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 // Roda fn com os valores à mostra (lembretes, widget e relatório não podem sair mascarados).
 function shown(fn){ const h = hideVals; hideVals = false; try { return fn(); } finally { hideVals = h; } }
 function toggleHide(){ hideVals = !hideVals; try { localStorage.setItem(HIDE_KEY, hideVals ? '1' : ''); } catch(e){} render(); }
@@ -636,6 +669,87 @@ function expensesRaw(ym){
 }
 const totalIn = ym => sum(incomesOf(ym), x => x.value);
 const totalOut = ym => sum(expensesOf(ym), x => x.value);
+// ---------- Previsões de gastos ----------
+// Gasto ESPERADO numa categoria até um dia do mês (o orçamento é um limite e só avisa; a previsão entra nos valores
+// projetados). db.previsoes: {id, cat, mes, value, dia, rep, ex, ate}. Uma que se repete vale do mês dela em diante (até
+// "ate"), calculada a cada mês, sem cópia gravada; ex guarda o que mudou ou saiu num mês só. Uma por categoria e mês.
+function previsoesDoMes(m){
+  return cached('P' + m, () => {
+    const por = {};
+    for (const p of db.previsoes){
+      if (!(p.mes === m || (p.rep && p.mes < m && (!p.ate || m <= p.ate)))) continue;
+      const e = (p.ex || {})[m] || {};
+      if (e.del || (por[p.cat] && por[p.cat].p.mes > p.mes)) continue; // duas na mesma categoria: vale a mais recente
+      por[p.cat] = {p, m, cat:p.cat, value:e.value || p.value, dia:Math.min(e.dia || p.dia, daysIn(m))}; // dia 31 em fevereiro = 28 ou 29
+    }
+    return Object.values(por);
+  });
+}
+// Lançamentos que contam: gastos da categoria do dia 1 até o dia final, pela data da aba Gastos (diaDe: fixos pelo
+// vencimento, parcelas pelo dia delas, crédito pela data da compra).
+const prevLanc = it => expensesOf(it.m).filter(x => x.cat === it.cat && diaDe(x, it.m) <= it.dia);
+const prevGasto = it => round2(sum(prevLanc(it), x => x.value));
+// Ainda vale o previsto? Mês futuro, sim; mês passado, não; no mês atual, até o dia final (inclusive).
+const prevAtiva = (it, hoje = today()) => it.m > hoje[0] || (it.m === hoje[0] && hoje[1] <= it.dia);
+// Quanto as previsões somam ao total PROJETADO de gastos do mês: só o que falta gastar do previsto, enquanto a previsão
+// vale (o já gasto está nos totais e não conta duas vezes). Não mexe no saldo real das contas nem nos gastos feitos.
+const reservaPrevisoes = (m, hoje = today()) => round2(sum(previsoesDoMes(m), it => prevAtiva(it, hoje) ? Math.max(0, it.value - prevGasto(it)) : 0));
+const totalOutPrev = ym => round2(totalOut(ym) + reservaPrevisoes(ym));
+// Do mês atual até m: o que as previsões tiram do saldo das contas no fim de m (projetado).
+const reservaAte = m => { let t = 0; for (let k = curYM; k <= m; k = addMonths(k, 1)) t += reservaPrevisoes(k); return round2(t); };
+const prevInclui = v => v > 0 ? `inclui ${fmt(v)} de previsões` : '';
+// Avisos das previsões: 80% e acima de 100% do previsto (no mês atual) e o encerramento, uma vez por previsão, mês e
+// limite. Conferido ao abrir, ao voltar ao app e ao salvar. O que já foi avisado fica guardado neste aparelho (na
+// demonstração, só na memória), para não repetir ao reabrir ou sincronizar. O encerramento descoberto dias depois leva o
+// horário do fim do dia final (23:59). Olha o mês atual e o anterior (app fechado por muito tempo).
+const PREV_AVISOS_KEY = 'financas-prev-avisos';
+let prevAvisosDemo = {};
+function prevAvisosLer(){ if (demoOn) return prevAvisosDemo; try { return JSON.parse(localStorage.getItem(PREV_AVISOS_KEY)) || {}; } catch(e){ return {}; } }
+function prevAvisosGuardar(o){ if (demoOn){ prevAvisosDemo = o; return; } try { localStorage.setItem(PREV_AVISOS_KEY, JSON.stringify(o)); } catch(e){} }
+function prevAvisosNovos(hoje = today()){
+  const vistos = prevAvisosLer(), novos = [], velho = addMonths(hoje[0], -3);
+  for (const k of Object.keys(vistos)) if (k.split(':')[1] < velho) delete vistos[k];
+  for (const m of [addMonths(hoje[0], -1), hoje[0]]) for (const it of previsoesDoMes(m)){
+    const k = it.p.id + ':' + m + ':', nome = prevNome(it.cat), g = prevGasto(it), dif = round2(g - it.value), dest = {k:'prev', id:it.p.id, m};
+    if (!prevAtiva(it, hoje)){
+      if (vistos[k + 'fim']) continue;
+      vistos[k + 'fim'] = vistos[k + '80'] = vistos[k + '100'] = 1;
+      const [y, mo] = m.split('-').map(Number);
+      novos.push({t:new Date(y, mo - 1, it.dia, 23, 59).getTime(), tipo:dif > 0 ? 'aviso' : 'sucesso', dest,
+        txt:dif < 0 ? `Previsão de ${nome} encerrada: você gastou ${fmtTexto(g)} de ${fmtTexto(it.value)}. Sobraram ${fmtTexto(-dif)}, e o valor do mês foi atualizado.`
+          : dif > 0 ? `Previsão de ${nome} encerrada: você gastou ${fmtTexto(g)}, ${fmtTexto(dif)} acima do previsto. O valor do mês foi atualizado.`
+          : `Previsão de ${nome} encerrada: você gastou exatamente o previsto.`});
+    } else if (m === hoje[0]){
+      const pct = g / it.value * 100;
+      if (pct > 100 && !vistos[k + '100']){ vistos[k + '100'] = vistos[k + '80'] = 1; novos.push({t:Date.now(), tipo:'aviso', dest, txt:`Previsão de ${nome}: você passou do previsto. Gastou ${fmtTexto(g)} de ${fmtTexto(it.value)}, ${fmtTexto(dif)} acima.`}); }
+      else if (pct >= 80 && !vistos[k + '80']){ vistos[k + '80'] = 1; novos.push({t:Date.now(), tipo:'aviso', dest, txt:`Previsão de ${nome}: você já gastou ${Math.round(pct)}% do previsto (${fmtTexto(g)} de ${fmtTexto(it.value)}).`}); }
+    }
+  }
+  prevAvisosGuardar(vistos);
+  return novos.sort((a, b) => a.t - b.t);
+}
+// Orçamento: 80% e estouro do limite de uma categoria no mês atual, uma vez cada, só na central (a tela já mostra).
+function orcAvisos(hoje = today()){
+  const vistos = prevAvisosLer(), m = hoje[0];
+  for (const b of budgetStatus(m)){
+    const k = 'orc:' + m + ':' + b.cat + ':', nome = (CAT_GASTO[b.cat] || CAT_GASTO.outros)[1], dest = {k:'orc', m};
+    if (b.pct > 100 && !vistos[k + '100']){ vistos[k + '100'] = vistos[k + '80'] = 1; centralAdd(`Orçamento de ${nome} estourou: ${fmtTexto(b.used)} de ${fmtTexto(b.lim)}.`, 'aviso', 0, dest); }
+    else if (b.pct >= 80 && b.pct <= 100 && !vistos[k + '80']){ vistos[k + '80'] = 1; centralAdd(`Orçamento de ${nome}: ${Math.round(b.pct)}% do limite usado (${fmtTexto(b.used)} de ${fmtTexto(b.lim)}).`, 'aviso', 0, dest); }
+  }
+  prevAvisosGuardar(vistos);
+}
+function prevAvisos(){
+  orcAvisos();
+  const novos = prevAvisosNovos();
+  if (!novos.length) return novos;
+  // Cada um vai para a central de notificações com o horário do acontecimento; na tela, só o último (ou quantos foram).
+  for (const a of novos){
+    centralAdd(a.txt, a.tipo, a.t, a.dest);
+    if (window.Android && Android.notificar && podeNotificar('prev')) Android.notificar('Previsão de gastos', a.txt);
+  }
+  toast(novos.length === 1 ? novos[0].txt : `${novos.length} avisos das suas previsões de gastos.`, {central:false});
+  return novos;
+}
 function annualRate(inv){
   const r = db.rates, p = inv.pct/100;
   if (inv.index === 'cdi') return r.cdi/100 * p;
@@ -751,7 +865,7 @@ function updateAlerts(){
 let quoting = false;
 async function refreshQuotes(force){
   const held = db.investments.filter(v => v.ticker);
-  if (!held.length || quoting || (!force && Date.now() - (db.quotesAt || 0) < 10*60e3)) return false;
+  if (!held.length || quoting || demoOn || (!force && Date.now() - (db.quotesAt || 0) < 10*60e3)) return false; // demonstração: cotação fictícia
   quoting = true;
   if (!sheetOpen()) render(); // mostra os valores "carregando" enquanto as cotações chegam
   let ok = false;
@@ -962,7 +1076,7 @@ function openSubs(){
     ${subsHits.length ? `<div class="card" style="background:var(--bg);box-shadow:none"><div class="grid2">
         <div class="stat"><small>Por mês</small><b>${fmt(mes)}</b></div><div class="stat"><small>Por ano</small><b class="out">${fmt(mes * 12)}</b></div></div></div>
       ${subsHits.map((x, i) => { const c = CAT_GASTO[x.cat] || CAT_GASTO.outros; return `<div class="item" data-onclick="openForm('expenses', subsHits[${i}])">${ico(c)}<div class="mid"><b>${esc(x.desc)}</b>
-        <small>${c[1]} · ${fmt(x.value)} por mês</small></div><div class="val out">${fmt(x.value * 12)}<small style="display:block;font-weight:500;color:var(--muted);text-align:right">por ano</small></div></div>`; }).join('')}`
+        <small>${esc(c[1])} · ${fmt(x.value)} por mês</small></div><div class="val out">${fmt(x.value * 12)}<small style="display:block;font-weight:500;color:var(--muted);text-align:right">por ano</small></div></div>`; }).join('')}`
     : empty('calendar', 'Nenhum gasto fixo mensal cadastrado.')}
     ${anuais.length ? `<label>Uma vez por ano</label>${anuais.map(x => `<div class="item" style="cursor:default"><div class="mid"><b>${esc(x.desc)}</b><small>todo mês de ${MESES[+x.start.slice(5) - 1]}</small></div><div class="val out">${fmt(x.value)}</div></div>`).join('')}` : ''}
     <div class="btns foot"><button class="btn primary" data-onclick="closeForm()">Fechar</button></div>`);
@@ -1024,7 +1138,7 @@ function togglePaid(id, ym){
   const pm = x.pm || [];
   x.pm = pm.includes(ym) ? pm.filter(m => m !== ym) : pm.concat(ym);
   touch(x); save(); render();
-  if (db.prefs.fun && !pm.includes(ym)){ confetti(); toast(pick(FUN_PAID)); }
+  if (db.prefs.fun && !pm.includes(ym)){ confetti(); toast(pick(FUN_PAID), {central:false}); } // brincadeira do modo divertido
 }
 // Fatura do cartão: compras no crédito por banco. db.cardClose = {banco: dia de fechamento}.
 // Um gasto avulso com dia da compra depois do fechamento cai na fatura do mês seguinte.
@@ -1062,7 +1176,7 @@ const notifLiberada = () => !(window.Android && Android.notificacaoLiberada) || 
 const lembLigados = () => aparelhoLemb() === '1' && notifLiberada();
 // Preferências da conta que geram notificação: contas a vencer, parcelas de financiamentos e empréstimos, alertas de preço
 // dos investimentos e avisos da conta compartilhada.
-const lembTipos = p => ({contas:!!p.notify, fin:!!(p.notifyFin ?? p.notify), preco:db.investments.some(v => v.ticker && (v.alertUp || v.alertDown)),
+const lembTipos = p => ({contas:!!p.notify, fin:!!(p.notifyFin ?? p.notify), prev:!!(p.notifyPrev ?? p.notify), preco:db.investments.some(v => v.ticker && (v.alertUp || v.alertDown)),
   compart:!!sync.shared && p.avisoComp !== false});
 // Decide se um tipo de aviso pode virar notificação: com o interruptor do aparelho desligado, sempre não.
 const podeNotificar = tipo => !demoOn && lembLigados() && !!lembTipos(db.prefs)[tipo];
@@ -1102,10 +1216,10 @@ function scheduleReminders(){
 // Widget da tela inicial (só no APK): entrega ao lado nativo os números do mês atual, já formatados.
 function updateWidget(){
   if (!(window.Android && Android.widget) || demoOn) return;
-  const tin = totalIn(curYM), tout = totalOut(curYM), m = monthName(curYM), humor = funMood();
+  const tin = totalIn(curYM), tout = totalOut(curYM), m = monthName(curYM), humor = funMood(), saldoPrev = tin - totalOutPrev(curYM);
   const frase = {feliz:'Oinc! Mês no azul', ok:'Tudo sob controle', triste:'Segura o cartão…'}[humor];
   const curto = v => fmt(v).replace(/^R\$\s?/, '').replace(/,\d\d$/, ''); // sem "R$" nem centavos: cabe no widget de saldo, que é estreito
-  Android.widget(JSON.stringify({mes:m[0].toUpperCase() + m.slice(1), saldo:fmt(tin - tout), negativo:tin - tout < 0, ganhos:fmt(tin), gastos:fmt(tout), ganhosC:curto(tin), gastosC:curto(tout),
+  Android.widget(JSON.stringify({mes:m[0].toUpperCase() + m.slice(1), saldo:fmt(saldoPrev), negativo:saldoPrev < 0, ganhos:fmt(tin), gastos:fmt(tout), ganhosC:curto(tin), gastosC:curto(tout),
     fun:!!db.prefs.fun, frase, linhas:widgetLines(), pig:db.prefs.widgetPig ?? !!db.prefs.fun, humor, skin:db.prefs.skin || '',
     // cor = cor do app (o fundo dos widgets acompanha); fundo = 'tema' (cor ou tema especial) ou 'escuro'; pct = gastos sobre ganhos.
     cor:db.prefs.color, fundo:db.prefs.widgetFundo || 'tema', pct:tin > 0 ? Math.min(100, Math.round(tout / tin * 100)) : tout > 0 ? 100 : 0,
@@ -1125,9 +1239,9 @@ function widgetGastos(){
 }
 // Linhas do widget Resumo: as escolhidas em Configurações > Widgets, na ordem; as que não têm dado são puladas. [{t, v, c}]
 function widgetLines(){
-  const tin = totalIn(curYM), tout = totalOut(curYM);
+  const tin = totalIn(curYM), tout = totalOut(curYM), saldoPrev = tin - totalOutPrev(curYM); // saldo projetado: com as previsões
   const itens = {
-    saldo:() => ['Saldo do mês', fmt(tin - tout), tin - tout < 0 ? 'out' : 'in'],
+    saldo:() => ['Saldo do mês', fmt(saldoPrev), saldoPrev < 0 ? 'out' : 'in'],
     ganhos:() => ['Ganhos', fmt(tin), 'in'],
     gastos:() => ['Gastos', fmt(tout), 'out'],
     conta:() => { const b = upcomingBills()[0]; return b && [`${b.x.desc} · ${b.diff < 0 ? 'atrasada' : b.diff === 0 ? 'vence hoje' : 'em ' + b.diff + (b.diff > 1 ? ' dias' : ' dia')}`, fmt(b.x.value), b.diff <= 0 ? 'out' : '']; },
@@ -1137,7 +1251,7 @@ function widgetLines(){
     orcamento:() => { const b = budgetStatus(curYM), lim = sum(b, x => x.lim); return lim > 0 && ['Orçamento usado', Math.round(sum(b, x => x.used) / lim * 100) + '%', '']; },
     vales:() => temVales() && ['Saldo dos vales', fmt(sum(Object.keys(VALES), k => valeSaldo(k))), ''],
     parcelas:() => { const v = sum(expensesOf(curYM).filter(x => x.kind === 'installment'), x => x.value); return v > 0 && ['Parcelas do mês', fmt(v), 'out']; },
-    previsao:() => { const n = addMonths(curYM, 1), s = totalIn(n) - totalOut(n); return [(s < 0 ? 'Falta em ' : 'Sobra em ') + monthName(n).split(' ')[0], fmt(Math.abs(s)), s < 0 ? 'out' : 'in']; }};
+    previsao:() => { const n = addMonths(curYM, 1), s = totalIn(n) - totalOutPrev(n); return [(s < 0 ? 'Falta em ' : 'Sobra em ') + monthName(n).split(' ')[0], fmt(Math.abs(s)), s < 0 ? 'out' : 'in']; }};
   return db.prefs.layout.widget.filter(b => b.on).map(b => itens[b.k]()).filter(Boolean).map(([t, v, c]) => ({t, v, c}));
 }
 

@@ -32,13 +32,14 @@ if (needGate()){
   // Quem já usava o app antes do aviso de conta nova: a conta atual vira a "última usada", sem repetir as boas-vindas.
   if (canSync() && !sync.account && Android.conta && Android.conta()){ sync.account = Android.conta(); saveSync(); }
   netConferir(); // sem internet ao abrir: aviso (com internet, nada)
-  syncNow(); aposAbertura(() => { startSheets(); onFoto(); onAtalho(); }); // depois da animação de abertura; o convite do bloqueio vem no fim das telas de início
+  syncNow(); aposAbertura(() => { startSheets(); onFoto(); onAtalho(); prevAvisos(); webVerificar(); }); // depois da animação de abertura; o convite do bloqueio vem no fim das telas de início
 }
 let saiuEm = 0;
 document.addEventListener('visibilitychange', () => {
   if (document.hidden){ saiuEm = Date.now(); return; }
   // Conversa do assistente: recomeça cada vez que o app é aberto (voltar depois de mais de meio minuto fora conta como abrir).
   if (saiuEm && Date.now() - saiuEm > 30e3){ chatLog.length = 0; chatEntries.length = 0; }
+  if (saiuEm && Date.now() - saiuEm >= 30 * 60e3) webVerificar(); // 30 min fora conta como abrir: procura atualização (no APK, o lado nativo procura)
   now = new Date();
   curYM = ymOf(now.getFullYear(), now.getMonth());
   funVisit();
@@ -47,13 +48,14 @@ document.addEventListener('visibilitychange', () => {
   if (!sheetOpen()) render();
   updateRates();
   refreshQuotes();
-  if (!needGate()) syncNow();
+  if (!needGate()){ syncNow(); prevAvisos(); } // previsões: o dia final pode ter passado com o app fechado
 });
 // Conta compartilhada com o app aberto: confere a cada minuto o que as outras pessoas lançaram (sem isso, só ao abrir e
 // ao alterar algo). Com o app fechado, quem confere é o lado nativo (ShareReceiver).
 // Na conta pessoal de quem tem conta compartilhada, só espia a planilha (espiarComp), sem misturar os dados.
 if (!window.TESTE) setInterval(() => { if (document.hidden || navigator.onLine === false || needGate()) return; if (shared()) syncNow(); else espiarComp(); }, 60e3);
 widgetFundoEnviar(); // fundo do tema para os widgets, se ainda não foi entregue
+avisosConfigEnviar(); // sugestões pelas notificações: a lista de apps permitidos e os bloqueados, para o lado nativo
 if (window.Android && Android.webOk) Android.webOk(); // APK: as telas abriram sem erro (confirma uma atualização recém-aplicada)
 if (window.webResume) webResume(); // versão web: continua o que estava sendo feito antes de ir ao login do Google
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});

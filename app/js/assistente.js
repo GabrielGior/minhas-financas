@@ -156,8 +156,8 @@ function answer(q){
       chatRows(open.map(p => [`${p.desc} · ${p.paid}/${p.n} · até ${monthName(addMonths(p.start, p.n - 1))}`, left(p)]));
   }
   if (/vai sobrar|vou ter no fim|previs(ao|to)|fim do mes/.test(t) && !/invest|projec/.test(t)){
-    const rows = [...Array(4)].map((_,i) => addMonths(curYM, i)), net = m => totalIn(m) - totalOut(m), n0 = net(curYM);
-    return `Pela previsão, em ${monthName(curYM)} ${n0 < 0 ? 'faltam' : 'sobram'} <b>${fmt(Math.abs(n0))}</b>${db.accounts.length ? `, e o saldo das contas termina o mês em <b>${fmt(sum(db.accounts, a => accountBalance(a, monthEnd(curYM))))}</b>` : ''}.` +
+    const rows = [...Array(4)].map((_,i) => addMonths(curYM, i)), net = m => totalIn(m) - totalOutPrev(m), n0 = net(curYM), r0 = reservaPrevisoes(curYM);
+    return `Pela previsão, em ${monthName(curYM)} ${n0 < 0 ? 'faltam' : 'sobram'} <b>${fmt(Math.abs(n0))}</b>${db.accounts.length ? `, e o saldo das contas termina o mês em <b>${fmt(sum(db.accounts, a => accountBalance(a, monthEnd(curYM))) - r0)}</b>` : ''}${r0 ? ` (${prevInclui(r0)})` : ''}.` +
       chatRows(rows.map(m => [monthName(m), `${net(m) < 0 ? 'falta' : 'sobra'} ${fmt(Math.abs(net(m)))}`]));
   }
   if (/transfer/.test(t)){
@@ -168,7 +168,7 @@ function answer(q){
   const acc = db.accounts.find(a => t.includes(' ' + plain(a.name) + ' '));
   if (db.accounts.length && /saldo|quanto tenho|tenho n|dinheiro/.test(t) && (acc || /\bcontas?\b|\bbanco/.test(t))){
     const list = acc ? [acc] : db.accounts;
-    return `${acc ? `O saldo de ${esc(acc.name)} hoje é` : 'Suas contas somam hoje'} <b>${fmt(sum(list, a => accountBalance(a)))}</b>; a previsão para o fim do mês é ${fmt(sum(list, a => accountBalance(a, monthEnd(curYM))))}.` +
+    return `${acc ? `O saldo de ${esc(acc.name)} hoje é` : 'Suas contas somam hoje'} <b>${fmt(sum(list, a => accountBalance(a)))}</b>; a previsão para o fim do mês é ${fmt(sum(list, a => accountBalance(a, monthEnd(curYM))) - (acc ? 0 : reservaPrevisoes(curYM)))}${!acc && reservaPrevisoes(curYM) ? `, contando ${fmt(reservaPrevisoes(curYM))} de previsões` : ''}.` +
       (acc ? '' : chatRows(list.map(a => [a.name, accountBalance(a)])));
   }
   if (/provento|dividendo|\bjcp\b/.test(t)){
@@ -329,6 +329,7 @@ function onBack(){
   if (pickerOpen()){ closePicker(); return true; }
   if (sheetOpen()){ closeForm(); return true; }
   if (state.tab === 'gastos' && state.parcDet){ fecharParc(); return true; } // detalhe de uma parcela: volta para a lista
+  if (state.tab === 'gastos' && state.gsub === 'saude'){ fecharSaude(); return true; } // detalhe da saúde financeira: volta para Gastos
   if (state.tab === 'chat'){ sairChat(); return true; }
   if (state.tab !== visTabs()[0]){ go(visTabs()[0]); return true; }
   return false;
