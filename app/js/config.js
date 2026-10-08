@@ -29,22 +29,22 @@ function openSettings(sec){
   F = null;
   // [chave, ícone, título, descrição, conteúdo ('' = categoria não existe neste aparelho)]
   const S = [
-  ['perfil', 'person', 'Perfil', 'Seu nome, tutorial e atualizações', `
+  ['perfil', 'person', 'Perfil', 'Nome, tutorial e versão', `
     <label>Seu nome</label>
     <div class="hint" style="margin-top:0">${myName() ? `${greeting()} O nome aparece no topo do Resumo e nas mensagens do app.` : 'Ainda sem nome. Ele aparece no topo do Resumo e nas mensagens do app.'}${sync.shared ? ' Na conta compartilhada, cada pessoa vê o próprio nome no seu celular.' : ''}</div>
     <div class="btns"><button class="btn" data-onclick="askName(true)">${I('person')}${myName() ? 'Trocar o nome' : 'Informar o nome'}</button></div>
     <label>Ajuda</label>
     <div class="btns" style="margin-top:0"><button class="btn" data-onclick="openTour(0, true)">${I('book')}Ver o tutorial</button><button class="btn" data-onclick="maybeNews(true)">${I('sparkle')}Novidades da versão</button></div>
     ${typeof podeInstalar === 'function' && podeInstalar() ? `<label>Instalar o app</label>
-    <div class="hint" style="margin-top:0">Põe o Cofrim na tela inicial do celular (ou no computador), para abrir direto, como um app.</div>
+    <div class="hint" style="margin-top:0">Abre o Cofrim direto da tela inicial.</div>
     <div class="btns"><button class="btn primary" data-onclick="instalarApp()">${I('download')}Instalar o Cofrim</button></div>` : ''}
     ${window.Android && Android.atualizar ? `<label>Atualizações</label>
-    <div class="hint" style="margin-top:0">Versão ${APP_VERSION}. O app procura atualizações sozinho ao abrir e as aplica na abertura seguinte.</div>
+    <div class="hint" style="margin-top:0">Versão ${APP_VERSION}. O app confere sozinho a cada abertura.</div>
     <div class="btns"><button class="btn" data-onclick="procurarAtualizacao()">${I('refresh')}Procurar atualização agora</button></div>` : ''}`],
-  ['aparencia', 'sun', 'Aparência', 'Idioma, tema, cores, texto e modo divertido', `
+  ['aparencia', 'sun', 'Aparência', 'Idioma, cores e texto', `
     <label>Idioma</label>
     <div class="btns" style="margin-top:0">${Object.entries(LANGS).map(([k, v]) => `<button class="btn ${lang() === k ? 'primary' : ''}" style="padding:11px 4px" data-onclick="setLang('${k}')">${v}</button>`).join('')}</div>
-    ${lang() !== 'pt' ? '<div class="hint">O assistente entende perguntas só em português. Os valores continuam em reais.</div>' : ''}
+    ${lang() !== 'pt' ? '<div class="hint">O assistente entende só português.</div>' : ''}
     <label>Tema</label>
     <div class="btns" style="margin-top:0">${Object.entries(MODES).map(([k,v]) => `<button class="btn ${p.mode === k ? 'primary' : ''}" data-onclick="setPref('mode','${k}')">${v}</button>`).join('')}</div>
     <label>Cor</label>
@@ -60,45 +60,45 @@ function openSettings(sec){
     <div class="btns" style="margin-top:0">${[[false,'Do tema'],[true,'Uma cor por categoria']].map(([v,t]) => `<button class="btn ${!!p.catColor === v ? 'primary' : ''}" data-onclick="setPref('catColor',${v})">${t}</button>`).join('')}</div>
     <label>Modo divertido</label>
     <div class="btns" style="margin-top:0">${[[true, I('sparkle') + 'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${p.fun === v ? 'primary' : ''}" data-onclick="setPref('fun',${v})">${t}</button>`).join('')}</div>
-    <div class="hint">Um porquinho no Resumo que reage ao seu mês, mais de 100 conquistas para desbloquear, confete e recados bem-humorados.</div>
+    <div class="hint">Mascote, conquistas e recados bem-humorados.</div>
     <label>Tema especial</label>
     <div class="btns" style="margin-top:0"><button class="btn" data-onclick="openSettings('temas')">${I('sparkle')}${p.skin ? 'Em uso: ' + SKINS[p.skin][0] : 'Escolher um tema especial'}</button></div>
-    <div class="hint">Os temas especiais têm uma área própria nas Configurações, separados por categoria. Com um deles ligado, "Tema" e "Cor" acima ficam sem efeito.</div>`],
-  ['temas', 'sparkle', 'Temas especiais', `${Object.keys(SKINS).length} temas por categoria, com mascote próprio`, `
+    <div class="hint">Com um tema especial, Tema e Cor não valem.</div>`],
+  ['temas', 'sparkle', 'Temas especiais', `${Object.keys(SKINS).length} temas com mascote`, `
     <div class="hint" style="margin-top:0">Um tema especial muda as cores do app inteiro, o mascote do modo divertido, a abertura e os widgets; os ícones das categorias ficam com a cor de cada uma. ${p.skin ? `Em uso: <b>${SKINS[p.skin][0]}</b>.` : 'Nenhum em uso.'}</div>
     <div class="btns" style="margin-top:0"><button class="btn ${p.skin ? '' : 'primary'}" data-onclick="setSkin('')">Sem tema especial</button></div>
     ${sorteioBtn('tema', 'Tema aleatório todo dia')}
-    ${WEB_APP ? '<div class="hint">No iPhone, o ícone do app é fixado na hora de adicionar à Tela de Início. Para ele ficar com o tema: abra o app no Safari com o tema já escolhido, toque em Compartilhar › Adicionar à Tela de Início e apague o ícone antigo.</div>' : ''}
+    ${WEB_APP ? '<div class="hint">No iPhone, adicione de novo à Tela de Início para trocar o ícone.</div>' : ''}
     ${TEMA_CATS.map(([c, nome, ks]) => `<details class="grp" ${ks.includes(p.skin) || (!p.skin && c === 'estilos') ? 'open' : ''}><summary>${nome}<small>${ks.length}</small>${I('chev')}</summary>
       <div class="icoGrid t3">${ks.map(k => `<button class="${p.skin === k ? 'on' : ''}" data-onclick="setSkin('${k}')"><span class="temaM" style="background:linear-gradient(135deg,${SKINS[k][4]},${SKINS[k][5]})">${mascoteEm(k, 'ok', 0, 0, 46)}</span><small>${SKINS[k][0]}</small></button>`).join('')}</div></details>`).join('')}`],
-  ['menu', 'sliders', 'Menu de baixo', 'Esconder e reordenar as abas', `
-    <div class="hint" style="margin-top:0">Toque no círculo para esconder ou mostrar uma aba e use as setas para mudar a ordem. O Resumo fica sempre no menu.</div>
+  ['menu', 'sliders', 'Menu de baixo', 'Ordem das abas', `
+    <div class="hint" style="margin-top:0">O Resumo fica sempre no menu.</div>
     <div>${p.tabs.map((t,i) => { if (t === 'chat' || (WEB_APP && t === 'noticias')) return ''; const off = p.tabsOff.includes(t); return `<div class="item" style="cursor:default;padding:6px 0">
       <button class="iconbtn ${off ? 'muted' : 'in'}" data-onclick="toggleTab('${t}')" ${t === 'resumo' ? 'disabled style="opacity:.35"' : ''} aria-label="${off ? 'Mostrar' : 'Esconder'}">${I(off ? 'unchecked' : 'checked', 24)}</button>
       <div class="mid" style="${off ? 'opacity:.5' : ''}"><b>${I(TABS[t][0])} ${TABS[t][1]}</b>${off ? '<small>escondida</small>' : t === visTabs()[0] ? '<small>Aba inicial</small>' : ''}</div>
       <button class="iconbtn" data-onclick="moveTab(${i},-1)" ${i ? '' : 'disabled style="opacity:.25"'} aria-label="Subir">▲</button>
       <button class="iconbtn" data-onclick="moveTab(${i},1)" ${i < n-1 ? '' : 'disabled style="opacity:.25"'} aria-label="Descer">▼</button></div>`; }).join('')}</div>`],
-  ['seguranca', 'lock', 'Ícone e bloqueio', 'Cor do ícone, senha ou biometria', !isApp ? '' : `${demo}
+  ['seguranca', 'lock', 'Ícone e bloqueio', 'Ícone e senha', !isApp ? '' : `${demo}
     <label>Cor do ícone do app</label>
     <div class="swatches">${Object.entries(ICONES).filter(([k]) => !SKINS[k] || SKIN_ANTIGOS.includes(k) || (k === p.skin || k === N.icone()) && iconeTem(k)).map(([k,c]) => `<button class="sw ${N.icone() === k ? 'on' : ''}" style="background:linear-gradient(135deg,${c[1]},${c[2]});border-radius:14px" data-onclick="nativeOpts().setIcone('${k}');openSettings()" aria-label="${c[0]}" title="${c[0]}"></button>`).join('')}</div>
     ${window.Android && Android.setIconeApp ? `<label>Desenho do ícone</label>
     <div class="icoGrid">${iconeDesenhos(Android.icone()).map(k => `<button class="${Android.iconeDesenho() === k ? 'on' : ''}" data-onclick="Android.setIconeApp(Android.icone(),'${k}',0);openSettings()">${iconeSvg(Android.icone(), k)}<small>${iconeNomeDesenho(Android.icone(), k)}</small></button>`).join('')}</div>
-    ${SKINS[Android.icone()] ? '<div class="hint">Os outros desenhos (moeda, carteira, cofre…) existem para as doze cores comuns: escolha uma delas acima para vê-los.</div>' : Android.criarAtalho ? '' : '<div class="hint">Há mais desenhos (moeda, carteira, cofre…) na versão nova do app: toque em Procurar atualizações.</div>'}` : ''}
-    <div class="hint">Ao trocar a cor ou o desenho, o Android fecha o app: é só abrir de novo pelo ícone novo. Se o ícone sumir da tela inicial, adicione de novo pela lista de apps.</div>
+    ${SKINS[Android.icone()] ? '<div class="hint">Mais desenhos nas cores comuns.</div>' : Android.criarAtalho ? '' : '<div class="hint">Há mais desenhos (moeda, carteira, cofre…) na versão nova do app: toque em Procurar atualizações.</div>'}` : ''}
+    <div class="hint">O app fecha ao trocar; abra pelo ícone novo.</div>
     <label>Pedir senha ou biometria ao abrir</label>
     <div class="btns" style="margin-top:0">${[[true, I('lock') + 'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${lockOn === v ? 'primary' : ''}" data-onclick="nativeOpts().setBloqueio(${v});openSettings()">${t}</button>`).join('')}</div>
-    ${lockOn ? '<div class="hint">Para desligar, o app pede a senha ou a biometria. Ao sair da conta Google, o app também pede, e o bloqueio desliga.</div>' : ''}
-    <label>Pedir de novo depois de ficar fora do app por</label>
+    ${lockOn ? '<div class="hint">Desligar pede a senha ou a biometria.</div>' : ''}
+    <label>Pedir de novo após</label>
     <div class="btns" style="margin-top:0;flex-wrap:wrap${lockOn ? '' : ';opacity:.4;pointer-events:none'}">${[[0,'Sempre'],[30,'30 s'],[60,'1 min'],[300,'5 min'],[900,'15 min']].map(([s,t]) => `<button class="btn ${lockTime === s ? 'primary' : ''}" style="padding:11px 6px" data-onclick="nativeOpts().setTempoBloqueio(${s});openSettings()">${t}</button>`).join('')}</div>`],
-  ['lembretes', 'calendar', 'Lembretes', 'Contas a vencer, parcelas e economia de bateria', !isApp ? '' : `${demo}
+  ['lembretes', 'calendar', 'Lembretes', 'Contas, parcelas e previsões', !isApp ? '' : `${demo}
     <label>Lembretes ativos neste aparelho</label>
     <div class="btns" style="margin-top:0">${[[true,'Ligados'],[false,'Desligados']].map(([v,t]) => `<button class="btn ${lembLigados() === v ? 'primary' : ''}" data-onclick="${v ? 'ligarLembretes()' : 'desligarLembretes()'}">${t}</button>`).join('')}</div>
     ${aparelhoLemb() === '1' && !notifLiberada() ? `<div class="hint warn">${I('alert', 13)} Desligados porque as notificações do Cofrim estão bloqueadas nas configurações do Android.</div>
       <div class="btns"><button class="btn" data-onclick="Android.abrirConfigNotificacoes()">Abrir configurações do Android</button></div>` : ''}
-    <div class="hint">Vale só para este aparelho. O que você escolhe abaixo fica salvo na sua conta e vale em todos os aparelhos em que os lembretes estiverem ligados.</div>
+    <div class="hint">Só neste aparelho; as escolhas ficam na conta.</div>
     ${lembLigados() && batLivre === false ? `<div class="hint warn">${I('alert', 13)} A economia de bateria está ligada para o app: os lembretes podem atrasar ou não chegar. Desligue para recebê-los na hora.</div>` : ''}
     ${lembLigados() && batLivre ? `<div class="hint in">${I('check', 13)} Economia de bateria desligada para o app: os lembretes chegam na hora.</div>` : ''}
-    <label>Contas a vencer (gastos fixos com dia de vencimento)</label>
+    <label>Contas a vencer</label>
     <div class="btns" style="margin-top:0">${[[true,'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${!!p.notify === v ? 'primary' : ''}" data-onclick="setNotify(${v})">${t}</button>`).join('')}</div>
     <div style="${p.notify ? '' : 'opacity:.4;pointer-events:none'}">
       <label>Avisar com antecedência de (pode marcar mais de uma)</label>
@@ -106,42 +106,42 @@ function openSettings(sec){
       <label>Categorias que notificam (as que têm gastos fixos; toque para ligar ou desligar)</label>
       <div class="chips" style="margin:0">${Object.entries(CAT_GASTO).filter(([k]) => k !== 'emprestimo' && (p.notifyCats[k] === false || db.expenses.some(x => x.cat === k && x.fixed))).map(([k,c]) => { const on = p.notifyCats[k] !== false; return `<button style="${on ? 'background:var(--brand);color:' + (theme.dark ? '#0b1020' : '#fff') : 'opacity:.6;text-decoration:line-through'}" data-onclick="toggleNotifyCat('${k}')">${I(c[0], 14)} ${esc(c[1])}</button>`; }).join('')}</div>
     </div>
-    <div class="hint">Vale para gastos fixos com dia de vencimento. O app avisa em cada antecedência marcada e de novo no dia do vencimento, por volta das 9h. Sem nenhuma marcada, avisa só no dia.</div>${window.Android && Android.bateria ? `${batLivre ? '' : `<div class="btns"><button class="btn" data-onclick="Android.bateria()">Tirar o app da economia de bateria</button></div>`}
+    <div class="hint">Avisa nos dias marcados e no vencimento, às 9h.</div>${window.Android && Android.bateria ? `${batLivre ? '' : `<div class="btns"><button class="btn" data-onclick="Android.bateria()">Tirar o app da economia de bateria</button></div>`}
     <label>Previsões de gastos (80%, passou do previsto e encerramento)</label>
     <div class="btns" style="margin-top:0">${[[true,'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${!!(p.notifyPrev ?? p.notify) === v ? 'primary' : ''}" data-onclick="setNotifyTipo('notifyPrev',${v})">${t}</button>`).join('')}</div>
     <label>Parcelas de financiamentos e empréstimos (no dia do vencimento)</label>
     <div class="btns" style="margin-top:0">${[[true,'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${!!(p.notifyFin ?? p.notify) === v ? 'primary' : ''}" data-onclick="setNotifyTipo('notifyFin',${v})">${t}</button>`).join('')}</div>
-    <div class="hint">Em alguns celulares (Samsung, Xiaomi, Motorola) a economia de bateria atrasa ou corta os lembretes. Na tela que abre, procure "Cofrim" e escolha "Não otimizar". O app também reagenda os lembretes quando o celular reinicia e quando é atualizado.</div>` : ''}`],
-  ['widgets', 'chart', 'Widgets', 'Tela inicial do celular: resumo, saldo e porquinho', !(window.Android && Android.widget) ? '' : `
-    <div class="hint" style="margin-top:0">Widgets são quadros do app na tela inicial do celular. Há seis: <b>Resumo</b> (você escolhe as linhas), <b>Gastos</b> (a lista dos gastos do mês), <b>Saldo do mês</b>, <b>Contas a vencer</b>, <b>Mascote</b> (a cara do mês e os gastos) e <b>Gastar</b> (só o mascote e o botão de novo gasto, sem valores). O que você muda aqui vale na hora para os widgets que já estão na tela inicial.</div>
+    <div class="hint">Se atrasarem, escolha "Não otimizar" para o Cofrim.</div>` : ''}`],
+  ['widgets', 'chart', 'Widgets', 'Quadros da tela inicial', !(window.Android && Android.widget) ? '' : `
+    <div class="hint" style="margin-top:0">Seis quadros: <b>Resumo</b>, <b>Gastos</b>, <b>Saldo</b>, <b>Contas</b>, <b>Mascote</b> e <b>Gastar</b>.</div>
     ${Android.setWidgetOculto ? `<label>Valores nos widgets</label>
     <div class="btns" style="margin-top:0">${[[false, 'Mostrar'], [true, 'Esconder']].map(([v, t]) => `<button class="btn ${!!Android.widgetOculto() === v ? 'primary' : ''}" data-onclick="Android.setWidgetOculto(${v});openSettings()">${t}</button>`).join('')}</div>
-    <div class="hint">Escondendo, os widgets mostram R$ •••• no lugar dos valores. Vale só para este aparelho, com ou sem o bloqueio ligado.</div>` : ''}
-    <div class="hint">Cada widget também tem as próprias configurações: segure o dedo nele na tela inicial e toque em <b>Configurações</b> para escolher a opacidade do fundo, o formato dos cantos e o fundo escuro (Android 12 ou mais novo; nos anteriores, elas aparecem ao pôr o widget).</div>
+    <div class="hint">Mostra R$ •••• no lugar dos valores.</div>` : ''}
+    <div class="hint">Segure o widget para ajustar fundo e cantos.</div>
     <label>Fundo dos widgets</label>
     <div class="btns" style="margin-top:0">${[['tema', p.skin ? 'Tema especial' : 'Cor do app'], ['escuro', 'Escuro']].map(([v, t]) => `<button class="btn ${(p.widgetFundo || 'tema') === v ? 'primary' : ''}" data-onclick="setPref('widgetFundo','${v}')">${t}</button>`).join('')}</div>
     <label>Mascote nos widgets Resumo, Gastos, Saldo e Contas</label>
     <div class="btns" style="margin-top:0">${[[true, 'Com mascote'], [false, 'Sem mascote']].map(([v, t]) => `<button class="btn ${(p.widgetPig ?? !!p.fun) === v ? 'primary' : ''}" data-onclick="setPref('widgetPig',${v})">${t}</button>`).join('')}</div>
-    <div class="hint">É o mesmo mascote do app: o porquinho ou o personagem do tema especial, com a cara do mês.</div>
+    <div class="hint">O mascote do app, com a cara do mês.</div>
     <label>Widget Resumo</label>
     <div class="btns" style="margin-top:0"><button class="btn" data-onclick="openLayoutEdit('widget')">${I('sliders')}Escolher o que aparece</button></div>
-    <div class="hint">As linhas aparecem na ordem escolhida; se não couberem, dá para rolar dentro do widget ou aumentá-lo (segure o dedo nele e puxe a borda). Linhas sem dado (por exemplo, sem conta a vencer) são puladas.</div>
+    <div class="hint">Linhas sem dado não aparecem.</div>
     <label>Widget Gastos: o que listar</label>
     <div class="btns" style="margin-top:0;flex-wrap:wrap">${[['', 'Todos'], ...Object.entries(GRUPOS).map(([k, g]) => [k, g[0]])].map(([k, t]) => `<button class="btn ${(p.widgetLista || '') === k ? 'primary' : ''}" style="padding:11px 6px;flex:1 0 30%" data-onclick="setPref('widgetLista','${k}')">${t}</button>`).join('')}</div>
     <label>Widget Gastos: ordem</label>
     <div class="btns" style="margin-top:0">${[['', 'Como no app'], ['valor', 'Maiores primeiro']].map(([k, t]) => `<button class="btn ${(p.widgetOrdem || '') === k ? 'primary' : ''}" data-onclick="setPref('widgetOrdem','${k}')">${t}</button>`).join('')}</div>
     ${Android.fixarWidget ? `<label>Pôr na tela inicial</label>
     <div class="btns" style="margin-top:0;flex-wrap:wrap">${[['resumo', 'Resumo'], ...(Android.criarAtalho ? [['gastos', 'Gastos']] : []), ['saldo', 'Saldo do mês'], ['contas', 'Contas a vencer'], ['porco', 'Mascote'], ['gastar', 'Gastar']].map(([k, t]) => `<button class="btn" style="padding:11px 6px;flex:1 0 30%" data-onclick="if(!Android.fixarWidget('${k}'))tell('Esta tela inicial não aceita o pedido. Segure o dedo num espaço vazio da tela inicial, toque em Widgets e procure Cofrim.')">${t}</button>`).join('')}</div>
-    <div class="hint">O Android pede sua confirmação. Também dá para adicionar segurando o dedo num espaço vazio da tela inicial › Widgets › Cofrim.</div>` : ''}`],
-  ['conta', 'cloud', 'Conta e sincronização', 'Conta Google, sincronização e cópias', syncHtml],
-  ['compart', 'people', 'Conta compartilhada', sync.shared ? 'Ligada: vocês veem os mesmos dados' : 'Casal ou família: os mesmos dados em dois celulares', syncHtml ? shareHtml() : ''],
-  ['auto', 'sparkle', 'Lançamento automático', 'Sugestões pelas notificações de bancos, carteiras e vales', !(window.Android && Android.avisosLigar) ? '' : `
-    <label>Sugerir lançamentos pelas notificações de bancos, carteiras e vales</label>
+    <div class="hint">O Android pede confirmação.</div>` : ''}`],
+  ['conta', 'cloud', 'Conta e sincronização', 'Google Drive e cópias', syncHtml],
+  ['compart', 'people', 'Conta compartilhada', sync.shared ? 'Ligada: vocês veem os mesmos dados' : 'Mesmos dados em dupla', syncHtml ? shareHtml() : ''],
+  ['auto', 'sparkle', 'Lançamento automático', 'Sugestões do banco', !(window.Android && Android.avisosLigar) ? '' : `
+    <label>Sugestões do banco</label>
     <div class="btns" style="margin-top:0">${[[true,'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${!!Android.avisosLigado() === v ? 'primary' : ''}" data-onclick="setAvisos(${v})">${t}</button>`).join('')}</div>
     ${Android.avisosLigado() && !Android.avisosAcesso() ? `<div class="hint warn">${I('alert', 13)} Falta autorizar no Android. <a href="#" data-onclick="Android.avisosConfigurar();return false" style="color:var(--brand)">Abrir a tela de autorização</a></div>` : ''}
-    <div class="hint">Quando o banco, a carteira do celular (Google, Samsung…) ou o app do vale-refeição ou alimentação avisa uma compra ou um Pix, o app mostra no Resumo uma sugestão já preenchida; você confere e lança. Para isso o Android pede acesso às notificações: o app guarda só as de compras, Pix e pagamentos, e nada sai do aparelho. Depende do texto que cada banco usa, então pode não reconhecer todos. A partir do Android 15, avisos com números longos (como um código de 4 dígitos ou o final do cartão) chegam escondidos: aí o app mostra só "Novo aviso do banco" para você lançar o valor.</div>`],
+    <div class="hint">Compras e Pix avisados pelo banco viram sugestão; nada sai do aparelho.</div>`],
   ['guia', 'book', 'Guia do app', 'Todas as funções, onde ficam e como usar', guideHtml()],
-  ['dados', 'box', 'Dados e ajustes', 'Categorias, taxas, lixeira, backup e apagar', `
+  ['dados', 'box', 'Dados e ajustes', 'Categorias, backup e lixeira', `
     <label>Investimentos</label>
     <div class="btns" style="margin-top:0"><button class="btn" data-onclick="openRates()">${I('trend')}Taxas de referência (CDI, Selic, IPCA)</button></div>
     <label>Categorias</label>
@@ -152,13 +152,13 @@ function openSettings(sec){
     <label>Planilha do Google</label>
     <div class="btns" style="margin-top:0"><button class="btn" data-onclick="openSheetLink()">${I('doc')}${sheetId() ? 'Planilha ligada ao app' : 'Criar planilha ligada ao app'}</button></div>
     <label>Backup em arquivo</label>
-    ${canSync() && sync.on ? `<div class="hint" style="margin-top:0">Seus dados ficam numa área privada do seu Google Drive, que só o Cofrim acessa. Use "Salvar cópia" para ter um arquivo que você pode ver e guardar onde quiser.</div>
+    ${canSync() && sync.on ? `<div class="hint" style="margin-top:0">Seus dados ficam numa área privada do Drive; "Salvar cópia" gera um arquivo seu.</div>
     <div class="btns"><button class="btn" data-onclick="salvarCopiaDrive()">${I('cloud')}Salvar cópia no meu Google Drive</button></div>` : ''}
     <div class="btns" style="margin-top:${canSync() && sync.on ? 8 : 0}px"><button class="btn" data-onclick="exportData()">${I('download')}Salvar no aparelho</button><button class="btn" data-onclick="if(!demoBloqueia())document.getElementById('file').click()">${I('upload')}Importar</button></div>
-    ${sync.fileAt ? `<div class="hint">Cópia automática semanal: a última foi em ${new Date(sync.fileAt).toLocaleDateString('pt-BR')}, na pasta <span style="overflow-wrap:anywhere">${esc(sync.fileDir || '')}</span> do celular (são guardadas as 8 mais recentes; a pasta é apagada se o app for desinstalado).</div>` : ''}
+    ${sync.fileAt ? `<div class="hint">Cópia semanal no celular: a última em ${new Date(sync.fileAt).toLocaleDateString('pt-BR')}.</div>` : ''}
     <label>Apagar tudo</label>
     <div class="btns" style="margin-top:0"><button class="btn danger" style="flex:1" data-onclick="wipeAll()">${I('trash')}Apagar todos os meus dados</button></div>
-    <div class="hint">Apaga os lançamentos deste aparelho e da sua conta Google (inclusive as cópias diárias e os comprovantes). Não dá para desfazer.</div>`]
+    <div class="hint">Apaga tudo, aqui e na conta. Não dá para desfazer.</div>`]
   ].filter(s => s[4]);
   const cur = S.find(s => s[0] === setSec);
   if (!cur) setSec = '';

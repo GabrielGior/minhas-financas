@@ -52,7 +52,7 @@ const GUIA = [
     ['Metas', 'Aba Investir › Metas', 'Crie a meta com valor e prazo e use "Guardar" para registrar o que já juntou.'],
     ['Taxas de referência', 'Configurações › Dados e ajustes › Taxas de referência', 'CDI, Selic e IPCA vêm do Banco Central; dá para ajustar à mão.']]],
   ['Assistente e notícias', [
-    ['Perguntas sobre os seus dados', 'Botão redondo do assistente, em qualquer tela', 'Pergunte "quanto gastei com mercado este mês?" ou "qual meu saldo?". As contas são feitas no aparelho, sem enviar nada.'],
+    ['Perguntas sobre os seus dados', 'Botão redondo do assistente, em qualquer tela', 'Pergunte "quanto gastei com mercado este mês?" ou "qual meu saldo?". As contas são feitas no aparelho, sem enviar nada. Com um tema especial, a resposta vem com uma abertura e um fecho no clima do tema.'],
     ['Notícias (só no Android)', 'Aba Notícias', 'Manchetes de economia; tocar abre a notícia no navegador.']]],
   ['Conta e segurança', [
     ['Modo demonstração', 'Tela de entrada › botão Demonstração (no canto de baixo)', 'Abre o app com dados fictícios, para conhecer antes de entrar com a conta Google. Nada é salvo nem enviado; a faixa no topo leva para "Entrar com Google", e os dados fictícios somem ao sair ou ao fechar o app.'],

@@ -66,7 +66,7 @@ function entryDo(i, op){
   } else if (op === 'edit'){
     e.done = 'Abri o formulário já preenchido para você conferir e salvar.';
     openForm(e.col, null, {vals:{desc:e.desc, value:moneyStr(e.value), cat:e.cat, bank:e.bank, ...(e.col === 'expenses' ? {pay:e.pay} : {fixed:''})}, more:true});
-  } else e.done = answer(e.q);
+  } else e.done = falaTema(e.q, answer(e.q));
   const log = document.getElementById('chatLog');
   if (log) log.innerHTML = chatHtml();
 }
@@ -113,6 +113,16 @@ function chatExpenses(t, P){
   if (pay) items = items.filter(x => x.pay === pay);
   const what = [cat && 'com ' + esc(CAT_GASTO[cat][1].toLowerCase()), word && `com "${esc(word)}"`, bank && 'no ' + esc(bank), pay && 'em ' + PAY[pay].toLowerCase()].filter(Boolean).join(' ');
   return {items, what, filtered:!!(cat || word || bank || pay)};
+}
+// Com um tema especial (e o app em português), a resposta ganha uma abertura e um fecho no clima do tema (FALAS_ASSIST,
+// em js/temas2.js). A escolha é fixa para cada pergunta: a mesma pergunta recebe sempre as mesmas falas.
+function falaTema(q, resp){
+  const k = db.prefs.skin, tema = FALAS_ASSIST[k], cat = FALAS_ASSIST_CAT[temaCat(k)];
+  if (!k || lang() !== 'pt' || (!tema && !cat)) return resp;
+  let h = 0;
+  for (const ch of plain(q).trim()) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+  const ab = [...(tema ? [tema[0]] : []), ...(cat ? cat[0] : [])], fe = [...(tema ? [tema[1]] : []), ...(cat ? cat[1] : [])];
+  return `<span class="fala">${ab[h % ab.length]}</span>${resp}<span class="fala fim">${fe[(h >>> 4) % fe.length]}</span>`;
 }
 function answer(q){
   const t = ' ' + plain(q).replace(/[-?!.,;:"']/g, ' ').replace(/\s+/g, ' ') + ' ';
@@ -248,7 +258,7 @@ function sendChat(text){
   const el = document.getElementById('chatIn'), q = (text || el.value).trim();
   if (!q) return;
   const ent = parseEntry(q);
-  chatLog.push({me:true, html:esc(q)}, ent ? {me:false, entry:chatEntries.push(ent) - 1} : {me:false, html:answer(q)});
+  chatLog.push({me:true, html:esc(q)}, ent ? {me:false, entry:chatEntries.push(ent) - 1} : {me:false, html:falaTema(q, answer(q))});
   el.value = '';
   document.getElementById('chatLog').innerHTML = chatHtml();
   const msgs = document.querySelectorAll('#chatLog .msg.me');
