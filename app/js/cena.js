@@ -167,10 +167,19 @@ function widgetFundoEnviar(){
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(cenaWidgetSvg(k));
 }
 // Põe (ou tira) a cena do tema em uso; chamada por applyTheme.
+// Fundo do tema padrão (sem tema especial): manchas de luz na cor escolhida que vagam devagar por trás da tela. Só
+// gradientes do CSS movidos por transform (leve para a bateria); para com as animações desligadas ou com o sistema
+// pedindo menos movimento. db.prefs.fundo === false desliga; fundoCor = uma das cores comuns ('' = a cor do app).
+const fundoCorDe = p => COLORS[p.fundoCor] ? p.fundoCor : COLORS[p.color] ? p.color : 'indigo';
+function fundoPadraoHtml(cor){
+  const c = COLORS[cor];
+  return `<div class="fundoP" style="--f1:${c[1]};--f2:${c[3]}"><i></i><i></i><i></i></div>`;
+}
 function cenaAplicar(){
-  const el = document.getElementById('cena'), k = db.prefs.skin || '';
+  const el = document.getElementById('cena'), p = db.prefs, k = p.skin || '';
   if (!el) return;
-  if (el.dataset.k !== k){ el.dataset.k = k; el.innerHTML = k && SKINS[k] ? cenaHtml(k) : ''; }
+  const chave = k || (p.fundo !== false ? 'padrao:' + fundoCorDe(p) : '');
+  if (el.dataset.k !== chave){ el.dataset.k = chave; el.innerHTML = k && SKINS[k] ? cenaHtml(k) : chave ? fundoPadraoHtml(fundoCorDe(p)) : ''; }
   // Os primeiros temas (SKIN_ANTIGOS) já têm a sua troca de tela no app.css; os demais usam a escolhida em CENAS.
   document.documentElement.dataset.troca = k && !SKIN_ANTIGOS.includes(k) ? cenaDe(k)[4] : '';
   if (typeof logErr === 'function') widgetFundoEnviar(); // na primeira chamada (carga deste arquivo) divertido.js e config.js ainda não existem; inicio.js chama de novo

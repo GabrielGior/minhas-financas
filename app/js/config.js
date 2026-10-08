@@ -50,6 +50,10 @@ function openSettings(sec){
     <label>Cor</label>
     <div class="swatches">${Object.entries(COLORS).map(([k,c]) => `<button class="sw ${p.color === k ? 'on' : ''}" style="background:linear-gradient(135deg,${c[1]},${c[2]})" data-onclick="setCor('${k}')" aria-label="${c[0]}" title="${c[0]}"></button>`).join('')}</div>
     ${sorteioBtn('cor', 'Cor aleatória todo dia')}
+    ${p.skin ? '' : `<label>Fundo animado</label>
+    <div class="btns" style="margin-top:0">${[[true,'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${(p.fundo !== false) === v ? 'primary' : ''}" data-onclick="setPref('fundo',${v})">${t}</button>`).join('')}</div>
+    ${p.fundo !== false ? `<div class="swatches">${Object.entries(COLORS).map(([k,c]) => `<button class="sw ${fundoCorDe(p) === k ? 'on' : ''}" style="background:linear-gradient(135deg,${c[1]},${c[2]});border-radius:50%" data-onclick="setPref('fundoCor','${k}')" aria-label="Fundo ${c[0]}" title="${c[0]}"></button>`).join('')}</div>
+    <div class="hint">${p.fundoCor && COLORS[p.fundoCor] ? '<a href="#" data-onclick="setPref(\'fundoCor\',\'\');return false" style="color:var(--brand)">Usar a cor do app</a>' : 'Segue a cor do app; toque numa cor para fixar.'}</div>` : ''}`}
     <label>Tamanho do texto</label>
     <div class="btns" style="margin-top:0">${[[.9,'Pequeno'],[1,'Normal'],[1.12,'Grande'],[1.25,'Maior']].map(([v,t]) => `<button class="btn ${p.font === v ? 'primary' : ''}" style="padding:11px 4px" data-onclick="setPref('font',${v})">${t}</button>`).join('')}</div>
     ${window.Android && Android.girar ? `<label>Girar a tela com o celular</label>

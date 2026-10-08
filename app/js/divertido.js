@@ -243,6 +243,13 @@ const MASCOTES = {
 Object.assign(MASCOTES, MASCOTES_NOVOS); // os dos temas por categoria (js/temas.js)
 // Mascote visto de frente; mood: 'feliz', 'ok' ou 'triste'. tema: de qual tema (padrão: o que está em uso).
 function pigSvg(mood, tema = db.prefs.skin){
+  // Personagem padrão em imagem (js/mascote-padrao.js), quando existir: mesma caixa de 120 x 110, a mesma sombra e a
+  // mesma moeda; a imagem fica dentro de g.corpo para receber as animações de humor do app.css.
+  const img = !tema && mascotePadraoImg(mood);
+  if (img) return `<svg class="pig ${mood}" viewBox="0 0 120 110" width="104" height="95" aria-hidden="true">
+    <ellipse cx="60" cy="104" rx="30" ry="4" fill="#000" opacity=".16"/>
+    <g class="moeda"><circle cx="60" cy="10" r="7.5" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"/><path d="M60 6.5v7" stroke="#b45309" stroke-width="2" stroke-linecap="round"/></g>
+    <g class="corpo"><image href="${img}" x="12" y="14" width="96" height="91" preserveAspectRatio="xMidYMax meet"/></g></svg>`;
   const [claro, medio, forte, fenda, bochecha, escuro, boca, p] = MASCOTES[tema] || MASCOTES[''];
   const triste = mood === 'triste', feliz = mood === 'feliz', g = 'pigG' + (tema || '');
   const olho = x => `<circle cx="${x}" cy="55" r="5" fill="${escuro}"/><circle cx="${x + 1.8}" cy="53.2" r="1.7" fill="#fff"/>`;

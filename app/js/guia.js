@@ -76,6 +76,8 @@ const GUIA = [
     ['Atualizações', 'Configurações › Procurar atualizações', 'O app procura versão nova ao abrir e mostra o que vem nela, um aviso de cada vez. O botão avisa também quando você já está na versão mais recente.']]],
   ['Aparência', [
     ['Tema, cor e tamanho do texto', 'Configurações › Aparência', 'Claro, escuro ou automático; cor do app; texto de pequeno a maior.'],
+    ['Tablet, dobrável e computador', 'Qualquer tela larga', 'Em tela larga, o conteúdo vai para duas ou três colunas; no computador, o menu fica na lateral, Tab e Enter navegam e Esc fecha a janela aberta. O dobrável abre e fecha sem perder o que estava digitado.'],
+    ['Fundo animado do tema padrão', 'Configurações › Aparência › Fundo animado', 'Manchas de luz que se movem devagar atrás da tela, na cor do app ou numa das cores comuns. Fica parado com as animações desligadas.'],
     ['Fundo e animações dos temas', 'Qualquer tema especial', 'Cada tema tem uma cena animada no fundo e animações próprias de abertura, troca de tela, comemoração e novo gasto. Desligar as animações em Configurações › Aparência deixa a cena parada.'],
     ['Temas especiais', 'Configurações › Temas especiais', 'Mais de 150 temas separados por categoria (estilos, corridas, temas gerais, filmes, séries, jogos, desenhos, super-heróis, contos e animações, animes). Cada um muda as cores do app inteiro, o mascote, as falas, a abertura, os widgets e, se você quiser, o ícone do app. No iPhone, o ícone acompanha o tema na hora de adicionar o app à Tela de Início.'],
     ['Idioma', 'Configurações › Aparência › Idioma', 'Português, inglês ou espanhol. O assistente entende só português.'],

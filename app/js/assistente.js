@@ -317,6 +317,12 @@ function a11y(root){
 }
 document.addEventListener('keydown', e => {
   if ((e.key === 'Enter' || e.key === ' ') && e.target.getAttribute && e.target.getAttribute('role') === 'button'){ e.preventDefault(); e.target.click(); }
+  // Esc (teclado do computador): fecha a camada de cima, como o "voltar" do Android, mas não troca de aba.
+  if (e.key === 'Escape'){
+    const el = id => document.getElementById(id), camada = !el('lightbox').hidden || !el('dlg').hidden || !el('lockAsk').hidden || pickerOpen() || sheetOpen()
+      || (state.tab === 'gastos' && (state.parcDet || state.gsub === 'saude'));
+    if (camada && onBack()) e.preventDefault();
+  }
 });
 // Redesenha a tela com a animação de entrada (troca de aba, de mês ou de ano).
 function renderIn(){

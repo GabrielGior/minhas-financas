@@ -6,7 +6,7 @@
 <filter id="cfSo" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#12051f" flood-opacity=".55"/></filter>
 <clipPath id="cfCorte"><path d="M0 0H1024V232L413 519L1024 806V1024H0Z"/></clipPath>
 </defs>
-<rect fill="url(#cfBg)"/>
+<rect width="1024" height="1024" fill="url(#cfBg)"/>
 <g id="fg">
 <g filter="url(#cfSo)"><g clip-path="url(#cfCorte)">
 <path fill-rule="evenodd" fill="#faf9f4" d="M210 518a300 300 0 1 0 600 0a300 300 0 1 0 -600 0ZM340 518a170 170 0 1 0 340 0a170 170 0 1 0 -340 0Z"/>

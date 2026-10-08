@@ -88,6 +88,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .fab{position:fixed;right:max(18px,calc(50% - 242px));bottom:calc(86px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:20px;background:linear-gradient(135deg,var(--hero1),var(--hero2));color:#fff;font-size:30px;line-height:1;box-shadow:0 8px 22px rgba(0,0,0,.3);z-index:5}
 .tabs{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom);z-index:6}
 .tabs div{display:flex;width:100%;max-width:520px}
+.tabs .marca{display:none}
 .msg{max-width:88%;width:fit-content;padding:10px 13px;border-radius:16px 16px 16px 5px;margin:0 0 8px;background:var(--card);box-shadow:var(--shadow);animation:pop .18s ease-out}
 .msg.me{margin-left:auto;border-radius:16px 16px 5px 16px;background:var(--brand);color:#fff}
 [data-mode=dark] .msg.me{color:#0b1020}
@@ -633,6 +634,16 @@ html[data-fun=on] .fab.chat{animation:none}
 @keyframes cenaAstro{to{transform:translateY(-8px) scale(1.05)}}
 @keyframes cenaVai{to{transform:translateX(-3.5%)}}
 #cena.parada *{animation-play-state:paused!important}
+/* Fundo do tema padrão: três manchas de luz grandes, já esfumadas pelo próprio gradiente (sem filter: blur). */
+.fundoP{position:absolute;inset:0}
+.fundoP i{position:absolute;width:80vmax;height:80vmax;border-radius:50%;opacity:.5;will-change:transform;
+  background:radial-gradient(circle,color-mix(in srgb,var(--f1) 34%,transparent) 0,color-mix(in srgb,var(--f1) 10%,transparent) 38%,transparent 66%);animation:fundoP 34s ease-in-out infinite alternate}
+.fundoP i:nth-child(1){left:-38vmax;top:-34vmax}
+.fundoP i:nth-child(2){right:-42vmax;top:18vh;animation-duration:42s;animation-direction:alternate-reverse;
+  background:radial-gradient(circle,color-mix(in srgb,var(--f2) 30%,transparent) 0,color-mix(in srgb,var(--f2) 8%,transparent) 40%,transparent 66%)}
+.fundoP i:nth-child(3){left:-10vmax;bottom:-50vmax;animation-duration:50s;opacity:.4}
+html[data-mode=dark] .fundoP i{opacity:.32}
+@keyframes fundoP{50%{transform:translate3d(9vw,7vh,0) scale(1.12)}to{transform:translate3d(-6vw,12vh,0) scale(.94)}}
 /* Noite estrelada: o quadro já está pintado no fundo da página; a cena só acrescenta as estrelas piscando. */
 [data-skin=noite] .cenaCeu,[data-skin=noite] .cenaVeu{display:none}
 /* Com tema especial, os cartões deixam a cena aparecer um pouco e os textos soltos ganham contorno na cor do fundo. */
@@ -915,3 +926,34 @@ h1 span .iconbtn.nuvem{width:30px}
 .centralIco{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,currentColor 14%,transparent)}
 .centralNova{font-style:normal;font-weight:700;color:var(--brand);margin-left:4px}
 .centralVai{display:flex;color:var(--muted);transform:rotate(-90deg)}
+/* Computador e tablet grande deitado: navegação na lateral no lugar da barra de baixo; o conteúdo fica centrado no
+   espaço que sobra, com largura máxima confortável (três colunas só em telas bem largas). */
+@media (min-width:1100px){
+  body{padding-left:216px}
+  .tabs{top:0;right:auto;width:216px;border-top:0;border-right:1px solid var(--line);flex-direction:column;justify-content:flex-start;padding:max(76px,calc(20px + env(safe-area-inset-top))) 12px 16px}
+  .tabs div{flex-direction:column;max-width:none;gap:4px}
+  .tabs .marca{display:flex;align-items:center;gap:10px;margin:-52px 0 16px 12px;font-size:18px;font-weight:800;color:var(--text)}
+  .tabs .marca img{width:30px;height:30px;border-radius:9px}
+  html.demo .tabs{padding-top:118px}
+  .tabs button{flex:none;flex-direction:row;justify-content:flex-start;gap:12px;padding:10px 12px;font-size:14.5px;border-radius:12px}
+  .tabs button span,.tabs button.on span{padding:0;background:none;transform:none}
+  .tabs button.on{background:color-mix(in srgb,var(--brand) 14%,transparent)}
+  #app{max-width:1040px;padding-bottom:40px}
+  #topbar{left:216px;max-width:1040px}
+  .sheet{left:216px}
+  .fab,.fab.chat{right:max(18px,calc(50% - 610px));bottom:24px}
+  .fab.chat.alto{right:calc(max(18px,calc(50% - 610px)) + 70px)}
+}
+@media (min-width:1700px){
+  #app,#topbar{max-width:1400px}
+  #app.cols{column-count:3}
+  .fab,.fab.chat{right:max(18px,calc(50% - 790px))}
+  .fab.chat.alto{right:calc(max(18px,calc(50% - 790px)) + 70px)}
+}
+/* Mouse: o que é clicável reage ao passar por cima (só onde existe "passar por cima"; no toque não fica preso). */
+@media (hover:hover) and (pointer:fine){
+  .btn:hover,.iconbtn:hover,.setTile:hover,.chips button:hover{filter:brightness(1.07)}
+  .tabs button:not(.on):hover{color:var(--text);background:color-mix(in srgb,var(--brand) 7%,transparent)}
+  .item[data-onclick]:hover,.catrow[data-onclick]:hover,.card[data-onclick]:hover{background:color-mix(in srgb,var(--brand) 5%,var(--card))}
+  [data-onclick],.tabs button,.btn{cursor:pointer}
+}

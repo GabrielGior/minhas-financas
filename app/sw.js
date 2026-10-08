@@ -1,8 +1,8 @@
 // Cache para o app abrir sem internet (versão web). Só guarda os arquivos do próprio app: as respostas do Google
 // (dados da conta) nunca passam pelo cache.
 // A lista precisa ter todos os <script> do index.html: um que falte não abre sem internet (a versão sobe a cada mudança).
-const CACHE = 'financas-v13';
-const FILES = ['./', './index.html', './app.css', './js/largura.js', './js/abre.js', './js/acoes.js', './js/temas.js', './js/temas2.js', './js/dados.js', './js/telas.js', './js/assistente.js', './js/formularios.js', './js/novidades.js', './js/guia.js', './js/divertido.js', './js/config.js', './js/sincronizacao.js', './js/entrada.js', './js/arte.js', './js/atos.js', './js/cena.js','./js/planilha.js', './js/exporta.js', './js/idioma.js', './js/web.js', './js/inicio.js', './manifest.json', './icon.svg', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
+const CACHE = 'financas-v14';
+const FILES = ['./', './index.html', './app.css', './js/largura.js', './js/abre.js', './js/acoes.js', './js/temas.js', './js/temas2.js', './js/dados.js', './js/telas.js', './js/assistente.js', './js/formularios.js', './js/novidades.js', './js/guia.js', './js/mascote-padrao.js', './js/divertido.js', './js/config.js', './js/sincronizacao.js', './js/entrada.js', './js/arte.js', './js/atos.js', './js/cena.js','./js/planilha.js', './js/exporta.js', './js/idioma.js', './js/web.js', './js/inicio.js', './manifest.json', './icon.svg', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting())));
 self.addEventListener('activate', e => e.waitUntil(
