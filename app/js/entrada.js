@@ -76,7 +76,7 @@ function demoCentral(){
   centralAdd('Sincronização efetuada', 'sucesso', t - 3 * h, {k:'sync'});
   centralAdd('Orçamento de Mercado: 93% do limite usado (R$ 650,95 de R$ 700,00).', 'aviso', t - 5 * h, {k:'orc', m:curYM});
   centralAdd('Cópia do dia salva na sua conta Google (Versões salvas).', 'sucesso', t - 28 * h, {k:'sync'});
-  centralAdd('Nova sugestão de lançamento pela notificação do Banco Azul.', 'info', t - 2 * h, {k:'resumo'});
+  centralAdd('Nova sugestão de gasto pela notificação do Banco Azul.', 'info', t - 2 * h, {k:'resumo'});
 }
 // Volta aos dados reais, exatamente como estavam (sem gravar nada: eles nunca saíram do aparelho).
 function demoSair(){

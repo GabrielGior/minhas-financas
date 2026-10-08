@@ -1,4 +1,4 @@
-// Cofrim — Dados: planilha formatada (.xlsx), exclusão por período, aviso do extrato e histórico de sugestões.
+// Cofrim — Dados: planilha formatada (.xlsx), exclusão por período, aviso do extrato e sugestões de gasto.
 // Carregado pelo index.html depois de planilha.js.
 
 // ---------- Planilha do ano (.xlsx) ----------
@@ -152,35 +152,53 @@ async function apagarAgora(){
   showUndo(`${n} ${n === 1 ? 'lançamento apagado' : 'lançamentos apagados'}`, () => restoreSnap(antes));
 }
 
-// ---------- Histórico de sugestões do banco ----------
-// As sugestões lidas das notificações saem da lista do Resumo quando são lançadas ou ignoradas; aqui fica o histórico
-// delas (neste aparelho, as 80 últimas), com um botão para lançar o gasto a partir de qualquer uma.
-const SUG_KEY = 'financas-sugestoes';
+// ---------- Sugestões de gasto (menu de três barras) ----------
+// As sugestões lidas das notificações saem do Resumo quando são lançadas, ignoradas ou abertas; aqui ficam todas (neste
+// aparelho), as novas também, com um botão para lançar a partir de qualquer uma. Cada uma ocupa uns 220 caracteres; guardamos
+// as dos últimos 12 meses, até 2.000 (uns 450 mil caracteres, menos de um décimo do armazenamento da página no APK, onde
+// os dados ficam num arquivo à parte), e só as mais antigas saem.
+const SUG_KEY = 'financas-sugestoes', SUG_MESES = 12, SUG_MAX = 2000;
 function sugLog(){ try { return JSON.parse(localStorage.getItem(SUG_KEY)) || []; } catch(e){ return []; } }
 function sugGuardar(n, st){
   if (!n) return;
-  const l = sugLog().filter(x => x.t !== n.t);
+  const desde = Date.now() - SUG_MESES * 31 * 864e5, l = sugLog().filter(x => x.t !== n.t && x.t >= desde);
   l.push({...n, st});
-  try { localStorage.setItem(SUG_KEY, JSON.stringify(l.slice(-80))); } catch(e){}
+  try { localStorage.setItem(SUG_KEY, JSON.stringify(l.slice(-SUG_MAX))); } catch(e){}
 }
-// Muda a situação de uma sugestão que já está no histórico (ex.: de "aberta" para "lançada").
+// Muda a situação de uma sugestão que já está guardada (ex.: de "aberta" para "lançada").
 function sugMarcar(t, st){ const n = sugLog().find(x => x.t === t); if (n) sugGuardar(n, st); }
-// destaque: hora de uma sugestão a mostrar em evidência (a que foi tocada na notificação e já tinha saído da lista).
-function openSugestoes(destaque){
+// destaque: hora de uma sugestão a mostrar em evidência (a que foi tocada na notificação ou na central e já tinha saído
+// do Resumo). filtro: todas, nova, lancada ou ignorada.
+const SUG_ROT = {nova:['Nova', 'in'], aberta:['Aberta, não lançada', 'out'], lancada:['Lançada', 'muted'], ignorada:['Ignorada', 'muted']};
+const SUG_FILTROS = [['todas', 'Todas'], ['nova', 'Novas'], ['lancada', 'Lançadas'], ['ignorada', 'Ignoradas']];
+function openSugestoes(destaque, filtro = 'todas'){
   settingsOpen = false; F = null;
   const todas = [...bankNotes().map(n => ({...n, st:'nova'})), ...sugLog()].sort((a, b) => b.t - a.t).filter(notaPermitida).map(n => ({n, p:parseBankNote(n)})).filter(x => x.p);
-  const ROT = {nova:['Nova', 'in'], aberta:['Aberta, não lançada', 'out'], lancada:['Lançada', 'muted'], ignorada:['Ignorada', 'muted']};
-  showSheet(`<h3>Histórico de sugestões</h3>
-    <div class="hint" style="margin-top:0">O que o app leu das notificações do banco, do mais novo para o mais antigo. Toque em "Lançar gasto" para registrar qualquer uma.</div>
-    ${todas.length ? todas.map(({n, p}) => `<div class="item${n.t === destaque ? ' sugDestaque' : ''}" style="cursor:default"><div class="mid"><b style="white-space:normal">${p.hidden ? 'Aviso do ' + esc(p.app) : esc(p.desc)}</b>
-      <small style="white-space:normal">${new Date(n.t).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'})} · ${esc(p.app || p.bank || '')}<span class="tag ${(ROT[n.st] || ROT.lancada)[1]}">${(ROT[n.st] || ROT.lancada)[0]}</span></small>
+  const lista = filtro === 'todas' ? todas : todas.filter(x => (SUG_ROT[x.n.st] ? x.n.st : 'lancada') === filtro), guardadas = todas.length > 0;
+  const rot = st => SUG_ROT[st] || SUG_ROT.lancada;
+  showSheet(`<h3>Sugestões de gasto</h3>
+    <div class="hint" style="margin-top:0">O que o app leu das notificações dos bancos, carteiras e vales, da mais nova para a mais antiga. Toque em "Lançar" para registrar qualquer uma.</div>
+    ${guardadas ? `<div class="seg sugFiltro" role="tablist">${SUG_FILTROS.map(([k, t]) => `<button role="tab" class="${k === filtro ? 'on' : ''}" aria-selected="${k === filtro}" data-onclick="openSugestoes(null,'${k}')">${t}</button>`).join('')}</div>` : ''}
+    ${lista.length ? lista.map(({n, p}) => `<div class="item${n.t === destaque ? ' sugDestaque' : ''}" style="cursor:default"><div class="mid"><b style="white-space:normal">${p.hidden ? 'Aviso do ' + esc(p.app) : esc(p.desc)}</b>
+      <small style="white-space:normal">${new Date(n.t).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'})} · ${esc(p.app || p.bank || bankName(n))}<span class="tag ${rot(n.st)[1]}">${rot(n.st)[0]}</span></small>
       ${p.hidden ? '' : `<small style="white-space:normal">${esc(String(n.texto).slice(0, 110))}</small>`}</div>
       <div style="flex:none;text-align:right"><div class="val ${p.income ? 'in' : 'out'}">${p.hidden ? 'R$ ?' : fmt(p.value)}</div>
       <button class="btn ${n.st === 'nova' ? 'primary' : ''}" style="padding:7px 10px;margin-top:4px" data-onclick="noteUse(${+n.t})">${p.income ? 'Lançar ganho' : 'Lançar gasto'}</button></div></div>`).join('')
-    : '<div class="card empty" style="box-shadow:none">Nenhuma sugestão por enquanto.<br>Elas aparecem quando o banco avisa uma compra ou um Pix.</div>'}
-    <div class="btns foot">${sugLog().length ? '<button class="btn" data-onclick="localStorage.removeItem(SUG_KEY);openSugestoes()">Limpar histórico</button>' : ''}<button class="btn primary" data-onclick="closeForm()">Fechar</button></div>`);
+    : `<div class="card empty" style="box-shadow:none">${guardadas ? 'Nenhuma sugestão nesta situação.' : 'Nenhuma sugestão por enquanto.<br>Elas aparecem quando o banco avisa uma compra ou um Pix.'}</div>`}
+    <div class="hint">Guardamos neste aparelho as sugestões dos últimos ${SUG_MESES} meses (até ${SUG_MAX.toLocaleString('pt-BR')}).</div>
+    <div class="btns foot">${guardadas ? '<button class="btn" data-onclick="sugLimpar()">Limpar todas</button>' : ''}<button class="btn primary" data-onclick="closeForm()">Fechar</button></div>`);
   const d = document.querySelector('#sheet .sugDestaque');
   if (d) d.scrollIntoView({block:'center'});
+}
+// "Limpar todas": apaga as guardadas e as novas (que saem do Resumo) e tira da barra as notificações de gasto encontrado.
+async function sugLimpar(){
+  if (!await ask('Apagar todas as sugestões guardadas neste aparelho? As novas também saem do Resumo.', 'Apagar')) return openSugestoes();
+  for (const n of bankNotes()) avisoCancelar(n.t);
+  try { localStorage.removeItem(SUG_KEY); } catch(e){}
+  if (demoOn) demoNotas = [];
+  else if (window.Android && Android.avisosGuardar) Android.avisosGuardar('[]');
+  render(); openSugestoes();
+  toast('Sugestões apagadas.');
 }
 
 // ---------- Puxar para atualizar ----------

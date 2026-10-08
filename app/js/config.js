@@ -141,12 +141,14 @@ function openSettings(sec){
     <div class="hint">O Android pede confirmação.</div>` : ''}`],
   ['conta', 'cloud', 'Conta e sincronização', 'Google Drive e cópias', syncHtml],
   ['compart', 'people', 'Conta compartilhada', sync.shared ? 'Ligada: vocês veem os mesmos dados' : 'Mesmos dados em dupla', syncHtml ? shareHtml() : ''],
-  ['auto', 'sparkle', 'Lançamento automático', 'Sugestões do banco', !(window.Android && Android.avisosLigar) ? '' : `
-    <label>Sugestões do banco</label>
+  ['auto', 'sparkle', 'Lançamento automático', 'Sugestões de gasto', !(window.Android && Android.avisosLigar) ? '' : `
+    <label>Sugestões de gasto</label>
     <div class="btns" style="margin-top:0">${[[true,'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${!!Android.avisosLigado() === v ? 'primary' : ''}" data-onclick="setAvisos(${v})">${t}</button>`).join('')}</div>
     ${Android.avisosLigado() && !Android.avisosAcesso() ? `<div class="hint warn">${I('alert', 13)} Falta autorizar no Android. <a href="#" data-onclick="Android.avisosConfigurar();return false" style="color:var(--brand)">Abrir a tela de autorização</a></div>` : ''}
     <div class="hint">Compras e Pix avisados pelo banco viram sugestão; nada sai do aparelho.</div>
-    ${Android.setAvisoGasto ? `<label>Avisar quando encontrar um gasto</label>
+    ${Android.setAvisoGasto && !Android.avisosLigado() ? `<label class="apagado">Avisar quando encontrar um gasto</label>
+    <div class="hint apagado" style="margin-top:0">Ligue as sugestões de gasto para usar o aviso.</div>` : ''}
+    ${Android.setAvisoGasto && Android.avisosLigado() ? `<label>Avisar quando encontrar um gasto</label>
     <div class="btns" style="margin-top:0">${[[true,'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${!!Android.avisoGasto() === v ? 'primary' : ''}" data-onclick="Android.setAvisoGasto(${v});openSettings()">${t}</button>`).join('')}</div>
     ${Android.avisoGasto() && !lembLigados() ? `<div class="hint warn">${I('alert', 13)} Os lembretes estão desligados neste aparelho: o aviso não aparece.</div><div class="btns" style="margin-top:6px"><button class="btn primary" data-onclick="ligarLembretes()">Ligar lembretes</button></div>`
       : '<div class="hint">Notificação na hora, com o app aberto ou fechado; tocar abre o formulário já preenchido.</div>'}` : ''}

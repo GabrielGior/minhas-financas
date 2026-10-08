@@ -979,3 +979,9 @@ ul.causas{margin:0 0 4px;padding-left:20px;color:var(--muted);font-size:14px}
   .item[data-onclick]:hover,.catrow[data-onclick]:hover,.card[data-onclick]:hover{background:color-mix(in srgb,var(--brand) 5%,var(--card))}
   [data-onclick],.tabs button,.btn{cursor:pointer}
 }
+/* Opção que depende de outra desligada (ex.: o aviso de gasto sem as sugestões): aparece apagada, sem botões. */
+.apagado{opacity:.5}
+/* Botão de menu com sugestões de gasto novas: um ponto no botão e o número ao lado do item do painel. */
+.iconbtn.menuBtn{position:relative}
+.menuPonto{position:absolute;top:6px;right:5px;width:9px;height:9px;border-radius:50%;background:var(--brand);box-shadow:0 0 0 2px var(--bg)}
+#menuTopo .menuN{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--brand);color:#fff;font-size:11.5px;font-weight:700;line-height:20px;text-align:center}

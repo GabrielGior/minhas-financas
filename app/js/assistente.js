@@ -345,19 +345,30 @@ function renderIn(){
 function go(t){ if (t === 'chat' && state.tab !== 'chat') state.antesChat = state.tab; state.tab = t; state.parcDet = ''; renderIn(); scrollTo(0,0); if (t === 'invest') refreshQuotes(); }
 const sairChat = () => go(visTabs().includes(state.antesChat) ? state.antesChat : visTabs()[0]);
 // ---------- Botão de menu do título (três barras) ----------
-// Abre um painel pequeno, preso ao botão, com "Configurações" e, nas telas com blocos, "Reorganizar esta tela" (o que
-// o antigo botão de personalizar abria). Nas telas sem blocos, o toque vai direto às Configurações. O painel fecha ao
-// tocar fora, com o voltar do Android e com Esc; Tab e Enter navegam nele.
+// Abre um painel pequeno, preso ao botão, com "Configurações", "Sugestões de gasto" (só no Android, com as sugestões
+// ligadas ou alguma guardada) e, nas telas com blocos, "Reorganizar esta tela" (o que o antigo botão de personalizar
+// abria). Com só as Configurações, o toque vai direto a elas. Sugestões novas (nem lançadas nem ignoradas): um ponto no
+// botão e o número ao lado do item. O painel fecha ao tocar fora, com o voltar do Android e com Esc; Tab e Enter navegam nele.
 const reorganizar = tab => tab === 'resumo' ? 'openResumoEdit()' : LAYOUT[tab] ? `openLayoutEdit('${tab}')` : '';
-const menuBtn = tab => reorganizar(tab)
-  ? `<button class="iconbtn menuBtn" data-onclick="abrirMenu(this,'${tab}')" aria-label="Menu" aria-haspopup="menu" aria-expanded="false">${I('menu', 24)}</button>`
-  : `<button class="iconbtn menuBtn" data-onclick="openSettings('')" aria-label="Menu">${I('menu', 24)}</button>`;
+const sugNoMenu = () => !!(window.Android && Android.avisosBanco) && ((Android.avisosLigado && Android.avisosLigado()) || sugLog().length > 0 || sugNovas() > 0);
+const sugNovas = () => bankNotes().filter(n => parseBankNote(n)).length;
+function menuItens(tab){
+  const l = [['gear', 'Configurações', "openSettings('')"]];
+  if (sugNoMenu()) l.push(['sparkle', 'Sugestões de gasto', 'openSugestoes()', sugNovas()]);
+  if (reorganizar(tab)) l.push(['sliders', 'Reorganizar esta tela', reorganizar(tab)]);
+  return l;
+}
+const menuBtn = tab => {
+  const l = menuItens(tab), n = l.reduce((t, x) => t + (x[3] || 0), 0), rot = `Menu${n ? `, ${n} ${n > 1 ? 'sugestões novas' : 'sugestão nova'}` : ''}`;
+  return l.length > 1
+    ? `<button class="iconbtn menuBtn" data-onclick="abrirMenu(this,'${tab}')" aria-label="${rot}" aria-haspopup="menu" aria-expanded="false">${I('menu', 24)}${n ? '<b class="menuPonto"></b>' : ''}</button>`
+    : `<button class="iconbtn menuBtn" data-onclick="openSettings('')" aria-label="Menu">${I('menu', 24)}</button>`;
+};
 function abrirMenu(btn, tab){
   if (fecharMenu()) return; // segundo toque no botão fecha
   const el = document.createElement('div');
   el.id = 'menuTopo'; el.setAttribute('role', 'menu');
-  el.innerHTML = `<button role="menuitem" data-onclick="fecharMenu();openSettings('')">${I('gear', 20)}Configurações</button>`
-    + `<button role="menuitem" data-onclick="fecharMenu();${reorganizar(tab)}">${I('sliders', 20)}Reorganizar esta tela</button>`;
+  el.innerHTML = menuItens(tab).map(([ic, txt, acao, n]) => `<button role="menuitem" data-onclick="fecharMenu();${acao}">${I(ic, 20)}${txt}${n ? `<b class="menuN">${n > 99 ? '99+' : n}</b>` : ''}</button>`).join('');
   btn.parentElement.appendChild(el);
   btn.setAttribute('aria-expanded', 'true');
   el.querySelector('button').focus({preventScroll:true});

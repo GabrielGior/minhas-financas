@@ -298,18 +298,16 @@ function parseBankNote(n){
 function bankNotesHtml(){
   const list = bankNotes().map((n, i) => ({i, n, p:parseBankNote(n)})).filter(x => x.p).slice(-5).reverse();
   centralBanco(list);
-  const hist = `<div class="btns" style="margin:${list.length ? '10px 0 0' : '0 0 12px'}"><button class="btn" data-onclick="openSugestoes()">${I('doc')}Histórico de sugestões</button></div>`;
-  // Sem sugestão nova, fica só o botão do histórico (para quem tem a leitura das notificações ligada ou já teve sugestões).
-  if (!list.length) return (window.Android && Android.avisosLigado && Android.avisosLigado()) || sugLog().length ? hist : '';
-  return list.length ? `<div class="card"><b>${I('sparkle')} Sugestões pelas notificações do banco</b>${list.map(({i, n, p}) => `
+  // Só as novas: lançadas, ignoradas e abertas ficam na tela Sugestões de gasto, no menu de três barras (openSugestoes).
+  return list.length ? `<div class="card"><b>${I('sparkle')} Sugestões de gasto</b>${list.map(({i, n, p}) => `
     <div class="item" style="cursor:default"><div class="mid">${p.hidden
       ? `<b>Novo aviso do ${esc(p.app)}</b><small style="white-space:normal">${p.title ? esc(p.title) + ' · ' : ''}${new Date(n.t).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'})}. Não deu para ler o valor (o Android esconde avisos com números parecidos com código); confira no app do banco.</small>`
       : `<b>${esc(p.desc)}</b><small style="white-space:normal">${esc(bankName(n))} · ${esc(String(n.texto).slice(0, 90))}</small>`}</div>
       <div style="flex:none;text-align:right"><div class="val ${p.income ? 'in' : 'out'}">${p.hidden ? 'R$ ?' : fmt(p.value)}</div>
-      <button class="btn primary" style="padding:7px 10px;margin-top:4px" data-onclick="noteUse(${+n.t})">Lançar</button> <button class="btn" style="padding:7px 10px;margin-top:4px" data-onclick="noteIgnorar(${+n.t})">Ignorar</button></div></div>`).join('')}${hist}</div>` : '';
+      <button class="btn primary" style="padding:7px 10px;margin-top:4px" data-onclick="noteUse(${+n.t})">Lançar</button> <button class="btn" style="padding:7px 10px;margin-top:4px" data-onclick="noteIgnorar(${+n.t})">Ignorar</button></div></div>`).join('')}</div>` : '';
 }
 // Os botões levam a hora do aviso (t), não a posição: a lista pode mudar se chegar um aviso novo com a tela aberta.
-// Uma sugestão que sai da lista (lançada ou ignorada) vai para o histórico (ver openSugestoes, em js/exporta.js).
+// Uma sugestão que sai da lista (lançada ou ignorada) vai para a tela Sugestões de gasto (ver openSugestoes, em js/exporta.js).
 // Ignorar: só esta sugestão ou, daqui para frente, nada deste app (guardado neste aparelho; vale também no lado nativo).
 function noteIgnorar(t){
   const n = bankNotes().find(n => n.t === t);
@@ -418,7 +416,7 @@ async function setAvisos(v){
   if (demoBloqueia()) return;
   Android.avisosLigar(v);
   if (v && !Android.avisosAcesso()){
-    await tell('Na tela que vai abrir, ative "Cofrim" (aparece como "Sugestões de lançamento"). O Android vai avisar que o app poderá ler suas notificações: ele guarda só as que têm um valor em R$ e nada sai do aparelho.');
+    await tell('Na tela que vai abrir, ative o "Cofrim" (pode aparecer como "Sugestões de gasto"). O Android vai avisar que o app poderá ler suas notificações: ele guarda só as que têm um valor em R$ e nada sai do aparelho.');
     Android.avisosConfigurar();
   }
   openSettings();
