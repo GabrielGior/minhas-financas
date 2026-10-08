@@ -171,15 +171,19 @@ function widgetFundoEnviar(){
 // gradientes do CSS movidos por transform (leve para a bateria); para com as animações desligadas ou com o sistema
 // pedindo menos movimento. db.prefs.fundo === false desliga; fundoCor = uma das cores comuns ('' = a cor do app).
 const fundoCorDe = p => COLORS[p.fundoCor] ? p.fundoCor : COLORS[p.color] ? p.color : 'indigo';
-function fundoPadraoHtml(cor){
+// Intensidade (db.prefs.fundoInt): 'suave', 'media' (padrão) ou 'forte'. Três manchas: a cor do app, um tom mais claro
+// dela e um pouco do dourado da moeda do ícone.
+const FUNDO_INT = {suave:'Suave', media:'Média', forte:'Forte'};
+const fundoIntDe = p => FUNDO_INT[p.fundoInt] ? p.fundoInt : 'media';
+function fundoPadraoHtml(cor, int = 'media'){
   const c = COLORS[cor];
-  return `<div class="fundoP" style="--f1:${c[1]};--f2:${c[3]}"><i></i><i></i><i></i></div>`;
+  return `<div class="fundoP" data-int="${int}" style="--f1:${c[1]};--f2:${c[3]};--f3:#f1cf7e"><i></i><i></i><i></i></div>`;
 }
 function cenaAplicar(){
   const el = document.getElementById('cena'), p = db.prefs, k = p.skin || '';
   if (!el) return;
-  const chave = k || (p.fundo !== false ? 'padrao:' + fundoCorDe(p) : '');
-  if (el.dataset.k !== chave){ el.dataset.k = chave; el.innerHTML = k && SKINS[k] ? cenaHtml(k) : chave ? fundoPadraoHtml(fundoCorDe(p)) : ''; }
+  const chave = k || (p.fundo !== false ? 'padrao:' + fundoCorDe(p) + ':' + fundoIntDe(p) : '');
+  if (el.dataset.k !== chave){ el.dataset.k = chave; el.innerHTML = k && SKINS[k] ? cenaHtml(k) : chave ? fundoPadraoHtml(fundoCorDe(p), fundoIntDe(p)) : ''; }
   // Os primeiros temas (SKIN_ANTIGOS) já têm a sua troca de tela no app.css; os demais usam a escolhida em CENAS.
   document.documentElement.dataset.troca = k && !SKIN_ANTIGOS.includes(k) ? cenaDe(k)[4] : '';
   if (typeof logErr === 'function') widgetFundoEnviar(); // na primeira chamada (carga deste arquivo) divertido.js e config.js ainda não existem; inicio.js chama de novo

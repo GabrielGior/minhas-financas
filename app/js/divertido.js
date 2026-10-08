@@ -416,9 +416,10 @@ function funCount(){
   if (!db.prefs.fun || !db.prefs.anim) return;
   document.querySelectorAll('#app .hero .big').forEach(el => {
     if (hideVals) return;
-    const fim = parseMoney(el.textContent), t0 = performance.now();
+    // O número vem de data-v (bigNum), não do texto: o texto já formatado ("R$ 4.002", "R$ 29,3 mil") não volta a número.
+    const fim = +el.dataset.v, curto = el.dataset.f === 'c', t0 = performance.now(), final = el.textContent;
     if (!fim) return;
-    const passo = t => { const k = Math.min(1, (t - t0) / 650); el.textContent = fmt(fim * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(passo); };
+    const passo = t => { const k = Math.min(1, (t - t0) / 650); el.textContent = k < 1 ? (curto ? fmtCurto : fmt)(fim * (1 - Math.pow(1 - k, 3))) : final; if (k < 1) requestAnimationFrame(passo); };
     requestAnimationFrame(passo);
   });
 }

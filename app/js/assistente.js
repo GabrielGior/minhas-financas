@@ -286,10 +286,17 @@ addEventListener('scroll', () => {
   for (const id of ['fab', 'fabChat']) document.getElementById(id).classList.toggle('away', y > lastScroll && y > 80);
   lastScroll = y;
 }, {passive:true});
+const telaErro = () => `<h1>${esc(TABS[state.tab] ? TABS[state.tab][1] : 'Cofrim')}</h1><div class="card"><b>${I('alert')} Não foi possível abrir esta tela</b>
+  <div class="hint">O erro ficou registrado. Abra o Diagnóstico e envie o relatório para quem dá suporte; seus dados continuam salvos.</div>
+  <div class="btns"><button class="btn primary" data-onclick="diagOpen()">Abrir Diagnóstico</button>${state.tab !== 'resumo' ? '<button class="btn" data-onclick="go(\'resumo\')">Ir para o Resumo</button>' : ''}</div></div>`;
 function render(){
   dirty();
   if (archNeeded()) ensureArchive();
-  document.getElementById('app').innerHTML = VIEWS[state.tab]();
+  // Erro ao montar a tela (dado inesperado): em vez de deixar o app vazio (ou preso na abertura), mostra o aviso com o
+  // caminho para o Diagnóstico, e o erro fica registrado.
+  let tela;
+  try { tela = VIEWS[state.tab](); } catch(e){ logErr('tela ' + state.tab, e); tela = telaErro(); }
+  document.getElementById('app').innerHTML = tela;
   document.getElementById('tabs').innerHTML = visTabs().map(t => `<button class="${t === state.tab ? 'on' : ''}" ${t === state.tab ? 'aria-current="page"' : ''} data-onclick="go('${t}')"><span>${I(TABS[t][0], 23)}</span>${TABS[t][1]}</button>`).join('');
   const noFab = ['resumo', 'noticias', 'chat'].includes(state.tab);
   document.getElementById('fab').hidden = noFab;
@@ -300,6 +307,7 @@ function render(){
   document.getElementById('app').classList.toggle('hasFab', !noFab);
   document.getElementById('app').classList.toggle('cols', state.tab !== 'chat' && state.tab !== 'noticias'); // tela larga: duas colunas
   drawTopbar();
+  nuvemAlinhar(document.getElementById('app'));
   a11y(document.getElementById('app'));
   if (db.prefs.fun && !window.TESTE) setTimeout(funCheck, 0); // conquista nova: aviso com confete
 }
@@ -318,6 +326,7 @@ function a11y(root){
 document.addEventListener('keydown', e => {
   if ((e.key === 'Enter' || e.key === ' ') && e.target.getAttribute && e.target.getAttribute('role') === 'button'){ e.preventDefault(); e.target.click(); }
   // Esc (teclado do computador): fecha a camada de cima, como o "voltar" do Android, mas não troca de aba.
+  if (e.key === 'Escape' && fecharMenu(true)){ e.preventDefault(); return; }
   if (e.key === 'Escape'){
     const el = id => document.getElementById(id), camada = !el('lightbox').hidden || !el('dlg').hidden || !el('lockAsk').hidden || pickerOpen() || sheetOpen()
       || (state.tab === 'gastos' && (state.parcDet || state.gsub === 'saude'));
@@ -335,8 +344,41 @@ function renderIn(){
 // antesChat = a tela de onde o assistente foi aberto: é para ela que o "voltar" do assistente leva.
 function go(t){ if (t === 'chat' && state.tab !== 'chat') state.antesChat = state.tab; state.tab = t; state.parcDet = ''; renderIn(); scrollTo(0,0); if (t === 'invest') refreshQuotes(); }
 const sairChat = () => go(visTabs().includes(state.antesChat) ? state.antesChat : visTabs()[0]);
+// ---------- Botão de menu do título (três barras) ----------
+// Abre um painel pequeno, preso ao botão, com "Configurações" e, nas telas com blocos, "Reorganizar esta tela" (o que
+// o antigo botão de personalizar abria). Nas telas sem blocos, o toque vai direto às Configurações. O painel fecha ao
+// tocar fora, com o voltar do Android e com Esc; Tab e Enter navegam nele.
+const reorganizar = tab => tab === 'resumo' ? 'openResumoEdit()' : LAYOUT[tab] ? `openLayoutEdit('${tab}')` : '';
+const menuBtn = tab => reorganizar(tab)
+  ? `<button class="iconbtn menuBtn" data-onclick="abrirMenu(this,'${tab}')" aria-label="Menu" aria-haspopup="menu" aria-expanded="false">${I('menu', 24)}</button>`
+  : `<button class="iconbtn menuBtn" data-onclick="openSettings('')" aria-label="Menu">${I('menu', 24)}</button>`;
+function abrirMenu(btn, tab){
+  if (fecharMenu()) return; // segundo toque no botão fecha
+  const el = document.createElement('div');
+  el.id = 'menuTopo'; el.setAttribute('role', 'menu');
+  el.innerHTML = `<button role="menuitem" data-onclick="fecharMenu();openSettings('')">${I('gear', 20)}Configurações</button>`
+    + `<button role="menuitem" data-onclick="fecharMenu();${reorganizar(tab)}">${I('sliders', 20)}Reorganizar esta tela</button>`;
+  btn.parentElement.appendChild(el);
+  btn.setAttribute('aria-expanded', 'true');
+  el.querySelector('button').focus({preventScroll:true});
+}
+function fecharMenu(focar){
+  const el = document.getElementById('menuTopo');
+  if (!el) return false;
+  const btn = el.parentElement.querySelector('.menuBtn');
+  el.remove();
+  if (btn){ btn.setAttribute('aria-expanded', 'false'); if (focar) btn.focus({preventScroll:true}); }
+  return true;
+}
+// Toque fora do painel: só fecha (o toque não chega ao que estava embaixo).
+document.addEventListener('click', e => {
+  const el = document.getElementById('menuTopo');
+  if (!el || el.contains(e.target) || (e.target.closest && e.target.closest('.menuBtn'))) return;
+  e.stopPropagation(); e.preventDefault(); fecharMenu();
+}, true);
 // Botão "voltar" do Android (chamado pelo APK). Retorna false quando o app deve fechar.
 function onBack(){
+  if (fecharMenu()) return true;
   // Fecha a camada de cima primeiro: foto ampliada, diálogo, convite do bloqueio, seletor, folha, e só então a aba.
   if (!document.getElementById('lightbox').hidden){ document.getElementById('lightbox').hidden = true; return true; }
   if (!document.getElementById('dlg').hidden){ dlgClose(false); return true; }

@@ -179,7 +179,7 @@ function nameSave(daConfig){
 const TOUR = [
   ['piggy', () => `${greeting() || 'Boas-vindas!'}`, 'Este é o Cofrim: seus ganhos, gastos, contas e investimentos num lugar só, salvos na sua conta Google. Veja em um minuto como usar.'],
   ['plus', 'Lançar é rápido', 'Toque no + (ou nos atalhos do Resumo) e informe só o valor e a categoria; o resto fica em "Mais opções". Os gastos que você mais repete viram botões.'],
-  ['chart', 'Resumo', 'Gastos do mês e do ano, contas a vencer, gastos por categoria e contas bancárias. Há muito mais (previsão, gráficos, metas, investimentos): toque em "Ver mais informações no resumo", no fim da tela, ou no botão de ajustes, no topo.'],
+  ['chart', 'Resumo', 'Gastos do mês e do ano, contas a vencer, gastos por categoria e contas bancárias. Há muito mais (previsão, gráficos, metas, investimentos): toque em "Ver mais informações no resumo", no fim da tela, ou no menu (três barras), no topo › Reorganizar esta tela.'],
   ['receipt', 'Gastos do mês', 'Separados em Assinaturas, Fixos e anuais, Parceladas e Ocasionais, com busca e filtros. Deslize um lançamento para a esquerda para excluir; numa conta com vencimento, para a direita marca como paga.'],
   ['card', 'Parcelas e financiamentos', 'Em Gastos › Parceladas, cadastre compras parceladas, financiamentos e empréstimos. Toque num item para ver o saldo devedor e todas as parcelas, pagar, abater ou exportar em PDF.'],
   ['trend', 'Investimentos e metas', 'Cadastre aplicações, ações e metas. O app projeta quanto vão render com CDI, Selic e IPCA e mostra quanto falta para cada meta.'],

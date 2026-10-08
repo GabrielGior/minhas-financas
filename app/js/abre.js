@@ -4,3 +4,5 @@ try {
   var abreCor = JSON.parse(localStorage.getItem('financas-abre') || 'null'), hex = /^#[0-9a-f]{3,8}$/i;
   if (abreCor && hex.test(abreCor[0]) && hex.test(abreCor[1])) document.getElementById('abre').style.background = 'linear-gradient(135deg,' + abreCor[0] + ',' + abreCor[1] + ')';
 } catch(e){}
+// Rede de segurança: se a abertura não começar (erro antes dela), a tela de abertura sai sozinha depois de 6 s.
+setTimeout(function(){ var el = document.getElementById('abre'), dentro = document.getElementById('abreIn'); if (el && dentro && !dentro.innerHTML) el.remove(); }, 6000);

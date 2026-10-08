@@ -13,7 +13,9 @@ const skel = n => `<div class="sk skHero"></div><div class="card">${'<div class=
 // Nome da categoria com o ícone pequeno, para textos corridos.
 const catName = (c, color = 'var(--brand)') => `<span style="color:${esc(color)}">${I(c[0], 16)}</span> ${esc(c[1])}`;
 // Título da aba com os botões de personalizar a tela e de configurações.
-const head = (title, tab) => `<h1>${title} <span>${nuvemBtn()}${eyeBtn()}${LAYOUT[tab] ? `<button class="iconbtn" data-onclick="openLayoutEdit('${tab}')" aria-label="Personalizar esta tela">${I('sliders', 24)}</button>` : ''}<button class="iconbtn" data-onclick="openSettings('')" aria-label="Configurações">${I('gear', 24)}</button></span></h1>${offlinePill()}`;
+// Título das telas: a nuvem da sincronização logo depois do nome; à direita, o sino (só no Resumo), o olho e o menu.
+const tituloTela = (title, tab, extra = '') => `<h1><span class="tit">${title}${nuvemBtn()}</span><span class="acoes">${extra}${eyeBtn()}${menuBtn(tab)}</span></h1>`;
+const head = (title, tab) => tituloTela(title, tab) + offlinePill();
 const empty = (icon, t) => `<div class="card empty"><span>${I(icon, 40)}</span>${t}</div>`;
 // Conta compartilhada: quem lançou o registro (by), como etiqueta na linha. Fora dela não aparece.
 const byTag = x => shared() && x.by ? `<span class="tag">${I('user', 11)} ${esc(x.by)}</span>` : '';
@@ -101,9 +103,9 @@ function viewResumo(){
   destaque: () => { const mi = totalIn(rm), mo = totalOut(rm), ant = totalOut(addMonths(rm, -1)), dif = ant ? Math.round((mo - ant) / ant * 100) : null;
     const uso = (g, t) => `<div class="uso"><i style="width:${g ? Math.min(100, t / g * 100) : 0}%"></i></div><small>${g ? `${hideVals ? '••' : Math.round(t / g * 100)}% dos ganhos (${fmtCurto(g)})` : 'sem ganhos lançados'}</small>`;
     return `<div class="hero2">
-    <div class="hero" data-onclick="goMonth('${rm}')"><small>Gastos de ${nomeM}</small><div class="big">${fmtCurto(mo)}</div>${uso(mi, mo)}
+    <div class="hero" data-onclick="goMonth('${rm}')"><small>Gastos de ${nomeM}</small>${bigNum(mo, 1)}${uso(mi, mo)}
       ${dif == null || hideVals ? '' : `<span class="selo">${dif ? `${dif > 0 ? '▲' : '▼'} ${Math.abs(dif)}% sobre ${mesCurto(addMonths(rm, -1))}` : `= igual a ${mesCurto(addMonths(rm, -1))}`}</span>`}</div>
-    <div class="hero ano"><small>Gastos de ${y}</small><div class="big">${fmtCurto(tout)}</div>${uso(tin, tout)}
+    <div class="hero ano"><small>Gastos de ${y}</small>${bigNum(tout, 1)}${uso(tin, tout)}
       ${tin || tout ? `<span class="selo">${tin - tout < 0 ? 'faltou' : 'sobrou'} ${fmtCurto(Math.abs(tin - tout))}</span>` : ''}</div></div>`; },
   // Gastos por categoria do mês escolhido: rosca com o total no centro e as maiores categorias ao lado.
   rosca: () => { const g = {}; expensesOf(rm).forEach(e => g[e.cat] = (g[e.cat] || 0) + e.value);
@@ -125,7 +127,7 @@ function viewResumo(){
   ${over.length ? `<div class="card"><b><span class="warn">${I('alert')}</span> Orçamento de ${monthName(curYM)}</b>${over.map(b => { const c = CAT_GASTO[b.cat] || CAT_GASTO.outros; return `
     <div class="hint" style="color:${budgetColor(b.pct)}">${esc(c[1])}:${Math.round(b.pct)}% usado (${fmt(b.used)} de ${fmt(b.lim)})</div>`; }).join('')}</div>` : ''}${oddHtml(odd)}`,
   planejar: () => planHtml(),
-  saldo: () => `<div class="hero"><small>Saldo de ${y}</small><div class="big">${fmt(tin - tout)}</div>
+  saldo: () => `<div class="hero"><small>Saldo de ${y}</small>${bigNum(tin - tout)}
     <div class="row cores"><div><small>Ganho total</small><b class="hIn">${fmt(tin)}</b></div><div><small>Gasto total</small><b class="hOut">${fmt(tout)}</b></div></div></div>`,
   // Ganhos e gastos mês a mês, em curvas suaves: a linha cheia (cor do tema, com a área preenchida em degradê) são os
   // ganhos, com o rendimento dos investimentos; a pontilhada vermelha são os gastos. O mês tocado (ou, sem toque, o mês
@@ -188,7 +190,7 @@ function viewResumo(){
       ${pendIn || pendOut ? `<div class="hint">Até o fim de ${monthName(curYM).split(' ')[0]} ainda entram ${fmt(pendIn)} e saem ${fmt(pendOut)} (lançamentos com dia depois de hoje).</div>` : ''}
       <div class="hint">Considera ganhos e gastos fixos, anuais, parcelas, o que já está lançado em cada mês e o que falta gastar das previsões.</div></div>`; },
   // Resumo do mês: o mesmo cartão de destaque do saldo do ano. Tocar leva aos gastos do mês.
-  mes: () => { const a = totalIn(rm), b = totalOut(rm), r = reservaPrevisoes(rm); return `<div class="hero" style="cursor:pointer" data-onclick="goMonth('${rm}')"><small>Saldo de ${monthName(rm)}</small><div class="big">${fmt(a - b - r)}</div>${r ? `<small class="prevInc">${prevInclui(r)}</small>` : ''}
+  mes: () => { const a = totalIn(rm), b = totalOut(rm), r = reservaPrevisoes(rm); return `<div class="hero" style="cursor:pointer" data-onclick="goMonth('${rm}')"><small>Saldo de ${monthName(rm)}</small>${bigNum(a - b - r)}${r ? `<small class="prevInc">${prevInclui(r)}</small>` : ''}
     <div class="row cores"><div><small>Ganhos</small><b class="hIn">${fmt(a)}</b></div><div><small>Gastos</small><b class="hOut">${fmt(b)}</b></div><div style="margin-left:auto;align-self:flex-end"><small>Ver gastos ›</small></div></div></div>`; },
   faturas: () => `<h2>Faturas de ${monthName(rm)}</h2>${inv.length ? `<div class="card">${inv.map(([bank, v]) => `<div class="item" style="cursor:default">${tile('card')}<div class="mid"><b>${esc(bank)}</b></div><div class="val out">${fmt(v)}</div></div>`).join('')}</div>`
     : '<div class="hint" style="margin:0 4px 12px">Nenhuma compra no crédito neste mês.</div>'}`,
@@ -210,7 +212,7 @@ function viewResumo(){
     : '<div class="hint" style="margin:0 4px 12px">Nenhum investimento cadastrado.</div>'}`
   };
   return `${greeting() ? `<div class="hello">${greeting()}</div>` : ''}
-  <h1 style="margin-bottom:0">Resumo <span>${sinoBtn()}${nuvemBtn()}${eyeBtn()}<button class="iconbtn" data-onclick="openResumoEdit()" aria-label="Personalizar o Resumo">${I('sliders', 24)}</button><button class="iconbtn" data-onclick="openSettings('')" aria-label="Configurações">${I('gear', 24)}</button></span></h1>
+  ${tituloTela('Resumo', 'resumo', sinoBtn()).replace('<h1>', '<h1 style="margin-bottom:0">')}
   <div class="muted" style="margin:0 2px 14px;font-size:13.5px">Hoje é ${todayLabel()}</div>${offlinePill(true)}${trocaContaHtml()}${typeof avisoInstalar === 'function' ? avisoInstalar() : ''}
   <div class="nav periodo"><button data-onclick="resMes(-1)" aria-label="Mês anterior">‹</button><b data-onclick="pickResumo()"><span>${nomeM}</span><small>${y} ▾</small></b><button data-onclick="resMes(1)" aria-label="Próximo mês">›</button></div>
   ${archBanner(y)}${ativHtml()}${bankNotesHtml()}${blocks('resumo', B)}
@@ -231,8 +233,24 @@ const CARTEIRA_APPS = {'com.google.android.apps.walletnfcrel':'Google Carteira',
 const APPS_PADROES = ['(^|\\.)(nu|bank|banco|itau|bradesco|santander|caixa|inter|sicredi|sicoob|picpay|mercadopago|pagbank|pagseguro|neon|next|btg|c6|original|banrisul|safra|digio|bancopan|will|nubank)(\\.|$|bank)',
   'wallet|(^|\\.)(spay|samsungpay)(\\.|$)', 'alelo|pluxee|sodexo|swile|valecard|greencard|upbrasil|benef|(^|\\.)(ticket|vr|flash|caju)(\\.|$)'];
 const APPS_ANUNCIO = 'oferta|promo[cç]|promo\\b|cupo[nm]|desconto de|\\bbora\\b|aproveit|imperd[ií]ve|frete gr[aá]tis|s[oó] hoje|[uú]ltim[oa]s (dias|horas|unidades)|black friday|liquida[cç]|ganhe at[eé]|pe[cç]a j[aá]|garanta (j[aá]|o seu|a sua)|corre que';
+// Apps que a pessoa mandou não sugerir mais (Ignorar › Não sugerir do <app>), só neste aparelho: [{app, nome}]. Até a
+// 1.77 a lista era só de pacotes (["com.x"]); ao ler, ela passa para o formato novo sem perder nenhum app.
 const APPS_BLOQ_KEY = 'financas-apps-bloqueados';
-function appsBloqueados(){ try { return JSON.parse(localStorage.getItem(APPS_BLOQ_KEY)) || []; } catch(e){ return []; } }
+function appsIgnorados(){
+  let l = [];
+  try { l = JSON.parse(localStorage.getItem(APPS_BLOQ_KEY)) || []; } catch(e){}
+  if (!Array.isArray(l)) l = [];
+  const novo = l.map(x => typeof x === 'string' ? {app:x, nome:''} : x).filter(x => x && x.app);
+  if (l.some(x => typeof x === 'string')) appsIgnoradosGuardar(novo);
+  return novo;
+}
+function appsIgnoradosGuardar(l){ try { localStorage.setItem(APPS_BLOQ_KEY, JSON.stringify(l)); } catch(e){} }
+const appsBloqueados = () => appsIgnorados().map(x => x.app); // só os pacotes (o que o lado nativo recebe)
+const nomeIgnorado = x => BANK_APPS[x.app] || CARTEIRA_APPS[x.app] || x.nome || x.app;
+function appIgnorar(app, nome){
+  if (!appsBloqueados().includes(app)) appsIgnoradosGuardar([...appsIgnorados(), {app, nome:nome || ''}]);
+  avisosConfigEnviar();
+}
 const appFinanceiro = pacote => !!BANK_APPS[pacote] || !!CARTEIRA_APPS[pacote] || APPS_PADROES.some(p => new RegExp(p, 'i').test(pacote || ''));
 const ehAnuncio = texto => new RegExp(APPS_ANUNCIO, 'i').test(String(texto || ''));
 // Pode virar sugestão: de um app financeiro, que a pessoa não bloqueou, e sem cara de propaganda.
@@ -246,7 +264,9 @@ function centralBanco(list){
   let visto = 0; try { visto = +localStorage.getItem('financas-central-banco') || 0; } catch(e){}
   const novas = list.filter(x => x.n.t > visto);
   if (!novas.length) return;
-  for (const x of novas) centralAdd(`Nova sugestão de lançamento pela notificação do ${x.p.app || 'banco'}.`, 'info', x.n.t, {k:'resumo'});
+  // Cada sugestão é um item próprio (não agrupa), e o toque abre o formulário dela (abrirSugestao).
+  for (const x of novas) centralAdd(x.p.hidden ? `Novo aviso do ${bankName(x.n)}: toque para lançar o valor.`
+    : `Nova sugestão: ${fmtTexto(x.p.value)}${x.p.desc ? ' em ' + x.p.desc : ''} (${bankName(x.n)})`, 'info', x.n.t, {k:'sug', t:x.n.t});
   try { localStorage.setItem('financas-central-banco', String(Math.max(...novas.map(x => x.n.t)))); } catch(e){}
 }
 function bankNotes(){ if (demoOn) return demoNotas; try { return window.Android && Android.avisosBanco ? JSON.parse(Android.avisosBanco()).filter(notaPermitida) : []; } catch(e){ return []; } }
@@ -297,8 +317,7 @@ function noteIgnorar(t){
   pickList('Ignorar', [['esta', 'Ignorar esta sugestão'], ['app', `Não sugerir do ${bankName(n)}`]], '', v => {
     noteDrop(t); // antes de bloquear: depois o app some da lista e a sugestão não iria para o histórico
     if (v === 'app'){
-      try { localStorage.setItem(APPS_BLOQ_KEY, JSON.stringify([...new Set([...appsBloqueados(), n.app])])); } catch(e){}
-      avisosConfigEnviar();
+      appIgnorar(n.app, bankName(n));
       toast(`O app não vai mais sugerir lançamentos do ${bankName(n)}.`);
       render();
     }
@@ -306,6 +325,7 @@ function noteIgnorar(t){
 }
 function noteDrop(t, st = 'ignorada'){
   const n = bankNotes().find(n => n.t === t);
+  avisoCancelar(t); // a notificação dela, se ainda estiver na barra do Android
   if (n && demoOn){ demoNotas = demoNotas.filter(n => n.t !== t); } // demonstração: só na memória
   else if (n){ sugGuardar(n, st); Android.avisosGuardar(JSON.stringify(bankNotes().filter(n => n.t !== t))); }
   else if (st === 'lancada') sugGuardar(sugLog().find(n => n.t === t), st); // relançada a partir do histórico
@@ -333,6 +353,67 @@ function noteUse(t){
     openForm('expenses', null, {vals:{desc:p.desc, value, ...(p.desc ? {cat:guessCat(p.desc)} : {}), bank:p.bank, start:p.date.slice(0, 7), day:String(+p.date.slice(8))}, more:true});
   });
 }
+// Configurações › Lançamento automático › Apps ignorados: a lista e o "Voltar a sugerir" de cada um.
+function openAppsIgnorados(){
+  settingsOpen = false; F = null;
+  const l = appsIgnorados();
+  showSheet(`<h3>Apps ignorados</h3>
+    <div class="hint" style="margin-top:0">Destes apps o Cofrim não sugere lançamentos. Ao voltar a sugerir, valem só as próximas notificações: as que chegaram enquanto o app estava ignorado não voltam.</div>
+    ${l.length ? `<div class="card" style="box-shadow:none;background:var(--bg)">${l.map((x, i) => `<div class="item" style="cursor:default"><div class="mid"><b>${esc(nomeIgnorado(x))}</b>${nomeIgnorado(x) !== x.app ? `<small>${esc(x.app)}</small>` : ''}</div>
+      <button class="btn" style="flex:none;padding:7px 10px" data-onclick="appVoltar(${i})">Voltar a sugerir</button></div>`).join('')}</div>`
+    : '<div class="hint">Nenhum app ignorado.</div>'}
+    <div class="btns foot"><button class="btn" data-onclick="openSettings('auto')">Voltar</button><button class="btn primary" data-onclick="closeForm()">Fechar</button></div>`);
+}
+async function appVoltar(i){
+  const x = appsIgnorados()[i];
+  if (!x) return openAppsIgnorados();
+  const nome = nomeIgnorado(x);
+  if (!await ask(`Voltar a receber sugestões do ${nome}?`, 'Voltar a sugerir')) return;
+  appsIgnoradosGuardar(appsIgnorados().filter(y => y.app !== x.app));
+  avisosConfigEnviar();
+  toast(`O ${nome} volta a gerar sugestões a partir das próximas notificações.`);
+  openAppsIgnorados();
+}
+// Notificação de uma sugestão (BankListener): some da barra quando a sugestão sai da lista por outro caminho.
+const avisoCancelar = t => { if (window.Android && Android.avisoCancelar) Android.avisoCancelar(String(t)); };
+// Toque na notificação "Novo gasto encontrado" (Android) ou na sugestão da central: vai para Gastos (ou Ganhos) e abre
+// direto o formulário já preenchido, sem a pergunta "Esse gasto foi pago com…". A sugestão sai do Resumo na hora e vai
+// para o histórico como "aberta"; salvar o formulário a marca como "lançada" (submitForm). Sugestão que já saiu da lista
+// abre o histórico com ela destacada. "teste" (Diagnóstico › Testar aviso de gasto): só o formulário, sem sugestão.
+function abrirSugestao(t){
+  if (needGate() || demoOn) return;
+  if (t === 'teste') return abrirFormSugestao({value:12.34, desc:'Padaria teste', income:false, bank:'', date:new Date().toLocaleDateString('sv')}, null);
+  t = +t;
+  if (F && F.sug === t) return; // toque duplo: o formulário dela já está aberto
+  const n = bankNotes().find(x => x.t === t), p = n && parseBankNote(n);
+  if (!p) return openSugestoes(t);
+  sugGuardar(n, 'aberta');
+  Android.avisosGuardar(JSON.stringify(bankNotes().filter(x => x.t !== t)));
+  avisoCancelar(t);
+  abrirFormSugestao(p, t);
+}
+function abrirFormSugestao(p, t){
+  const value = p.hidden ? '' : moneyStr(p.value), quando = {start:p.date.slice(0, 7), day:String(+p.date.slice(8))}, v = p.vale;
+  const emp = k => (v && v.emp) || valeEmp(k), aba = p.income ? 'ganhos' : 'gastos';
+  closeForm();
+  if (visTabs().includes(aba)) state.tab = aba;
+  state.gsub = 'mes'; state.month = curYM; state.parcDet = '';
+  render(); scrollTo(0, 0);
+  // App de vale com o vale conhecido: no vale. Vale desconhecido: dinheiro normal (o formulário de gasto comum não escolhe vale).
+  if (v && v.k) return p.income ? openForm('incomes', null, {vale:true, sug:t, vals:{cat:v.k, emp:emp(v.k), value, ...quando}})
+    : openForm('expenses', null, {vale:true, sug:t, vals:{desc:p.desc, value, pay:v.k, emp:emp(v.k), fixed:'', ...quando}, more:true});
+  if (p.income) return openForm('incomes', null, {sug:t, vals:{desc:p.desc, value, fixed:'', bank:p.bank, ...quando}, more:true});
+  openForm('expenses', null, {sug:t, vals:{desc:p.desc, value, ...(p.desc ? {cat:guessCat(p.desc)} : {}), bank:p.bank, ...quando}, more:true});
+}
+// Sugestão nova guardada com o app aberto (aviso do lado nativo): o Resumo e a central se atualizam na hora.
+let avisoBancoVisto = 0;
+window.onAvisoBanco = () => {
+  const l = bankNotes(), ult = l.length ? Math.max(...l.map(n => n.t)) : 0;
+  if (ult <= avisoBancoVisto) return;
+  avisoBancoVisto = ult;
+  centralBanco(l.map(n => ({n, p:parseBankNote(n)})).filter(x => x.p));
+  if (state.tab === 'resumo' && !sheetOpen() && !pickerOpen()) render();
+};
 async function setAvisos(v){
   if (demoBloqueia()) return;
   Android.avisosLigar(v);
@@ -401,7 +482,7 @@ function openVale(k){
   const linha = (x, entra) => `<div class="item" data-onclick="edit('${entra ? 'incomes' : x.kind === 'installment' ? 'installments' : 'expenses'}','${x.pid || x.id}')"><div class="mid"><b>${esc(x.desc)}</b>
     <small>${entra ? 'crédito' : 'gasto'}${x.day ? ' · dia ' + x.day : ''}${x.emp ? `<span class="tag">${esc(x.emp)}</span>` : ''}${byTag(x)}</small></div><div class="val ${entra ? 'in' : 'out'}">${entra ? '+' : '−'} ${fmt(x.value)}</div></div>`;
   showSheet(`<h3>${VALES[k]}${valeEmp(k) ? ' · ' + esc(valeEmp(k)) : ''}</h3>
-    <div class="hero" style="margin-bottom:10px"><small>Saldo do vale</small><div class="big">${fmt(saldo)}</div>
+    <div class="hero" style="margin-bottom:10px"><small>Saldo do vale</small>${bigNum(saldo)}
       <div class="row"><div><small>Entrou no total</small><b>${fmt(tin)}</b></div><div><small>Saiu no total</small><b>${fmt(tout)}</b></div></div></div>
     <div class="btns" style="margin-top:0"><button class="btn" data-onclick="novoVale('ganhos','${k}')">+ Crédito</button><button class="btn primary" data-onclick="novoVale('gastos','${k}')">+ Gasto</button></div>
     <label>Histórico (${n} ${n === 1 ? 'lançamento' : 'lançamentos'})</label>
@@ -426,7 +507,7 @@ function viewGanhos(){
   const ordena = l => [...l].sort((a, b) => sinal * quando(b).localeCompare(quando(a)));
   const fixed = ordena(naoVale.filter(isMonthly)), yearly = ordena(naoVale.filter(x => x.fixed === 'y')), once = ordena(naoVale.filter(x => !x.fixed));
   const B = {
-  total: () => `<div class="hero"><small>Ganhos em ${monthName(curYM)}</small><div class="big">${fmt(totalIn(curYM))}</div>
+  total: () => `<div class="hero"><small>Ganhos em ${monthName(curYM)}</small>${bigNum(totalIn(curYM))}
     <small>Fixos mensais: ${fmt(sum(fixed.filter(x => activeIn(x,curYM)), x => x.value))}</small></div>`,
   fixos: () => `<h2>Fixos (todo mês) ${ordemBtn()}</h2>
   ${fixed.length ? `<div class="card">${fixed.map(row).join('')}</div>` : empty('briefcase','Cadastre seu salário e outros ganhos fixos.<br>Eles entram automaticamente em todos os meses.')}`,
@@ -564,12 +645,12 @@ function calcSaude(ym){
     const comp = (k, nome, peso, nota, frase, curta, dica, ativar) => C.push({k, nome, peso, nota, frase, curta, dica, ativar});
     // Poupança: (ganhos − gastos) ÷ ganhos; 20% ou mais = 100.
     const taxa = tin > 0 ? (tin - tout) / tin * 100 : null;
-    comp('poupanca', 'Poupança', 25, taxa == null ? null : escala(taxa, 0, 20), taxa == null ? '' : `Taxa de poupança em ${numBR(taxa)}% (referência: 20%).`,
+    comp('poupanca', 'Poupança', 22, taxa == null ? null : escala(taxa, 0, 20), taxa == null ? '' : `Taxa de poupança em ${numBR(taxa)}% (referência: 20%).`,
       taxa == null ? '' : taxa <= 0 ? 'Seus gastos passaram dos ganhos neste mês' : `Você guardou ${numBR(taxa)}% dos ganhos`,
       'Tente separar uma parte dos ganhos assim que eles entram, antes de gastar.', 'Lance os ganhos do mês.');
     // Reserva: saldo das contas ÷ média de gastos dos últimos 3 meses; 6 meses ou mais = 100.
     const media = sum(meses3, totalOut) / 3, saldo = sum(db.accounts, a => accountBalance(a, fim)), cobre = db.accounts.length && media > 0 ? Math.max(0, saldo) / media : null;
-    comp('reserva', 'Reserva', 25, cobre == null ? null : escala(cobre, 0, 6), cobre == null ? '' : `Cobre ${numBR(cobre)} ${cobre === 1 ? 'mês' : 'meses'} de despesas (alvo: 3 a 6).`,
+    comp('reserva', 'Reserva', 20, cobre == null ? null : escala(cobre, 0, 6), cobre == null ? '' : `Cobre ${numBR(cobre)} ${cobre === 1 ? 'mês' : 'meses'} de despesas (alvo: 3 a 6).`,
       cobre == null ? '' : `Sua reserva cobre ${numBR(cobre)} ${cobre === 1 ? 'mês' : 'meses'} de despesas`,
       'Guarde um pouco todo mês numa conta separada até juntar de 3 a 6 meses de gastos.', 'Cadastre suas contas bancárias com o saldo (Investir › Contas).');
     // Dívidas: vale a pior de três medidas. Uso do limite do cartão (fatura do mês ÷ limite) e compras parceladas do mês
@@ -588,20 +669,29 @@ function calcSaude(ym){
       pesoFin != null && escala(pesoFin, 60, 30) === Math.min(...notas) ? `Financiamentos e empréstimos levam ${numBR(pesoFin)}% da renda`
         : uso != null ? `O cartão usa ${numBR(uso)}% do limite` : `As parcelas levam ${numBR(pesoParc || 0)}% da renda`,
       'Use menos de 30% do limite do cartão e evite novas compras parceladas até as atuais terminarem.', 'Informe o limite do cartão (Gastos › Faturas do cartão).');
+    // Investimentos: quanto entra por mês nos investimentos (aportes mensais cadastrados ÷ renda; 10% ou mais = 100) e
+    // quanto já está investido (total hoje ÷ média de gastos; 12 meses de gastos ou mais = 100). Vale a média das duas.
+    const aporte = sum(db.investments, x => x.monthly || 0), investido = sum(db.investments, x => x.value || 0);
+    const taxaInv = db.investments.length && renda > 0 ? aporte / renda * 100 : null, mesesInv = db.investments.length && media > 0 ? investido / media : null;
+    const notasInv = [taxaInv != null && escala(taxaInv, 0, 10), mesesInv != null && escala(mesesInv, 0, 12)].filter(v => v !== false);
+    comp('investimentos', 'Investimentos', 15, notasInv.length ? Math.round(sum(notasInv, v => v) / notasInv.length) : null,
+      [taxaInv != null && `Aportes de ${numBR(taxaInv)}% da renda por mês (referência: 10%).`, mesesInv != null && `Investido o equivalente a ${numBR(mesesInv)} ${mesesInv === 1 ? 'mês' : 'meses'} de gastos (alvo: 12).`].filter(Boolean).join(' '),
+      taxaInv != null && taxaInv < 10 && (mesesInv == null || escala(taxaInv, 0, 10) <= escala(mesesInv, 0, 12)) ? `Você investe ${numBR(taxaInv)}% da renda por mês` : mesesInv != null ? `Seus investimentos cobrem ${numBR(mesesInv)} ${mesesInv === 1 ? 'mês' : 'meses'} de gastos` : `Você investe ${numBR(taxaInv || 0)}% da renda por mês`,
+      'Depois da reserva, invista todo mês uma parte fixa da renda (10% é um bom começo), de preferência no dia em que o dinheiro entra.', 'Cadastre seus investimentos e o aporte mensal (aba Investir).');
     // Orçamento: categorias com orçamento dentro do limite no mês.
     const orc = budgetStatus(ym), dentro = orc.length ? orc.filter(b => b.pct <= 100).length / orc.length * 100 : null;
-    comp('orcamento', 'Orçamento', 15, dentro == null ? null : Math.round(dentro), dentro == null ? '' : `${numBR(dentro, 0)}% dos orçamentos dentro do limite.`,
+    comp('orcamento', 'Orçamento', 13, dentro == null ? null : Math.round(dentro), dentro == null ? '' : `${numBR(dentro, 0)}% dos orçamentos dentro do limite.`,
       dentro == null ? '' : `${numBR(dentro, 0)}% dos orçamentos ficaram dentro do limite`,
       'Reveja as categorias que estouraram: ajuste o limite ou corte um pouco nelas.', 'Defina um orçamento por categoria (Gastos › Orçamento do mês).');
     // Regularidade: dias do mês (até hoje) com pelo menos um lançamento.
     const lanc = [...incomesOf(ym), ...expensesOf(ym)], ate = ym === curYM ? now.getDate() : ym < curYM ? daysIn(ym) : 0;
     const dias = new Set(lanc.map(x => diaDe(x, ym)).filter(d => d >= 1 && d <= ate)), reg = lanc.length && ate ? dias.size / ate * 100 : null;
-    comp('regularidade', 'Regularidade', 10, reg == null ? null : Math.round(reg), reg == null ? '' : `Lançamentos em ${numBR(reg, 0)}% dos dias do mês.`,
+    comp('regularidade', 'Regularidade', 6, reg == null ? null : Math.round(reg), reg == null ? '' : `Lançamentos em ${numBR(reg, 0)}% dos dias do mês.`,
       reg == null ? '' : `Você lançou algo em ${numBR(reg, 0)}% dos dias do mês`,
       'Anote os gastos no dia em que acontecem: leva segundos e deixa a análise mais certa.', 'Lance seus gastos do mês.');
     // Fontes de renda: descrições diferentes de ganhos nos últimos 3 meses; 3 ou mais = 100, 2 = 70, 1 = 40, 0 = 0.
     const fontes = new Set(meses3.flatMap(incomesOf).map(x => plain(String(x.desc || x.cat || '').trim()))).size;
-    comp('fontes', 'Fontes de renda', 5, [0, 40, 70, 100][Math.min(fontes, 3)], `${fontes} ${fontes === 1 ? 'fonte de renda registrada' : 'fontes de renda registradas'}.`,
+    comp('fontes', 'Fontes de renda', 4, [0, 40, 70, 100][Math.min(fontes, 3)], `${fontes} ${fontes === 1 ? 'fonte de renda registrada' : 'fontes de renda registradas'}.`,
       `${fontes} ${fontes === 1 ? 'fonte de renda registrada' : 'fontes de renda registradas'}`,
       'Uma renda extra (um trabalho por fora, aluguel, dividendos) deixa você menos dependente de uma fonte só.', '');
     const com = C.filter(c => c.nota != null), peso = sum(com, c => c.peso);
@@ -657,7 +747,7 @@ function viewGastos(){
   saude: () => saudeBloco(m),
   previsoes: () => prevBloco(m),
   // O mesmo cartão de destaque das outras abas (Ganhos, Investir, Resumo): o total do mês em cima, o resto embaixo.
-  mes: () => `<div class="hero"><small>Gastos em ${monthName(m)}</small><div class="big">${fmt(tout)}</div>
+  mes: () => `<div class="hero"><small>Gastos em ${monthName(m)}</small>${bigNum(tout)}
     <div class="row"><div><small>Ganhos</small><b>${fmt(tin)}</b></div><div><small>Saldo</small><b>${fmt(tin - tout - resPrev)}</b></div><div><small>Lançamentos</small><b>${list.length}</b></div></div>${resPrev ? `<small class="prevInc">Saldo ${prevInclui(resPrev)}</small>` : ''}</div>`,
   orcamento: () => `<h2>Orçamento do mês <button data-onclick="openForm('budgets', db.budgets)">${budgets.length ? 'Alterar' : 'Definir'}</button></h2>
   ${budgets.length ? `<div class="card">${budgets.map(b => { const c = CAT_GASTO[b.cat] || CAT_GASTO.outros; return `
@@ -771,7 +861,7 @@ function viewParcelas(){
   const ps = db.installments, fins = ps.filter(isFin), compras = ps.filter(p => !isFin(p));
   const falta = sum(ps, parcFalta), pago = sum(ps, p => parcPago(p) + abatido(p));
   return `
-  <div class="hero"><small>Falta pagar</small><div class="big">${fmt(falta)}</div>
+  <div class="hero"><small>Falta pagar</small>${bigNum(falta)}
     <div class="row"><div><small>Valor total</small><b>${fmt(falta + pago)}</b></div><div><small>Já pago</small><b>${fmt(pago)}</b></div></div></div>
   ${fins.length ? `<h2>Financiamentos e empréstimos</h2><div class="card">${fins.map(parcItem).join('')}</div>` : ''}
   ${compras.length ? `${fins.length ? '<h2>Compras parceladas</h2>' : ''}<div class="card">${compras.map(parcItem).join('')}</div>` : ''}
@@ -816,7 +906,7 @@ function viewParcDet(p){
   <div class="hero">
     <b style="font-size:19px;display:block">${esc(p.desc)}</b>
     ${onde.filter(Boolean).map(t => `<small>${t}</small>`).join('')}
-    <small style="margin-top:12px">Saldo devedor hoje</small><div class="big">${fmt(saldo)}</div>
+    <small style="margin-top:12px">Saldo devedor hoje</small>${bigNum(saldo)}
     ${p.taxa && rest ? '<small>Valor aproximado; o valor oficial é o informado pelo banco.</small>' : ''}
     ${progresso}
     <div class="row" style="justify-content:space-between"><small>${plural(pagas, 'paga', 'pagas')}</small><small>${rest ? `${plural(rest, 'restante', 'restantes')} · até ${MESES[+addMonths(p.start, n - 1).slice(5) - 1].slice(0, 3)}/${addMonths(p.start, n - 1).slice(0, 4)}` : 'quitado'}</small></div>
@@ -931,7 +1021,7 @@ function viewInvest(){
   const hist = [...Array(12)].map((_,i) => addMonths(curYM, i - 11)).map(m => [m, m === curYM ? hoje : db.netLog[m]]);
   const known = hist.filter(h => h[1] != null), hmax = Math.max(1, ...known.map(h => h[1]));
   const B = {
-  total: () => `<div class="hero"><small>Total investido hoje</small><div class="big">${fmt(hoje)}</div>
+  total: () => `<div class="hero"><small>Total investido hoje</small>${bigNum(hoje)}
     <div class="row"><div><small>Projeção em 12 meses</small><b>${fmt(fut)}</b></div><div><small>Aportes do ano</small><b>${fmt(sum(vs, v => (v.monthly||0)*12))}</b></div></div></div>`,
   evolucao: () => vs.length ? `<div class="card"><b>Evolução do total investido</b>
     <div class="chart" style="height:110px">${chartGrid(hmax)}${hist.map(([m, v]) => `<div class="col" style="cursor:default"><div class="bars"><i style="height:${v == null ? 0 : v/hmax*100}%;width:70%;max-width:16px;background:${v == null ? 'transparent' : 'linear-gradient(var(--brand),var(--brand2))'}"></i></div><small>${MESES[+m.slice(5)-1].slice(0,3)}</small></div>`).join('')}</div>

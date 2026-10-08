@@ -163,19 +163,24 @@ function sugGuardar(n, st){
   l.push({...n, st});
   try { localStorage.setItem(SUG_KEY, JSON.stringify(l.slice(-80))); } catch(e){}
 }
-function openSugestoes(){
+// Muda a situação de uma sugestão que já está no histórico (ex.: de "aberta" para "lançada").
+function sugMarcar(t, st){ const n = sugLog().find(x => x.t === t); if (n) sugGuardar(n, st); }
+// destaque: hora de uma sugestão a mostrar em evidência (a que foi tocada na notificação e já tinha saído da lista).
+function openSugestoes(destaque){
   settingsOpen = false; F = null;
   const todas = [...bankNotes().map(n => ({...n, st:'nova'})), ...sugLog()].sort((a, b) => b.t - a.t).filter(notaPermitida).map(n => ({n, p:parseBankNote(n)})).filter(x => x.p);
-  const ROT = {nova:['Nova', 'in'], lancada:['Lançada', 'muted'], ignorada:['Ignorada', 'muted']};
+  const ROT = {nova:['Nova', 'in'], aberta:['Aberta, não lançada', 'out'], lancada:['Lançada', 'muted'], ignorada:['Ignorada', 'muted']};
   showSheet(`<h3>Histórico de sugestões</h3>
     <div class="hint" style="margin-top:0">O que o app leu das notificações do banco, do mais novo para o mais antigo. Toque em "Lançar gasto" para registrar qualquer uma.</div>
-    ${todas.length ? todas.map(({n, p}) => `<div class="item" style="cursor:default"><div class="mid"><b style="white-space:normal">${p.hidden ? 'Aviso do ' + esc(p.app) : esc(p.desc)}</b>
-      <small style="white-space:normal">${new Date(n.t).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'})} · ${esc(p.app || p.bank || '')}<span class="tag ${ROT[n.st][1]}">${ROT[n.st][0]}</span></small>
+    ${todas.length ? todas.map(({n, p}) => `<div class="item${n.t === destaque ? ' sugDestaque' : ''}" style="cursor:default"><div class="mid"><b style="white-space:normal">${p.hidden ? 'Aviso do ' + esc(p.app) : esc(p.desc)}</b>
+      <small style="white-space:normal">${new Date(n.t).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'})} · ${esc(p.app || p.bank || '')}<span class="tag ${(ROT[n.st] || ROT.lancada)[1]}">${(ROT[n.st] || ROT.lancada)[0]}</span></small>
       ${p.hidden ? '' : `<small style="white-space:normal">${esc(String(n.texto).slice(0, 110))}</small>`}</div>
       <div style="flex:none;text-align:right"><div class="val ${p.income ? 'in' : 'out'}">${p.hidden ? 'R$ ?' : fmt(p.value)}</div>
       <button class="btn ${n.st === 'nova' ? 'primary' : ''}" style="padding:7px 10px;margin-top:4px" data-onclick="noteUse(${+n.t})">${p.income ? 'Lançar ganho' : 'Lançar gasto'}</button></div></div>`).join('')
     : '<div class="card empty" style="box-shadow:none">Nenhuma sugestão por enquanto.<br>Elas aparecem quando o banco avisa uma compra ou um Pix.</div>'}
     <div class="btns foot">${sugLog().length ? '<button class="btn" data-onclick="localStorage.removeItem(SUG_KEY);openSugestoes()">Limpar histórico</button>' : ''}<button class="btn primary" data-onclick="closeForm()">Fechar</button></div>`);
+  const d = document.querySelector('#sheet .sugDestaque');
+  if (d) d.scrollIntoView({block:'center'});
 }
 
 // ---------- Puxar para atualizar ----------

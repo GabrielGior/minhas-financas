@@ -6,20 +6,27 @@ document.getElementById('lockIcon').innerHTML = I('lock', 48);
 document.getElementById('fabChat').innerHTML = I('chat', 26);
 document.getElementById('ptr').innerHTML = I('refresh', 22);
 document.getElementById('lockX').innerHTML = I('close', 20);
-lembMigrar(); // interruptor dos lembretes deste aparelho: decidido na primeira abertura (antes da sincronização)
-rollover();
-// Botão "+ Gasto" do widget: abre direto o formulário de novo gasto.
+// Cada passo da abertura protegido: um erro num deles (dado inesperado) é registrado no Diagnóstico e o app abre do
+// mesmo jeito, em vez de ficar preso na tela de abertura.
+const seguro = (onde, fn) => { try { fn(); } catch(e){ logErr('abertura: ' + onde, e); } };
+seguro('lembretes', lembMigrar); // interruptor dos lembretes deste aparelho: decidido na primeira abertura (antes da sincronização)
+seguro('virada do mês', rollover);
+// Atalhos do lado nativo: "gasto" (botão "+ Gasto" do widget) abre o formulário de novo gasto; "sugestao:<t>" (toque na
+// notificação de gasto encontrado) abre o formulário já preenchido com aquela sugestão. Sem conta ou na demonstração, só
+// abre o app.
 function onAtalho(){
   const a = window.Android && Android.atalho ? Android.atalho() : '';
-  if (a !== 'gasto' || needGate()) return;
+  if (!a || needGate()) return;
+  if (a.startsWith('sugestao:')) return demoOn ? undefined : abrirSugestao(a.slice(9));
+  if (a !== 'gasto') return;
   closeForm(); state.tab = visTabs().includes('gastos') ? 'gastos' : state.tab; state.gsub = 'mes'; state.month = curYM;
   render(); openForm('expenses');
 }
-funVisit();
-if (lang() !== 'pt'){ document.documentElement.lang = LOCALES[lang()]; trAll(); } // partes fixas da página (login, bloqueio)
-render();
-sorteioDoDia(); // tema ou cor do dia, se ligado: troca antes de a abertura e as telas aparecerem
-abertura();
+seguro('modo divertido', funVisit);
+if (lang() !== 'pt') seguro('idioma', () => { document.documentElement.lang = LOCALES[lang()]; trAll(); }); // partes fixas da página (login, bloqueio)
+seguro('tela', render);
+seguro('tema do dia', sorteioDoDia); // tema ou cor do dia, se ligado: troca antes de a abertura e as telas aparecerem
+seguro('abertura', abertura);
 restoreFromIdb();
 save(false);
 updateRates();

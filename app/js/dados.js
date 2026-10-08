@@ -39,9 +39,9 @@ function logErr(onde, e){
     localStorage.setItem(ERR_KEY, JSON.stringify(list.slice(-60)));
   } catch(x){}
 }
-addEventListener('error', e => logErr('erro na tela', (e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0)));
+addEventListener('error', e => logErr('erro na tela', (e.error && e.error.stack) || (e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0)));
 addEventListener('unhandledrejection', e => logErr('promessa', e.reason));
-const APP_VERSION = '1.77'; // manter igual ao versionName do build.gradle
+const APP_VERSION = '1.78'; // manter igual ao versionName do build.gradle
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 // Ícones do app: desenhos em dois tons (traço + preenchimento translúcido nas partes com class="d"),
 // todos numa grade de 24×24. I('nome', tamanho) devolve o <svg>; a cor vem do texto ao redor (currentColor).
@@ -85,9 +85,12 @@ const ICONS = {
   lock:'<rect class="d" x="5" y="10" width="14" height="10" rx="2.5"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10M12 14v2"/>',
   cloud:'<path class="d" d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 10.5 3.75 3.75 0 0 1 17.5 18z"/>',
   // Estado da sincronização (ícone do topo das telas): nuvem com check, com relógio e com alerta.
-  nuvemOk:'<path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 10.5 3.75 3.75 0 0 1 17.5 18z"/><path d="M9.6 13.6l1.8 1.8 3.3-3.4"/>',
-  nuvemPend:'<path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 10.5 3.75 3.75 0 0 1 17.5 18z"/><circle cx="12" cy="13.8" r="2.9"/><path d="M12 12.5v1.4l.9.7"/>',
-  nuvemErro:'<path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 10.5 3.75 3.75 0 0 1 17.5 18z"/><path d="M12 11.6v2.6M12 16.2h.01"/>',
+  // Nuvens da sincronização: o desenho de dentro (visto, relógio, corte, exclamação) tem o centro de massa no da nuvem
+  // (11,90; 12,53), medido pela área preenchida, não pela caixa (as bolhas de cima puxam o centro para baixo).
+  nuvemOk:'<path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 10.5 3.75 3.75 0 0 1 17.5 18z"/><path d="M9.328 12.347l1.8 1.8 3.3-3.4"/>',
+  nuvemPend:'<path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 10.5 3.75 3.75 0 0 1 17.5 18z"/><circle cx="11.849" cy="12.551" r="2.9"/><path d="M11.849 11.251v1.4l.9.7"/>',
+  nuvemOff:'<path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 10.5 3.75 3.75 0 0 1 17.5 18z"/><path d="M6.297 6.927L17.497 18.127"/>',
+  nuvemErro:'<path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 10.5 3.75 3.75 0 0 1 17.5 18z"/><path d="M11.896 10.366v2.6M11.896 14.966h.01"/>',
   refresh:'<path d="M20 12a8 8 0 0 1-14.3 4.9M4 12a8 8 0 0 1 14.3-4.9M18.5 3.5v4h-4M5.5 20.5v-4h4"/>',
   download:'<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14"/>',
   upload:'<path d="M12 15V4M7.5 8.5L12 4l4.5 4.5M5 19h14"/>',
@@ -152,6 +155,7 @@ const ICONS = {
   percent:'<circle class="d" cx="7.500" cy="7.500" r="2.500"/><circle class="d" cx="16.500" cy="16.500" r="2.500"/><path d="M19 5L5 19"/>',
   smile:'<circle class="d" cx="12" cy="12" r="9"/><path d="M8.500 14a4.500 4.500 0 0 0 7 0M9 9.500h.01M15 9.500h.01"/>',
   sparkle:'<path class="d" d="M12 3l1.800 5.200L19 10l-5.200 1.800L12 17l-1.800-5.200L5 10l5.200-1.800z"/><path d="M19 15v4M17 17h4M5 4v3M3.500 5.500h3"/>',
+  menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',
   sliders:'<path d="M4 7h9M19 7h1M4 17h1M11 17h9"/><circle class="d" cx="16" cy="7" r="2.5"/><circle class="d" cx="8" cy="17" r="2.5"/>'
 };
 const I = (name, size = 18) => `<svg class="ic" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
@@ -530,7 +534,11 @@ function ensurePrefs(){
 const visTabs = () => db.prefs.tabs.filter(t => t !== 'chat' && !db.prefs.tabsOff.includes(t) && !(t === 'noticias' && typeof WEB_APP !== 'undefined' && WEB_APP));
 const layoutOf = tab => tab === 'resumo' ? db.prefs.resumo : db.prefs.layout[tab];
 // Monta a tela: os blocos ligados da aba, na ordem escolhida. B = {chave: () => html}.
-const blocks = (tab, B) => layoutOf(tab).filter(b => b.on && B[b.k]).map(b => B[b.k]()).join('');
+// Um bloco com erro (dado inesperado) não derruba a tela: no lugar dele fica um aviso, e o erro vai para o Diagnóstico.
+const blocks = (tab, B) => layoutOf(tab).filter(b => b.on && B[b.k]).map(b => {
+  try { return B[b.k](); }
+  catch(e){ logErr(`bloco ${tab}.${b.k}`, e); return `<div class="card hint" style="margin-bottom:12px">Não foi possível mostrar esta parte da tela. O erro ficou registrado em Configurações › Diagnóstico.</div>`; }
+}).join('');
 function applyTheme(){
   const p = db.prefs, sk = SKINS[p.skin]; // tema especial: define tudo, inclusive claro ou escuro
   const dark = sk ? sk[1] : p.mode === 'dark' || (p.mode === 'auto' && darkQuery.matches), c = sk ? [sk[0], sk[2], sk[3], sk[2], sk[3], sk[11], sk[12]] : COLORS[p.color] || COLORS.indigo;
@@ -580,6 +588,9 @@ const HIDE_KEY = 'financas-olho', MASK = 'R$ ••••';
 let hideVals = false;
 try { hideVals = localStorage.getItem(HIDE_KEY) === '1'; } catch(e){}
 const fmt = v => hideVals ? MASK : fmtTexto(v);
+// Valor grande dos cartões (.hero .big): leva o número em data-v e o formato em data-f ('c' = fmtCurto), para a
+// animação de contagem do modo divertido (funCount) usar o valor de verdade e o mesmo formato do cartão.
+const bigNum = (v, curto) => `<div class="big" data-v="${+v || 0}"${curto ? ' data-f="c"' : ''}>${curto ? fmtCurto(v) : fmt(v)}</div>`;
 // Sem a máscara de "Esconder valores": para textos guardados (central de notificações) e notificações do Android.
 const fmtTexto = v => (v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 // Roda fn com os valores à mostra (lembretes, widget e relatório não podem sair mascarados).
@@ -594,7 +605,7 @@ function parseMoney(s){ s = String(s).trim().replace(/[R$\s]/g,''); if (s.includ
 const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
 const moneyStr = v => v == null || v === '' ? '' : Number(v).toFixed(2).replace('.',',');
 const sum = (a, f) => a.reduce((t,x) => t + f(x), 0);
-const round2 = v => Math.round(v*100)/100;
+function round2(v){ return Math.round(v*100)/100; } // função (e não const): o fixDb a usa ao abrir o app, antes desta linha
 const sheetOpen = () => document.getElementById('sheet').classList.contains('open');
 
 // ---------- Regras ----------
@@ -1085,7 +1096,7 @@ function openDebts(){
   settingsOpen = false; F = null;
   const d = debts(), mes = sum(expensesOf(curYM).filter(x => x.kind === 'installment'), x => x.value);
   showSheet(`<h3>Dívidas e parcelas</h3>
-    ${d.list.length ? `<div class="hero" style="margin-top:4px"><small>Saldo devedor</small><div class="big">${fmt(d.total)}</div>
+    ${d.list.length ? `<div class="hero" style="margin-top:4px"><small>Saldo devedor</small>${bigNum(d.total)}
         <div class="row"><div><small>Parcelas deste mês</small><b>${fmt(mes)}</b></div><div><small>Tudo termina em</small><b style="text-transform:capitalize">${monthName(d.end)}</b></div></div></div>
       ${d.list.map(({p, left, end}) => { const c = CAT_GASTO[p.cat] || CAT_GASTO.outros; return `<div class="item" style="cursor:default">${ico(c)}<div class="mid"><b>${esc(p.desc)}</b>
         <small>${p.n - p.paid} de ${p.n} parcelas de ${fmt(parcVal(p, p.paid))} · até ${monthName(end)}</small>

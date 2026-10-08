@@ -509,7 +509,7 @@ function openForm(col, item, preset = {}){
   if (item) for (const f of fields){ const v = item[f.k]; vals[f.k] = f.type === 'money' ? moneyStr(v) : f.k === 'fixed' ? (v === 'y' ? 'y' : v ? '1' : '') : v == null ? '' : String(v).replace('.', f.type === 'num' ? ',' : '.'); }
   if (item && cfg.load) cfg.load(vals, item);
   settingsOpen = false;
-  F = {col, cfg, fields, id:preset.id || (item && item.id), vals, touched:{}, asset:preset.asset || null, vale:formVale};
+  F = {col, cfg, fields, id:preset.id || (item && item.id), vals, touched:{}, asset:preset.asset || null, vale:formVale, sug:preset.sug || null}; // sug: hora da sugestão do banco que abriu o formulário
   // Lançamento rápido: num registro novo, os campos "more" começam recolhidos.
   const hasMore = fields.some(f => f.more);
   F.more = !hasMore || !!F.id || !!preset.more;
@@ -661,8 +661,9 @@ function submitForm(){
   }
   if (F.col === 'expenses' && !F.id) state.month = out.fixed && out.start > state.month ? out.start : (out.fixed ? state.month : out.start);
   rollover(); // marca registros novos com o mês atual
-  const done = savedMsg(F.col, !F.id), gastoNovo = F.col === 'expenses' && !F.id ? out.value : 0;
+  const done = savedMsg(F.col, !F.id), gastoNovo = F.col === 'expenses' && !F.id ? out.value : 0, sugT = F.sug;
   save(); closeForm(); render();
+  if (sugT) sugMarcar(sugT, 'lancada'); // formulário aberto por uma sugestão do banco: no histórico, "Lançada"
   if (gastoNovo) gastoAnim(gastoNovo); // animação de novo gasto, com as formas do tema (js/cena.js)
   if (after) after();
   if (voltar) openWelcome();
@@ -895,7 +896,18 @@ const CENTRAL_KEY = 'financas-central';
 const CENTRAL_FORA = /^(Copiado\.|Procurando atualização…|Atualizado|Salvo|Alteração salva|Excluído)$/;
 const CENTRAL_TIPOS = {sucesso:['check', 'var(--in)'], aviso:['alert', 'var(--yield)'], erro:['alert', 'var(--out)'], info:['bell', 'var(--brand)']};
 let centralDemo = [], centralNovas = new Set();
-function centralLer(){ if (demoOn) return centralDemo; try { const l = JSON.parse(localStorage.getItem(CENTRAL_KEY)); return Array.isArray(l) ? l : []; } catch(e){ return []; } }
+function centralLer(){
+  if (demoOn) return centralDemo;
+  let l = []; try { l = JSON.parse(localStorage.getItem(CENTRAL_KEY)); if (!Array.isArray(l)) l = []; } catch(e){ return []; }
+  // Até a 1.77 os avisos da sincronização ficavam aqui: passam para o histórico da folha da nuvem.
+  const sinc = l.filter(x => x.dest && x.dest.k === 'sync');
+  if (sinc.length){
+    for (const x of sinc) nuvemLogAdd(x.txt, x.tipo, x.t, (x.ts || []).length || 1);
+    l = l.filter(x => !(x.dest && x.dest.k === 'sync'));
+    try { localStorage.setItem(CENTRAL_KEY, JSON.stringify(l)); } catch(e){}
+  }
+  return l;
+}
 function centralGuardar(l){
   const limite = Date.now() - 30*864e5;
   l = l.filter(x => x.t >= limite).sort((a, b) => a.t - b.t).slice(-100);
@@ -909,7 +921,8 @@ function centralAdd(txt, tipo, t, dest){
   txt = String(txt || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
   if (!txt) return;
   t = t || Date.now();
-  const l = centralLer(), igual = l.find(x => x.txt === txt && centralDia(x.t) === centralDia(t));
+  if (dest && dest.k === 'sync') return nuvemLogAdd(txt, tipo, t); // sincronização: vai para a folha da nuvem, não para a central
+  const l = centralLer(), igual = dest && dest.k === 'sug' ? null : l.find(x => x.txt === txt && centralDia(x.t) === centralDia(t)); // sugestões do banco: uma por item
   if (igual){ igual.ts = [...igual.ts, t].sort((a, b) => a - b).slice(-50); igual.t = Math.max(igual.t, t); igual.novas = (igual.novas || 0) + 1; if (dest) igual.dest = dest; }
   else l.push({txt, tipo:tipo || centralTipo(txt), t, ts:[t], novas:1, ...(dest ? {dest} : {})});
   centralGuardar(l);
@@ -970,7 +983,8 @@ function centralAbrir(i){
   else if (d.k === 'sync') canSync() && sync.on ? openNuvem() : openSettings('conta');
   else if (d.k === 'compart') openAtividade();
   else if (d.k === 'conflito') openConflitos();
-  else if (d.k === 'resumo') go('resumo');
+  else if (d.k === 'sug') abrirSugestao(String(d.t)); // a sugestão do banco: o formulário dela (ou o histórico, se já saiu)
+  else if (d.k === 'resumo') openSugestoes(); // itens antigos das sugestões (até a 1.77): não dá para saber qual era
 }
 async function centralLimpar(){
   if (await ask('Apagar todas as notificações desta central?', 'Limpar', true)){ centralLimparJa(); centralTela(); }

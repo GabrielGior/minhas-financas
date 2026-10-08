@@ -293,6 +293,9 @@ const T = {
   'Para a esquerda exclui; para a direita marca a conta como paga':['Left deletes; right marks the bill as paid','A la izquierda elimina; a la derecha marca la cuenta como pagada'],
   'Marque gastos com etiquetas, busque em todos os meses e recupere o que excluiu por 30 dias':['Tag expenses, search all months and recover what you deleted for 30 days','Etiqueta gastos, busca en todos los meses y recupera lo eliminado durante 30 días'],
   // ---- Configurações (textos curtos da 1.76)
+  'Intensidade do fundo':['Background intensity','Intensidad del fondo'],
+  'Reorganizar esta tela':['Rearrange this screen','Reorganizar esta pantalla'], 'Menu':['Menu','Menú'],
+  'Apps ignorados':['Ignored apps','Apps ignoradas'], 'Nenhum app ignorado':['No ignored apps','Ninguna app ignorada'], 'Voltar a sugerir':['Suggest again','Volver a sugerir'],
   'Fundo animado':['Animated background','Fondo animado'], 'Usar a cor do app':['Use the app color','Usar el color de la app'], 'Segue a cor do app; toque numa cor para fixar':['Follows the app color; tap a color to keep it','Sigue el color de la app; toca un color para fijarlo'],
   'Nome, tutorial e versão':['Name, tutorial and version','Nombre, tutorial y versión'], 'temas com mascote':['themes with a mascot','temas con mascota'],
   'Contas, parcelas e previsões':['Bills, installments and forecasts','Cuentas, cuotas y previsiones'], 'Sugestões do banco':['Bank suggestions','Sugerencias del banco'],

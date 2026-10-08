@@ -59,6 +59,8 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .newsHero .src{background:rgba(255,255,255,.2);color:#fff}
 .newsHero:active{transform:scale(.985)}.newsHero{transition:transform .12s ease-out}
 .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:99px;background:var(--line);color:var(--muted);margin-left:4px;font-weight:600}
+.tag.in{color:var(--in)}.tag.out{color:var(--out)}
+.sugDestaque{outline:2px solid var(--brand);outline-offset:-2px;border-radius:12px}
 .empty{text-align:center;color:var(--muted);padding:26px 10px}
 .empty span{display:block;margin-bottom:6px;color:var(--brand)}
 .bar{height:9px;border-radius:99px;background:var(--line);overflow:hidden;margin:10px 0}
@@ -635,15 +637,20 @@ html[data-fun=on] .fab.chat{animation:none}
 @keyframes cenaVai{to{transform:translateX(-3.5%)}}
 #cena.parada *{animation-play-state:paused!important}
 /* Fundo do tema padrão: três manchas de luz grandes, já esfumadas pelo próprio gradiente (sem filter: blur). */
-.fundoP{position:absolute;inset:0}
-.fundoP i{position:absolute;width:80vmax;height:80vmax;border-radius:50%;opacity:.5;will-change:transform;
-  background:radial-gradient(circle,color-mix(in srgb,var(--f1) 34%,transparent) 0,color-mix(in srgb,var(--f1) 10%,transparent) 38%,transparent 66%);animation:fundoP 34s ease-in-out infinite alternate}
-.fundoP i:nth-child(1){left:-38vmax;top:-34vmax}
-.fundoP i:nth-child(2){right:-42vmax;top:18vh;animation-duration:42s;animation-direction:alternate-reverse;
-  background:radial-gradient(circle,color-mix(in srgb,var(--f2) 30%,transparent) 0,color-mix(in srgb,var(--f2) 8%,transparent) 40%,transparent 66%)}
-.fundoP i:nth-child(3){left:-10vmax;bottom:-50vmax;animation-duration:50s;opacity:.4}
-html[data-mode=dark] .fundoP i{opacity:.32}
-@keyframes fundoP{50%{transform:translate3d(9vw,7vh,0) scale(1.12)}to{transform:translate3d(-6vw,12vh,0) scale(.94)}}
+/* Fundo do tema padrão: três manchas de luz grandes, esfumadas pelo próprio gradiente (sem filter: blur), que passam
+   pela parte de cima da tela (a faixa que aparece atrás do título e entre os cartões). Só transform e opacity; param com
+   o app em segundo plano (#cena.parada), com as animações desligadas e com prefers-reduced-motion. --a = quanto de cor
+   entra no centro de cada mancha, conforme a intensidade. */
+.fundoP{position:absolute;inset:0;--a:46%}
+.fundoP[data-int=suave]{--a:28%}.fundoP[data-int=forte]{--a:66%}
+html[data-mode=dark] .fundoP{--a:38%}html[data-mode=dark] .fundoP[data-int=suave]{--a:24%}html[data-mode=dark] .fundoP[data-int=forte]{--a:56%}
+.fundoP i{position:absolute;border-radius:50%;will-change:transform;animation:fundoP1 16s ease-in-out infinite alternate}
+.fundoP i:nth-child(1){width:75vmax;height:75vmax;left:-30vmax;top:-42vmax;background:radial-gradient(circle,color-mix(in srgb,var(--f1) var(--a),transparent) 0,color-mix(in srgb,var(--f1) calc(var(--a) / 3),transparent) 40%,transparent 68%)}
+.fundoP i:nth-child(2){width:65vmax;height:65vmax;right:-30vmax;top:-26vmax;animation-name:fundoP2;animation-duration:20s;background:radial-gradient(circle,color-mix(in srgb,var(--f2) var(--a),transparent) 0,color-mix(in srgb,var(--f2) calc(var(--a) / 3),transparent) 40%,transparent 68%)}
+.fundoP i:nth-child(3){width:42vmax;height:42vmax;left:18vw;top:-16vmax;animation-name:fundoP3;animation-duration:13s;opacity:.55;background:radial-gradient(circle,color-mix(in srgb,var(--f3) var(--a),transparent) 0,transparent 66%)}
+@keyframes fundoP1{50%{transform:translate3d(28vw,14vh,0) scale(1.15)}to{transform:translate3d(8vw,30vh,0) scale(.9)}}
+@keyframes fundoP2{50%{transform:translate3d(-32vw,20vh,0) scale(.9)}to{transform:translate3d(-12vw,6vh,0) scale(1.18)}}
+@keyframes fundoP3{50%{transform:translate3d(-22vw,22vh,0) scale(1.2)}to{transform:translate3d(30vw,8vh,0) scale(.85)}}
 /* Noite estrelada: o quadro já está pintado no fundo da página; a cena só acrescenta as estrelas piscando. */
 [data-skin=noite] .cenaCeu,[data-skin=noite] .cenaVeu{display:none}
 /* Com tema especial, os cartões deixam a cena aparecer um pouco e os textos soltos ganham contorno na cor do fundo. */
@@ -897,14 +904,29 @@ html[data-troca=gira] #app.enter{animation:trGira .38s ease-out;transform-origin
 ol.passos{margin:6px 0 4px;padding-left:22px;line-height:1.5}
 ol.passos li{margin:6px 0}
 /* Ícone do estado da sincronização, no título das telas principais. */
-.iconbtn.nuvem{color:var(--muted)}
-.iconbtn.nuvem.erro,.nuvemTxt.erro{color:var(--out)}
-.iconbtn.nuvem.sinc svg{animation:nuvemPulsa 1.4s ease-in-out infinite}
+/* Título das telas: o nome com a nuvem logo depois (pequena, na altura do texto; o centro de massa dela vai no meio da
+   última letra, ver nuvemAlinhar) e, à direita, sino, olho e menu. */
+h1 .tit{display:block;min-width:0}
+h1 .acoes{position:relative}
+.nuvem{color:var(--muted)}
+h1 .tit > .nuvem{position:relative;display:inline-block;vertical-align:baseline;width:.72em;height:.72em;margin-left:.28em;padding:0;border:0;background:none;line-height:0;cursor:pointer}
+h1 .tit > .nuvem svg{display:block;width:100%;height:100%}
+h1 .tit > .nuvem::before{content:'';position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%)}
+.nuvem.erro,.nuvemTxt.erro{color:var(--out)}
+/* Painel do botão de menu, preso a ele. */
+#menuTopo{position:absolute;top:calc(100% + 6px);right:0;z-index:20;min-width:220px;padding:6px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.18);display:flex;flex-direction:column;letter-spacing:0;text-transform:none;font:15px/1.3 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-weight:600;animation:pop .15s ease-out}
+#menuTopo button{display:flex;align-items:center;gap:12px;padding:12px;white-space:nowrap;border-radius:10px;color:var(--text);text-align:left;font:inherit;background:none;border:0}
+#menuTopo button svg{color:var(--brand)}
+#menuTopo button:focus-visible,#menuTopo button:hover{background:color-mix(in srgb,var(--brand) 10%,transparent)}
+/* Folha da nuvem: o estado com o mesmo ícone e cor, o cartão do erro e as causas. */
+.nuvemEstado{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:var(--bg);color:var(--muted);margin-bottom:10px}
+.nuvemEstado b{color:var(--text);font-weight:600}.nuvemEstado.erro{color:var(--out)}
+.nuvemErroCard{background:color-mix(in srgb,var(--out) 10%,var(--card));border:1px solid color-mix(in srgb,var(--out) 40%,transparent);border-radius:14px;padding:10px 12px;margin-bottom:10px;color:var(--out)}
+.nuvemErroCard b{color:var(--out)}
+ul.causas{margin:0 0 4px;padding-left:20px;color:var(--muted);font-size:14px}
+.nuvem.sinc svg{animation:nuvemPulsa 1.4s ease-in-out infinite}
 @keyframes nuvemPulsa{50%{opacity:.35}}
-@media (prefers-reduced-motion:reduce){.iconbtn.nuvem.sinc svg{animation:none}}
-/* Com a nuvem, são quatro botões ao lado do título: em telas estreitas eles ficam mais juntos para o título caber. */
-h1 span .iconbtn.nuvem{width:30px}
-@media (max-width:400px){h1 span .iconbtn{width:33px}h1 span .iconbtn.nuvem{width:26px}}
+@media (prefers-reduced-motion:reduce){.nuvem.sinc svg{animation:none}}
 /* Saúde financeira (aba Gastos): nota grande, classificação na cor da faixa e o ponto mais fraco. */
 .saude{cursor:pointer}
 .saudeTopo{display:flex;align-items:center;gap:14px}
