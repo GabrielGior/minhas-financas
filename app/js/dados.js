@@ -41,7 +41,7 @@ function logErr(onde, e){
 }
 addEventListener('error', e => logErr('erro na tela', (e.error && e.error.stack) || (e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0)));
 addEventListener('unhandledrejection', e => logErr('promessa', e.reason));
-const APP_VERSION = '1.80'; // manter igual ao versionName do build.gradle
+const APP_VERSION = '1.90'; // manter igual ao versionName do build.gradle
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 // Ícones do app: desenhos em dois tons (traço + preenchimento translúcido nas partes com class="d"),
 // todos numa grade de 24×24. I('nome', tamanho) devolve o <svg>; a cor vem do texto ao redor (currentColor).
@@ -215,6 +215,11 @@ function catLimpa(c){
   if (c.name != null) c.name = String(c.name).slice(0, 40);
   return c;
 }
+// Pontos de aviso das previsões de gastos (Configurações › Lembretes; db.prefs.prevPontos, para todos os aparelhos da
+// conta). Antes do fixDb, que os confere ao abrir o app: só valores conhecidos; lista inválida = os padrões, os mesmos
+// avisos de antes da 1.90 (80%, passou do previsto e encerramento). [] = nenhum ponto: as previsões não avisam.
+const PREV_PONTOS = {'50':'50% do previsto', '80':'80% do previsto', '90':'90% do previsto', chegou:'Chegou no previsto', passou:'Passou do previsto', fim:'Encerramento'};
+const PREV_PONTOS_PADRAO = ['80', 'passou', 'fim'];
 function fixDb(d){
   for (const c of COLS) if (!Array.isArray(d[c])) d[c] = [];
   for (const k of ['tomb', 'budgets', 'cardClose', 'cardDue', 'cardAcc', 'cardLimit', 'yieldLog', 'netLog', 'catMemo', 'cats', 'membros']) if (!d[k] || typeof d[k] !== 'object') d[k] = {};
@@ -234,6 +239,10 @@ function fixDb(d){
     }
   }
   if (typeof d.archUntil !== 'string') d.archUntil = '';
+  if (d.prefs && typeof d.prefs === 'object' && 'prevPontos' in d.prefs){
+    const l = d.prefs.prevPontos, ok = Array.isArray(l) ? Object.keys(PREV_PONTOS).filter(k => l.includes(k)) : [];
+    if (!Array.isArray(l) || (l.length && !ok.length)) delete d.prefs.prevPontos; else d.prefs.prevPontos = ok;
+  }
   // Lixeira: o que foi excluído fica 30 dias, só neste aparelho. [{col, rec, at}]
   d.trash = (Array.isArray(d.trash) ? d.trash : []).filter(t => t.at > Date.now() - 30*864e5);
   d.rates = Object.assign({cdi:14.9, selic:15, ipca:4.5, auto:'1'}, d.rates);
@@ -709,22 +718,28 @@ const totalOutPrev = ym => round2(totalOut(ym) + reservaPrevisoes(ym));
 // Do mês atual até m: o que as previsões tiram do saldo das contas no fim de m (projetado).
 const reservaAte = m => { let t = 0; for (let k = curYM; k <= m; k = addMonths(k, 1)) t += reservaPrevisoes(k); return round2(t); };
 const prevInclui = v => v > 0 ? `inclui ${fmt(v)} de previsões` : '';
-// Avisos das previsões: 80% e acima de 100% do previsto (no mês atual) e o encerramento, uma vez por previsão, mês e
-// limite. Conferido ao abrir, ao voltar ao app e ao salvar. O que já foi avisado fica guardado neste aparelho (na
+// Avisos das previsões: os pontos marcados em Configurações › Lembretes (prevPontos: 50%, 80%, 90%, chegou no previsto,
+// passou do previsto e o encerramento; os padrões são 80%, passou e encerramento), uma vez por previsão, mês e ponto. Se
+// o gasto pula vários pontos de uma vez, avisa só o maior e marca os menores como vistos. As marcas guardadas antes da
+// 1.90 continuam valendo (sufixos 80, 100 = passou e fim). Conferido ao abrir, ao voltar ao app e ao salvar. O que já foi avisado fica guardado neste aparelho (na
 // demonstração, só na memória), para não repetir ao reabrir ou sincronizar. O encerramento descoberto dias depois leva o
 // horário do fim do dia final (23:59). Olha o mês atual e o anterior (app fechado por muito tempo).
 const PREV_AVISOS_KEY = 'financas-prev-avisos';
 let prevAvisosDemo = {};
 function prevAvisosLer(){ if (demoOn) return prevAvisosDemo; try { return JSON.parse(localStorage.getItem(PREV_AVISOS_KEY)) || {}; } catch(e){ return {}; } }
 function prevAvisosGuardar(o){ if (demoOn){ prevAvisosDemo = o; return; } try { localStorage.setItem(PREV_AVISOS_KEY, JSON.stringify(o)); } catch(e){} }
+// Sufixo guardado de cada ponto (passou continua "100", como antes da 1.90).
+const PREV_MARCA = {'50':'50', '80':'80', '90':'90', chegou:'chegou', passou:'100', fim:'fim'};
+const prevPontos = () => Array.isArray(db.prefs.prevPontos) ? db.prefs.prevPontos : PREV_PONTOS_PADRAO;
 function prevAvisosNovos(hoje = today()){
-  const vistos = prevAvisosLer(), novos = [], velho = addMonths(hoje[0], -3);
+  const vistos = prevAvisosLer(), novos = [], velho = addMonths(hoje[0], -3), pontos = prevPontos();
   for (const k of Object.keys(vistos)) if (k.split(':')[1] < velho) delete vistos[k];
   for (const m of [addMonths(hoje[0], -1), hoje[0]]) for (const it of previsoesDoMes(m)){
     const k = it.p.id + ':' + m + ':', nome = prevNome(it.cat), g = prevGasto(it), dif = round2(g - it.value), dest = {k:'prev', id:it.p.id, m};
     if (!prevAtiva(it, hoje)){
       if (vistos[k + 'fim']) continue;
-      vistos[k + 'fim'] = vistos[k + '80'] = vistos[k + '100'] = 1;
+      for (const p of Object.values(PREV_MARCA)) vistos[k + p] = 1;
+      if (!pontos.includes('fim')) continue;
       const [y, mo] = m.split('-').map(Number);
       novos.push({t:new Date(y, mo - 1, it.dia, 23, 59).getTime(), tipo:dif > 0 ? 'aviso' : 'sucesso', dest,
         txt:dif < 0 ? `Previsão de ${nome} encerrada: você gastou ${fmtTexto(g)} de ${fmtTexto(it.value)}. Sobraram ${fmtTexto(-dif)}, e o valor do mês foi atualizado.`
@@ -732,8 +747,13 @@ function prevAvisosNovos(hoje = today()){
           : `Previsão de ${nome} encerrada: você gastou exatamente o previsto.`});
     } else if (m === hoje[0]){
       const pct = g / it.value * 100;
-      if (pct > 100 && !vistos[k + '100']){ vistos[k + '100'] = vistos[k + '80'] = 1; novos.push({t:Date.now(), tipo:'aviso', dest, txt:`Previsão de ${nome}: você passou do previsto. Gastou ${fmtTexto(g)} de ${fmtTexto(it.value)}, ${fmtTexto(dif)} acima.`}); }
-      else if (pct >= 80 && !vistos[k + '80']){ vistos[k + '80'] = 1; novos.push({t:Date.now(), tipo:'aviso', dest, txt:`Previsão de ${nome}: você já gastou ${Math.round(pct)}% do previsto (${fmtTexto(g)} de ${fmtTexto(it.value)}).`}); }
+      const alcancados = ['50', '80', '90', 'chegou', 'passou'].filter(p => p === 'passou' ? pct > 100 : p === 'chegou' ? pct >= 100 : pct >= +p);
+      const topo = alcancados.filter(p => pontos.includes(p)).pop();
+      if (!topo || vistos[k + PREV_MARCA[topo]]) continue;
+      for (const p of alcancados) vistos[k + PREV_MARCA[p]] = 1;
+      novos.push({t:Date.now(), tipo:'aviso', dest, txt:topo === 'passou' ? `Previsão de ${nome}: você passou do previsto. Gastou ${fmtTexto(g)} de ${fmtTexto(it.value)}, ${fmtTexto(dif)} acima.`
+        : topo === 'chegou' ? `Previsão de ${nome}: você chegou no previsto (${fmtTexto(it.value)}).`
+        : `Previsão de ${nome}: você já gastou ${Math.round(pct)}% do previsto (${fmtTexto(g)} de ${fmtTexto(it.value)}).`});
     }
   }
   prevAvisosGuardar(vistos);

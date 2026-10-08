@@ -113,8 +113,11 @@ function openSettings(sec){
       <div class="chips" style="margin:0">${Object.entries(CAT_GASTO).filter(([k]) => k !== 'emprestimo' && (p.notifyCats[k] === false || db.expenses.some(x => x.cat === k && x.fixed))).map(([k,c]) => { const on = p.notifyCats[k] !== false; return `<button style="${on ? 'background:var(--brand);color:' + (theme.dark ? '#0b1020' : '#fff') : 'opacity:.6;text-decoration:line-through'}" data-onclick="toggleNotifyCat('${k}')">${I(c[0], 14)} ${esc(c[1])}</button>`; }).join('')}</div>
     </div>
     <div class="hint">Avisa nos dias marcados e no vencimento, às 9h.</div>${window.Android && Android.bateria ? `${batLivre ? '' : `<div class="btns"><button class="btn" data-onclick="Android.bateria()">Tirar o app da economia de bateria</button></div>`}
-    <label>Previsões de gastos (80%, passou do previsto e encerramento)</label>
+    <label>Previsões de gastos</label>
     <div class="btns" style="margin-top:0">${[[true,'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${!!(p.notifyPrev ?? p.notify) === v ? 'primary' : ''}" data-onclick="setNotifyTipo('notifyPrev',${v})">${t}</button>`).join('')}</div>
+    ${p.notifyPrev ?? p.notify ? `<label>Avisar quando chegar em (pode marcar mais de um)</label>
+    <div class="btns prevPontos" style="margin-top:0;flex-wrap:wrap">${Object.entries(PREV_PONTOS).map(([k, t]) => `<button class="btn ${prevPontos().includes(k) ? 'primary' : ''}" style="flex:1 0 30%;padding:11px 6px" data-onclick="togglePrevPonto('${k}')">${prevPontos().includes(k) ? I('check', 15) : ''}${t}</button>`).join('')}</div>
+    ${prevPontos().length ? '' : '<div class="hint warn">Nenhum ponto marcado: as previsões não vão avisar.</div>'}` : ''}
     <label>Parcelas de financiamentos e empréstimos (no dia do vencimento)</label>
     <div class="btns" style="margin-top:0">${[[true,'Ligado'],[false,'Desligado']].map(([v,t]) => `<button class="btn ${!!(p.notifyFin ?? p.notify) === v ? 'primary' : ''}" data-onclick="setNotifyTipo('notifyFin',${v})">${t}</button>`).join('')}</div>
     <div class="hint">Se atrasarem, escolha "Não otimizar" para o Cofrim.</div>` : ''}`],
@@ -253,11 +256,17 @@ function guideFilter(q){
 document.addEventListener('visibilitychange', () => { if (!document.hidden && settingsShown()) openSettings(); });
 // ---------- Diagnóstico (tela escondida) ----------
 // Abre com 7 toques seguidos no número da versão, em Configurações. Não tem senha: o relatório não traz valores nem
-// descrições dos lançamentos, e uma senha fixa no código não protegia nada.
+// descrições dos lançamentos, e uma senha fixa no código não protegia nada. Do 3º toque em diante, o aviso rápido diz
+// quantos faltam (trocando o texto no lugar, fora da central); parar por 1,5 s zera a contagem.
 let diagTaps = 0, diagTimer = 0;
 function diagTap(){
   clearTimeout(diagTimer); diagTimer = setTimeout(() => diagTaps = 0, 1500);
-  if (++diagTaps < 7) return;
+  if (++diagTaps < 7){
+    const faltam = 7 - diagTaps;
+    if (diagTaps >= 3) toast(`Falta${faltam > 1 ? 'm' : ''} ${faltam} toque${faltam > 1 ? 's' : ''} para abrir o Diagnóstico`, {central:false});
+    return;
+  }
+  hideSnack();
   diagTaps = 0; settingsOpen = false; F = null;
   diagOpen();
 }
@@ -444,5 +453,7 @@ function avisoLembretes(){
   ask('Seus lembretes estão salvos na conta, mas desligados neste aparelho. Ligar agora?', 'Ligar').then(sim => { if (sim) ligarLembretes(); askLock(); });
   return true;
 }
+// Pontos de aviso das previsões: marca ou desmarca um, na ordem da lista.
+function togglePrevPonto(k){ const l = prevPontos(); setPref('prevPontos', Object.keys(PREV_PONTOS).filter(x => x === k ? !l.includes(x) : l.includes(x))); }
 function toggleRemind(d){ const r = db.prefs.reminds; setPref('reminds', r.includes(d) ? r.filter(x => x !== d) : r.concat(d).sort((a,b) => a - b)); }
 function toggleNotifyCat(k){ db.prefs.notifyCats[k] = db.prefs.notifyCats[k] === false; setPref('notifyCats', db.prefs.notifyCats); }
