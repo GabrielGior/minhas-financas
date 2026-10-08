@@ -329,26 +329,30 @@ function noteDrop(t, st = 'ignorada'){
   else if (st === 'lancada') sugGuardar(sugLog().find(n => n.t === t), st); // relançada a partir do histórico
   render();
 }
+// Formulário aberto por uma sugestão foi salvo (submitForm): só aí ela vira "lançada". Nova (ainda no Resumo): sai da
+// lista e da barra do Android; já no histórico (aberta, ignorada): muda a situação lá.
+function sugLancada(t){ if (bankNotes().some(n => n.t === t)) noteDrop(t, 'lancada'); else sugMarcar(t, 'lancada'); }
 function noteUse(t){
   const nova = bankNotes().find(n => n.t === t), n = nova || sugLog().find(n => n.t === t), p = n && parseBankNote(n);
-  if (!p) return render(); // já lançado ou ignorado (toque duplo)
+  if (!p) return render(); // já lançado ou ignorado
+  if (F && F.sug === t) return; // toque duplo: o formulário dela já está aberto
   const value = p.hidden ? '' : moneyStr(p.value); // aviso escondido: o valor fica para a pessoa digitar
   const quando = {start:p.date.slice(0, 7), day:String(+p.date.slice(8))}, v = p.vale, emp = k => (v && v.emp) || valeEmp(k);
-  const credito = k => openForm('incomes', null, {vale:true, vals:{cat:k, emp:emp(k), value, ...quando}});
-  const noVale = pay => openForm('expenses', null, {vale:true, vals:{desc:p.desc, value, pay, emp:emp(pay), fixed:'', ...quando}, more:true});
+  const credito = k => openForm('incomes', null, {vale:true, sug:t, vals:{cat:k, emp:emp(k), value, ...quando}});
+  const noVale = pay => openForm('expenses', null, {vale:true, sug:t, vals:{desc:p.desc, value, pay, emp:emp(pay), fixed:'', ...quando}, more:true});
   // App de vale com o vale conhecido: lança direto nele (crédito do benefício ou gasto).
-  if (v && v.k){ noteDrop(t, 'lancada'); return p.income ? credito(v.k) : noVale(v.k); }
+  // (A sugestão só vira "lançada" se o formulário for salvo, em sugLancada; cancelar deixa como estava.)
+  if (v && v.k) return p.income ? credito(v.k) : noVale(v.k);
   if (v && p.income) return pickList('Esse crédito entrou em qual vale?', Object.entries(VALES).filter(([k]) => k !== 'vt'), null, k => {
     if (nova && !bankNotes().some(n => n.t === t)) return;
-    noteDrop(t, 'lancada'); credito(k);
+    credito(k);
   });
-  if (p.income){ noteDrop(t, 'lancada'); return openForm('incomes', null, {vals:{desc:p.desc, value, fixed:'', bank:p.bank, ...quando}, more:true}); }
+  if (p.income) return openForm('incomes', null, {sug:t, vals:{desc:p.desc, value, fixed:'', bank:p.bank, ...quando}, more:true});
   // Gasto: antes de abrir, pergunta se saiu do dinheiro normal ou de um vale (os vales ficam separados).
   pickList('Esse gasto foi pago com…', [['', 'Dinheiro normal (conta, cartão, Pix)'], ...Object.entries(VALES)], null, pay => {
     if (nova && !bankNotes().some(n => n.t === t)) return; // já lançado ou ignorado
-    noteDrop(t, 'lancada');
     if (pay) return noVale(pay);
-    openForm('expenses', null, {vals:{desc:p.desc, value, ...(p.desc ? {cat:guessCat(p.desc)} : {}), bank:p.bank, start:p.date.slice(0, 7), day:String(+p.date.slice(8))}, more:true});
+    openForm('expenses', null, {sug:t, vals:{desc:p.desc, value, ...(p.desc ? {cat:guessCat(p.desc)} : {}), bank:p.bank, start:p.date.slice(0, 7), day:String(+p.date.slice(8))}, more:true});
   });
 }
 // Configurações › Lançamento automático › Apps ignorados: a lista e o "Voltar a sugerir" de cada um.

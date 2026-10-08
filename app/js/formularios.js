@@ -663,7 +663,7 @@ function submitForm(){
   rollover(); // marca registros novos com o mês atual
   const done = savedMsg(F.col, !F.id), gastoNovo = F.col === 'expenses' && !F.id ? out.value : 0, sugT = F.sug;
   save(); closeForm(); render();
-  if (sugT) sugMarcar(sugT, 'lancada'); // formulário aberto por uma sugestão do banco: no histórico, "Lançada"
+  if (sugT) sugLancada(sugT); // formulário aberto por uma sugestão do banco: só agora ela vira "Lançada"
   if (gastoNovo) gastoAnim(gastoNovo); // animação de novo gasto, com as formas do tema (js/cena.js)
   if (after) after();
   if (voltar) openWelcome();
