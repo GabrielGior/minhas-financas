@@ -61,7 +61,7 @@
   <small id="gateMsg"></small>
 </div>
 <input type="file" id="file" accept="application/json,.json" hidden data-onchange="importData(this)">
-<input type="file" id="stmt" accept=".ofx,.csv,.txt,text/csv" hidden data-onchange="importStatement(this)">
+<input type="file" id="stmt" accept=".ofx,.csv,.txt,text/csv" multiple hidden data-onchange="importStatement(this)">
 <input type="file" id="photoIn" accept="image/*" hidden data-onchange="photoChosen(this)">
 <div id="lightbox" hidden data-onclick="this.hidden=true"><img alt="Comprovante"></div>
 <div id="report"></div>

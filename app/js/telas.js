@@ -299,7 +299,8 @@ function bankNotesHtml(){
   const list = bankNotes().map((n, i) => ({i, n, p:parseBankNote(n)})).filter(x => x.p).slice(-5).reverse();
   centralBanco(list);
   // Só as novas: lançadas, ignoradas e abertas ficam na tela Sugestões de gasto, no menu de três barras (openSugestoes).
-  return list.length ? `<div class="card"><b>${I('sparkle')} Sugestões de gasto</b>${list.map(({i, n, p}) => `
+  const todas = bankNotes().length;
+  return list.length ? `<div class="card"><div class="sugTopo"><b>${I('sparkle')} Sugestões de gasto</b>${todas > 1 ? `<button class="btn" data-onclick="noteIgnorarTodas()">Ignorar todas</button>` : ''}</div>${list.map(({i, n, p}) => `
     <div class="item" style="cursor:default"><div class="mid">${p.hidden
       ? `<b>Novo aviso do ${esc(p.app)}</b><small style="white-space:normal">${p.title ? esc(p.title) + ' · ' : ''}${new Date(n.t).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'})}. Não deu para ler o valor (o Android esconde avisos com números parecidos com código); confira no app do banco.</small>`
       : `<b>${esc(p.desc)}</b><small style="white-space:normal">${esc(bankName(n))} · ${esc(String(n.texto).slice(0, 90))}</small>`}</div>
@@ -319,6 +320,23 @@ function noteIgnorar(t){
       toast(`O app não vai mais sugerir lançamentos do ${bankName(n)}.`);
       render();
     }
+  });
+}
+// Ignorar todas as novas de uma vez (também as que não cabem nas cinco do Resumo): vão para a tela Sugestões de gasto como
+// "ignoradas" e saem da barra do Android, com "Desfazer". Não bloqueia nenhum app.
+async function noteIgnorarTodas(){
+  const novas = bankNotes(), ts = new Set(novas.map(n => n.t));
+  if (!novas.length) return render();
+  if (!await ask(`Ignorar ${novas.length > 1 ? `as ${novas.length} sugestões novas` : 'a sugestão nova'}? Elas continuam na tela Sugestões de gasto, no menu de três barras.`, 'Ignorar todas')) return;
+  const antes = sugLog();
+  novas.forEach(n => avisoCancelar(n.t));
+  if (demoOn) demoNotas = [];
+  else { novas.forEach(n => sugGuardar(n, 'ignorada')); Android.avisosGuardar(JSON.stringify(bankNotes().filter(n => !ts.has(n.t)))); }
+  render();
+  showUndo(`${novas.length} ${novas.length > 1 ? 'sugestões ignoradas' : 'sugestão ignorada'}`, () => {
+    if (demoOn) demoNotas = [...novas, ...demoNotas];
+    else { try { localStorage.setItem(SUG_KEY, JSON.stringify(antes)); } catch(e){} Android.avisosGuardar(JSON.stringify([...novas, ...bankNotes()])); }
+    render();
   });
 }
 function noteDrop(t, st = 'ignorada'){

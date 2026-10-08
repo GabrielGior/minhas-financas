@@ -119,6 +119,11 @@ input:focus,select:focus{border-color:var(--brand)}
 .stmt{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px}
 .stmt input{width:20px;height:20px;flex:none;padding:0}
 .stmt .mid{flex:1;min-width:0}
+.stmtArq{display:flex;flex-direction:column;margin-top:14px;padding-top:10px;border-top:1px solid var(--line)}
+.stmtArq span{font-size:12.5px}
+.sugTopo{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sugTopo .btn{flex:none;padding:6px 10px;font-size:13px}
+.stmtMes{margin:14px 0 2px;font-weight:700;font-size:13px;color:var(--muted)}
 .stmt .mid b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
 .stmt select{width:auto;max-width:150px;padding:4px 6px;font-size:12px;margin-top:3px}
 @media print{

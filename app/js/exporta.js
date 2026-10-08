@@ -109,7 +109,8 @@ function openStatementHelp(){
       <div class="leg"><span><b style="color:var(--text)">Descrição</b> (opcional)</span><b>também Histórico ou Título</b></div></div>
     <div class="hint" style="margin-top:0">Exemplo:<br><code>Data;Descrição;Valor<br>05/10/2026;Mercado;-182,40<br>06/10/2026;Salário;3500,00</code></div>
     <div class="hint">Valores negativos entram como gastos e positivos como ganhos (numa fatura de cartão é o contrário; você escolhe na próxima tela). Antes de gravar, o app mostra a lista para você conferir e desmarca o que já existe.</div>
-    <div class="btns foot"><button class="btn" data-onclick="closeForm()">Cancelar</button><button class="btn primary" data-onclick="closeForm();document.getElementById('stmt').click()">${I('upload')}Escolher o arquivo</button></div>`);
+    <div class="hint">Dá para escolher vários extratos de uma vez (meses ou bancos diferentes): cada lançamento entra no dia e no mês da data dele, e o que aparece em dois arquivos entra uma vez só.</div>
+    <div class="btns foot"><button class="btn" data-onclick="closeForm()">Cancelar</button><button class="btn primary" data-onclick="closeForm();document.getElementById('stmt').click()">${I('upload')}Escolher os arquivos</button></div>`);
 }
 
 // ---------- Apagar por período ----------

@@ -58,7 +58,7 @@ const T = {
   'Ver gastos':['See expenses','Ver gastos'], 'Período arquivado':['Archived period','Período archivado'], 'estes lançamentos vêm do arquivo e não podem ser editados':['these entries come from the archive and cannot be edited','estos movimientos vienen del archivo y no se pueden editar'],
   'carregando o arquivo da sua conta':['loading the archive from your account','cargando el archivo de tu cuenta'], 'entre com a conta Google para ver os lançamentos':['sign in with Google to see the entries','inicia sesión con Google para ver los movimientos'],
   'Sem conexão':['Offline','Sin conexión'], 'o que você lançar fica salvo e sincroniza depois':['what you enter is saved and syncs later','lo que registres queda guardado y se sincroniza después'],
-  'Lançar':['Add','Registrar'], 'Ignorar':['Ignore','Ignorar'],
+  'Lançar':['Add','Registrar'], 'Ignorar':['Ignore','Ignorar'], 'Ignorar todas':['Ignore all','Ignorar todas'],
   // ---- blocos personalizáveis
   'Contas a vencer e avisos de orçamento':['Bills due and budget alerts','Cuentas por vencer y avisos de presupuesto'], 'Gráfico de ganhos e gastos':['Income and expenses chart','Gráfico de ingresos y gastos'],
   'Média de gastos e total investido':['Average spending and total invested','Gasto promedio y total invertido'], 'Previsão dos próximos meses':['Forecast for the next months','Previsión de los próximos meses'],
