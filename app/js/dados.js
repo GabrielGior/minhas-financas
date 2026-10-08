@@ -41,7 +41,7 @@ function logErr(onde, e){
 }
 addEventListener('error', e => logErr('erro na tela', (e.error && e.error.stack) || (e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0)));
 addEventListener('unhandledrejection', e => logErr('promessa', e.reason));
-const APP_VERSION = '1.79'; // manter igual ao versionName do build.gradle
+const APP_VERSION = '1.80'; // manter igual ao versionName do build.gradle
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 // Ícones do app: desenhos em dois tons (traço + preenchimento translúcido nas partes com class="d"),
 // todos numa grade de 24×24. I('nome', tamanho) devolve o <svg>; a cor vem do texto ao redor (currentColor).
@@ -1228,14 +1228,37 @@ function scheduleReminders(){
 function updateWidget(){
   if (!(window.Android && Android.widget) || demoOn) return;
   const tin = totalIn(curYM), tout = totalOut(curYM), m = monthName(curYM), humor = funMood(), saldoPrev = tin - totalOutPrev(curYM);
+  // O saldo dos widgets é o previsto (como no Resumo): com previsões, diz isso e quanto delas está incluído, para a conta
+  // com os ganhos e gastos realizados fechar.
+  const reserva = reservaPrevisoes(curYM), mesNome = m.split(' ')[0];
   const frase = {feliz:'Oinc! Mês no azul', ok:'Tudo sob controle', triste:'Segura o cartão…'}[humor];
   const curto = v => fmt(v).replace(/^R\$\s?/, '').replace(/,\d\d$/, ''); // sem "R$" nem centavos: cabe no widget de saldo, que é estreito
-  Android.widget(JSON.stringify({mes:m[0].toUpperCase() + m.slice(1), saldo:fmt(saldoPrev), negativo:saldoPrev < 0, ganhos:fmt(tin), gastos:fmt(tout), ganhosC:curto(tin), gastosC:curto(tout),
+  Android.widget(JSON.stringify({mes:m[0].toUpperCase() + m.slice(1), saldo:fmt(saldoPrev), negativo:saldoPrev < 0,
+    saldoRot:(reserva ? 'Saldo previsto de ' : 'Saldo de ') + mesNome, prevTxt:prevInclui(reserva), ganhos:fmt(tin), gastos:fmt(tout), ganhosC:curto(tin), gastosC:curto(tout),
     fun:!!db.prefs.fun, frase, linhas:widgetLines(), pig:db.prefs.widgetPig ?? !!db.prefs.fun, humor, skin:db.prefs.skin || '',
     // cor = cor do app (o fundo dos widgets acompanha); fundo = 'tema' (cor ou tema especial) ou 'escuro'; pct = gastos sobre ganhos.
     cor:db.prefs.color, fundo:db.prefs.widgetFundo || 'tema', pct:tin > 0 ? Math.min(100, Math.round(tout / tin * 100)) : tout > 0 ? 100 : 0,
-    ...widgetGastos(),
+    ...widgetGastos(), ...widgetContas(), sugs:widgetSugs(), ts:Date.now(),
+    // Números curtos do tamanho 1x1 (sem "R$"): saldo, quantas contas vencem e o total da lista de gastos.
+    saldoC:fmtCurto(saldoPrev).replace(/^R\$\s?/, ''), contasN:upcomingBills().length ? String(upcomingBills().length) : '',
     contas:upcomingBills().slice(0, 12).map(b => ({t:b.x.desc, s:b.diff < 0 ? 'atrasada' : b.diff === 0 ? 'vence hoje' : 'vence dia ' + dueDay(b.x, curYM), v:fmt(b.x.value), c:b.diff <= 0 ? 'out' : '', k:(CAT_GASTO[b.x.cat] || CAT_GASTO.outros)[2]})), porco:{humor, frase, gastos:fmt(tout), sub:tin > 0 ? `gastos: ${Math.round(tout / tin * 100)}% dos ganhos` : 'gastos do mês'}}));
+}
+// Widget "Mascote e gastos": as sugestões de gasto novas (as do Resumo), da mais nova para a mais antiga, até 10, com o
+// valor ('' com "Esconder valores nos widgets" ou sem valor), a loja e o app. ts (junto dos dados) = hora do envio: o
+// widget mostra também as que chegarem depois, lidas pelo lado nativo.
+function widgetSugs(){
+  if (!(window.Android && Android.avisosLigado && Android.avisosLigado())) return [];
+  const oculto = !!(Android.widgetOculto && Android.widgetOculto());
+  return bankNotes().map(n => ({n, p:parseBankNote(n)})).filter(x => x.p).sort((a, b) => b.n.t - a.n.t).slice(0, 10)
+    .map(({n, p}) => ({t:n.t, v:oculto || p.hidden ? '' : fmtTexto(p.value), d:p.hidden ? 'Novo aviso' : p.desc, a:bankName(n)}));
+}
+// Widget "Contas a vencer" sem conta nos próximos 7 dias e com espaço sobrando: a próxima conta fixa do mês depois
+// disso e quantas contas fixas o mês tem, com o total.
+function widgetContas(){
+  const fixas = db.expenses.filter(x => x.fixed && x.due && activeIn(x, curYM)), hoje = now.getDate();
+  const depois = fixas.filter(x => !isPaid(x, curYM) && dueDay(x, curYM) - hoje > 7).sort((a, b) => dueDay(a, curYM) - dueDay(b, curYM))[0];
+  return {contasDepois:depois ? `Depois: ${depois.desc} · dia ${dueDay(depois, curYM)} · ${fmt(depois.value)}` : '',
+    contasMes:fixas.length ? `${fixas.length} ${fixas.length > 1 ? 'contas fixas' : 'conta fixa'} no mês · ${fmt(sum(fixas, x => x.value))}` : ''};
 }
 // Widget "Gastos": a lista dos gastos do mês, como na aba Gastos. db.prefs.widgetLista = qual grupo ('' = todos) e
 // db.prefs.widgetOrdem = 'valor' (maiores primeiro) ou '' (a ordem dos grupos do app). Vai até 40 linhas.
@@ -1244,15 +1267,15 @@ function widgetGastos(){
   let l = g ? todos.filter(g[1]) : p.grpOrder.flatMap(k => todos.filter(GRUPOS[k][1]));
   if (p.widgetOrdem === 'valor') l = [...l].sort((a, b) => b.value - a.value);
   const m = monthName(curYM).split(' ')[0];
-  return {listaTitulo:(g ? g[0] : 'Gastos') + ' de ' + m, listaSub:l.length ? `${l.length} ${l.length > 1 ? 'lançamentos' : 'lançamento'} · ${fmt(sum(l, x => x.value))}` : '',
+  return {listaTitulo:(g ? g[0] : 'Gastos') + ' de ' + m, listaC:l.length ? fmtCurto(sum(l, x => x.value)).replace(/^R\$\s?/, '') : '', listaSub:l.length ? `${l.length} ${l.length > 1 ? 'lançamentos' : 'lançamento'} · ${fmt(sum(l, x => x.value))}` : '',
     lista:l.slice(0, 40).map(x => { const c = CAT_GASTO[x.cat] || CAT_GASTO.outros;
       return {t:x.desc, s:c[1] + (x.kind === 'installment' ? ' · ' + parcTag(x) : x.fixed ? (x.fixed === 'y' ? ' · anual' : isSub(x) ? ' · assinatura' : ' · fixo') : x.day ? ' · dia ' + x.day : ''), v:fmt(x.value), c:'out', k:c[2]}; })};
 }
-// Linhas do widget Resumo: as escolhidas em Configurações > Widgets, na ordem; as que não têm dado são puladas. [{t, v, c}]
+// Linhas do widget Resumo: as escolhidas em Configurações > Widgets, na ordem; as que não têm dado são puladas. [{t, v, c, s?}]; s = detalhe (no saldo, quanto das previsões está incluído)
 function widgetLines(){
   const tin = totalIn(curYM), tout = totalOut(curYM), saldoPrev = tin - totalOutPrev(curYM); // saldo projetado: com as previsões
   const itens = {
-    saldo:() => ['Saldo do mês', fmt(saldoPrev), saldoPrev < 0 ? 'out' : 'in'],
+    saldo:() => { const r = reservaPrevisoes(curYM); return [r ? 'Saldo previsto' : 'Saldo do mês', fmt(saldoPrev), saldoPrev < 0 ? 'out' : 'in', prevInclui(r)]; },
     ganhos:() => ['Ganhos', fmt(tin), 'in'],
     gastos:() => ['Gastos', fmt(tout), 'out'],
     conta:() => { const b = upcomingBills()[0]; return b && [`${b.x.desc} · ${b.diff < 0 ? 'atrasada' : b.diff === 0 ? 'vence hoje' : 'em ' + b.diff + (b.diff > 1 ? ' dias' : ' dia')}`, fmt(b.x.value), b.diff <= 0 ? 'out' : '']; },
@@ -1263,7 +1286,7 @@ function widgetLines(){
     vales:() => temVales() && ['Saldo dos vales', fmt(sum(Object.keys(VALES), k => valeSaldo(k))), ''],
     parcelas:() => { const v = sum(expensesOf(curYM).filter(x => x.kind === 'installment'), x => x.value); return v > 0 && ['Parcelas do mês', fmt(v), 'out']; },
     previsao:() => { const n = addMonths(curYM, 1), s = totalIn(n) - totalOutPrev(n); return [(s < 0 ? 'Falta em ' : 'Sobra em ') + monthName(n).split(' ')[0], fmt(Math.abs(s)), s < 0 ? 'out' : 'in']; }};
-  return db.prefs.layout.widget.filter(b => b.on).map(b => itens[b.k]()).filter(Boolean).map(([t, v, c]) => ({t, v, c}));
+  return db.prefs.layout.widget.filter(b => b.on).map(b => itens[b.k]()).filter(Boolean).map(([t, v, c, s]) => ({t, v, c, ...(s ? {s} : {})}));
 }
 
 // ---------- Contas bancárias ----------

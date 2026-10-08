@@ -12,12 +12,13 @@ const seguro = (onde, fn) => { try { fn(); } catch(e){ logErr('abertura: ' + ond
 seguro('lembretes', lembMigrar); // interruptor dos lembretes deste aparelho: decidido na primeira abertura (antes da sincronização)
 seguro('virada do mês', rollover);
 // Atalhos do lado nativo: "gasto" (botão "+ Gasto" do widget) abre o formulário de novo gasto; "sugestao:<t>" (toque na
-// notificação de gasto encontrado) abre o formulário já preenchido com aquela sugestão. Sem conta ou na demonstração, só
-// abre o app.
+// notificação de gasto encontrado ou numa sugestão do widget Mascote e gastos) abre o formulário já preenchido com aquela
+// sugestão; "sugestoes" (selo do widget) abre a tela Sugestões de gasto. Sem conta ou na demonstração, só abre o app.
 function onAtalho(){
   const a = window.Android && Android.atalho ? Android.atalho() : '';
   if (!a || needGate()) return;
   if (a.startsWith('sugestao:')) return demoOn ? undefined : abrirSugestao(a.slice(9));
+  if (a === 'sugestoes') return demoOn ? undefined : (closeForm(), openSugestoes());
   if (a !== 'gasto') return;
   closeForm(); state.tab = visTabs().includes('gastos') ? 'gastos' : state.tab; state.gsub = 'mes'; state.month = curYM;
   render(); openForm('expenses');
