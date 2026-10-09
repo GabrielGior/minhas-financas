@@ -42,7 +42,8 @@ const TEMA_FUNDO = {
 };
 // O mascote de um tema, para pôr dentro de outro desenho (posição e largura dadas). A moeda só fica se pedida.
 function mascoteEm(tema, humor, x, y, w, moeda){
-  let s = pigSvg(humor, tema).replace(/class="pig \w+" /, '').replace('width="104" height="95"', `x="${x}" y="${y}" width="${w}" height="${Math.round(w * 110 / 120 * 10) / 10}"`);
+  let s = pigSvg(humor, tema).replace(/class="pig \w+" /, '').replace('width="104" height="95"',
+    `x="${x}" y="${y}" width="${w}" height="${Math.round(w * 110 / 120 * 10) / 10}"`);
   return moeda ? s : s.replace(/<g class="moeda">.*?<\/g>/, '');
 }
 // Miolo do ícone (sem o fundo).
@@ -86,15 +87,13 @@ function iconeSvg(cor, desenho, px = 56){
 // Desenhos que existem para uma cor de ícone neste aparelho.
 function iconeDesenhos(cor){
   if (SKINS[cor]) return SKIN_ANTIGOS.includes(cor) ? ['b', 'p', 't'] : ['t']; // os temas por categoria só têm o ícone próprio
-  return ['b', 'r', 'p', ...(window.Android && Android.criarAtalho ? ICON_NOVOS : [])];
+  return ['b', 'r', 'p', ...(temNativo('criarAtalho') ? ICON_NOVOS : [])];
 }
 
 // ---------- Abertura ----------
 // Ao abrir, o app mostra por um instante uma tela com as cores escolhidas (ou as do tema especial): o ícone do Cofrim, na
 // cor escolhida, chegando ou, com tema especial ou modo divertido, o mascote chegando do jeito do tema. As cores ficam guardadas
 // (ABRE_KEY, gravada por applyTheme) para a tela já nascer na cor certa, antes de o resto carregar.
-const ABRE_JEITO = {corrida:'vel', grandprix:'vel', rua:'vel', drift:'vel', fusca:'vel', bruxo:'magia', boneca:'magia', noite:'magia', espaco:'magia',
-  hacker:'tec', neon:'tec', retro:'tec', vikings:'forca', espartano:'forca', dragao:'forca', papel:'calma', praia:'calma', floresta:'calma'};
 // O que deve esperar a abertura sair da frente (as telas que abrem sozinhas ao iniciar): roda na hora se ela já saiu.
 const abreFila = [];
 function aposAbertura(f){ if (document.getElementById('abre')) abreFila.push(f); else f(); }
@@ -107,9 +106,10 @@ function abertura(){
   document.getElementById('abreIn').innerHTML = (comMascote
     ? `${sk && ATOS[sk] ? `<svg class="abreAto at-${ATOS[sk][1]}" viewBox="0 0 40 40">${ATOS[sk][0]}</svg>` : ''}<div class="abreM">${mascoteEm(sk, 'feliz', 0, 0, 150, true)}</div>`
     : `<div class="abreIco">${iconeSvg(COLORS[db.prefs.color] ? db.prefs.color : 'indigo', 'b', 132)}</div>`)
-    + `<b>${esc(window.Android && Android.iconeNome && APP_NOMES[Android.iconeNome()] || 'Cofrim')}</b>`;
+    + `<b>${esc(temNativo('iconeNome') && APP_NOMES[nativo('iconeNome')] || 'Cofrim')}</b>`;
   let acabou = false;
-  const fim = () => { if (acabou) return; acabou = true; el.classList.add('fim'); setTimeout(() => { el.remove(); abreFila.splice(0).forEach(f => f()); }, 400); };
+  const fim = () => { if (acabou) return; acabou = true; el.classList.add('fim');
+    setTimeout(() => { el.remove(); abreFila.splice(0).forEach(f => f()); }, 400); };
   setTimeout(fim, 1750); // entrada mais demorada, para dar tempo de ver
   el.onclick = fim; // um toque pula
 }

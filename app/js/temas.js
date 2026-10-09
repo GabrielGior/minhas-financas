@@ -73,8 +73,13 @@ const TEMA_CATS = [
   ['corridas', 'Corridas', ['corrida', 'grandprix', 'rua', 'drift', 'fusca']],
   ['filmes', 'Filmes e jogos', ['bruxo', 'dragao', 'vikings', 'espartano', 'colegio']],
   ['desenhos', 'Desenhos animados', ['fadas', 'supermeninas', 'portal', 'botoes', 'pantano']],
-  ['herois', 'Super-heróis', ['jovens', 'morcego', 'superheroi', 'lanterna', 'amazona', 'armadura', 'mercenario', 'gigante', 'capitao', 'trovao', 'aranha', 'relampago', 'guardioes', 'simbionte', 'chamas', 'mutantes', 'quarteto', 'magosupremo']],
-  ['contos', 'Contos e animações', ['superfamilia', 'peixe', 'trancas', 'maca', 'cristal', 'maravilhas', 'adormecida', 'sereia', 'fera', 'savana', 'guerreira', 'arqueira', 'ilha', 'gelo', 'mel', 'brinquedos', 'lampada', 'monstrinhos', 'jantar', 'nunca', 'planeta', 'selva', 'ferias', 'chef', 'aloha', 'halloween', 'noiva', 'sombria', 'dalmatas', 'pomagico', 'supercao']],
+  ['herois', 'Super-heróis',
+    ['jovens', 'morcego', 'superheroi', 'lanterna', 'amazona', 'armadura', 'mercenario', 'gigante', 'capitao', 'trovao', 'aranha', 'relampago',
+    'guardioes', 'simbionte', 'chamas', 'mutantes', 'quarteto', 'magosupremo']],
+  ['contos', 'Contos e animações',
+    ['superfamilia', 'peixe', 'trancas', 'maca', 'cristal', 'maravilhas', 'adormecida', 'sereia', 'fera', 'savana', 'guerreira', 'arqueira', 'ilha',
+    'gelo', 'mel', 'brinquedos', 'lampada', 'monstrinhos', 'jantar', 'nunca', 'planeta', 'selva', 'ferias', 'chef', 'aloha', 'halloween', 'noiva',
+    'sombria', 'dalmatas', 'pomagico', 'supercao']],
   ['animes', 'Animes', ['cacadores', 'ninja', 'espada']]
 ];
 const temaCat = k => (TEMA_CATS.find(c => c[2].includes(k)) || TEMA_CATS[0])[0];
@@ -383,21 +388,36 @@ const MASCOTES_NOVOS = {
 // Falas dos mascotes novos. As da categoria (FALAS_CAT) só valem para um tema que ainda não tenha as suas em FALAS_MAIS
 // (js/temas2.js); hoje todos têm, então o mascote só diz frases do próprio tema. {v} = saldo do mês; {nome} = a pessoa.
 const FALAS_CAT = {
-  filmes:{feliz:['Final feliz: sobrou {v}, {nome}!', 'Esse mês merece continuação.', 'Sucesso de bilheteria: {v} no azul.', 'Cena pós-créditos: ainda tem {v} na conta.', 'Roteiro perfeito este mês, {nome}.'],
-    ok:['O enredo segue equilibrado, {nome}.', 'Nem drama, nem comédia: tudo no eixo.', 'Próxima cena: anotar os gastos de hoje.', 'Suspense leve nas contas. Sigo de olho.', 'Meio do filme, tudo sob controle.'],
-    triste:['Reviravolta: faltam {v}, {nome}.', 'Drama nas contas: {v} no vermelho.', 'Esse capítulo pede um corte de gastos.', 'Calma, todo herói passa pelo segundo ato.', 'Hora de reescrever o roteiro do mês.']},
-  desenhos:{feliz:['Episódio feliz: sobrou {v}!', 'Hoje o desenho termina bem, {nome}.', '{v} de sobra. Dá até pra repetir o episódio.', 'Mês colorido: tudo no azul.', 'Aplausos da plateia: {v} guardados!'],
-    ok:['Episódio tranquilo por aqui, {nome}.', 'Nada de vilão nas contas hoje.', 'Anotou os gastos? O próximo episódio agradece.', 'Tudo em ordem no nosso desenho.', 'Mês equilibrado, sem sustos.'],
-    triste:['Ops! Faltam {v} neste episódio.', 'O vilão do mês foi o cartão, {nome}.', 'Plano novo: gastar menos até o fim do mês.', 'Faltam {v}. Mas todo desenho tem volta por cima.', 'Hora de rever os gastos, {nome}.']},
-  herois:{feliz:['Missão cumprida: {v} salvos, {nome}!', 'Hoje o herói é você: sobrou {v}.', 'Vilão das dívidas derrotado!', 'Grande saldo, grandes planos.', 'A cidade está segura e a carteira também: {v}.'],
-    ok:['Tudo calmo na cidade, {nome}.', 'Patrulhando os gastos. Nada suspeito.', 'Equilíbrio é o melhor superpoder.', 'Sem alerta por enquanto. Sigo de guarda.', 'Registrou os gastos de hoje, {nome}?'],
-    triste:['Alerta: {v} no vermelho, {nome}!', 'O vilão do mês atacou a carteira.', 'Precisamos de um plano: cortar gastos.', 'Até herói apanha. Faltam {v}, mas a gente vira.', 'Chamando reforços para segurar o cartão.']},
-  contos:{feliz:['E viveram felizes: sobrou {v}!', 'Era uma vez um mês no azul, {nome}.', 'Que magia: {v} de sobra!', 'Seu conto deste mês tem final feliz.', 'O tesouro cresceu: {v} guardados.'],
-    ok:['O conto segue tranquilo, {nome}.', 'Nem feitiço, nem susto: tudo em ordem.', 'Anote os gastos antes da meia-noite.', 'Capítulo calmo no nosso reino.', 'Tudo no lugar por aqui, {nome}.'],
-    triste:['O feitiço virou: faltam {v}, {nome}.', 'Capítulo difícil: {v} no vermelho.', 'Toda história tem um aperto antes do final feliz.', 'Hora de quebrar o feitiço dos gastos.', 'Faltam {v}. Vamos virar essa página.']},
-  animes:{feliz:['Nível acima! Sobrou {v}, {nome}.', 'Treino concluído: mês no azul.', 'Poder de economia: {v}!', 'Arco encerrado com vitória.', 'Você ficou mais forte: {v} guardados.'],
-    ok:['Treino do dia: anotar os gastos, {nome}.', 'Energia estável. Seguimos.', 'Nem vitória, nem derrota: empate técnico.', 'Concentração. O mês ainda não acabou.', 'Tudo sob controle nesta fase.'],
-    triste:['Derrota neste round: faltam {v}.', 'Chefão difícil este mês, {nome}.', 'Hora de treinar a economia.', 'Faltam {v}. Nunca desista, {nome}!', 'Recuar, poupar e voltar mais forte.']}
+  filmes:{feliz:['Final feliz: sobrou {v}, {nome}!', 'Esse mês merece continuação.', 'Sucesso de bilheteria: {v} no azul.',
+    'Cena pós-créditos: ainda tem {v} na conta.', 'Roteiro perfeito este mês, {nome}.'],
+    ok:['O enredo segue equilibrado, {nome}.', 'Nem drama, nem comédia: tudo no eixo.', 'Próxima cena: anotar os gastos de hoje.',
+      'Suspense leve nas contas. Sigo de olho.', 'Meio do filme, tudo sob controle.'],
+    triste:['Reviravolta: faltam {v}, {nome}.', 'Drama nas contas: {v} no vermelho.', 'Esse capítulo pede um corte de gastos.',
+      'Calma, todo herói passa pelo segundo ato.', 'Hora de reescrever o roteiro do mês.']},
+  desenhos:{feliz:['Episódio feliz: sobrou {v}!', 'Hoje o desenho termina bem, {nome}.', '{v} de sobra. Dá até pra repetir o episódio.',
+    'Mês colorido: tudo no azul.', 'Aplausos da plateia: {v} guardados!'],
+    ok:['Episódio tranquilo por aqui, {nome}.', 'Nada de vilão nas contas hoje.', 'Anotou os gastos? O próximo episódio agradece.',
+      'Tudo em ordem no nosso desenho.', 'Mês equilibrado, sem sustos.'],
+    triste:['Ops! Faltam {v} neste episódio.', 'O vilão do mês foi o cartão, {nome}.', 'Plano novo: gastar menos até o fim do mês.',
+      'Faltam {v}. Mas todo desenho tem volta por cima.', 'Hora de rever os gastos, {nome}.']},
+  herois:{feliz:['Missão cumprida: {v} salvos, {nome}!', 'Hoje o herói é você: sobrou {v}.', 'Vilão das dívidas derrotado!',
+    'Grande saldo, grandes planos.', 'A cidade está segura e a carteira também: {v}.'],
+    ok:['Tudo calmo na cidade, {nome}.', 'Patrulhando os gastos. Nada suspeito.', 'Equilíbrio é o melhor superpoder.',
+      'Sem alerta por enquanto. Sigo de guarda.', 'Registrou os gastos de hoje, {nome}?'],
+    triste:['Alerta: {v} no vermelho, {nome}!', 'O vilão do mês atacou a carteira.', 'Precisamos de um plano: cortar gastos.',
+      'Até herói apanha. Faltam {v}, mas a gente vira.', 'Chamando reforços para segurar o cartão.']},
+  contos:{feliz:['E viveram felizes: sobrou {v}!', 'Era uma vez um mês no azul, {nome}.', 'Que magia: {v} de sobra!',
+    'Seu conto deste mês tem final feliz.', 'O tesouro cresceu: {v} guardados.'],
+    ok:['O conto segue tranquilo, {nome}.', 'Nem feitiço, nem susto: tudo em ordem.', 'Anote os gastos antes da meia-noite.',
+      'Capítulo calmo no nosso reino.', 'Tudo no lugar por aqui, {nome}.'],
+    triste:['O feitiço virou: faltam {v}, {nome}.', 'Capítulo difícil: {v} no vermelho.', 'Toda história tem um aperto antes do final feliz.',
+      'Hora de quebrar o feitiço dos gastos.', 'Faltam {v}. Vamos virar essa página.']},
+  animes:{feliz:['Nível acima! Sobrou {v}, {nome}.', 'Treino concluído: mês no azul.', 'Poder de economia: {v}!', 'Arco encerrado com vitória.',
+    'Você ficou mais forte: {v} guardados.'],
+    ok:['Treino do dia: anotar os gastos, {nome}.', 'Energia estável. Seguimos.', 'Nem vitória, nem derrota: empate técnico.',
+      'Concentração. O mês ainda não acabou.', 'Tudo sob controle nesta fase.'],
+    triste:['Derrota neste round: faltam {v}.', 'Chefão difícil este mês, {nome}.', 'Hora de treinar a economia.',
+      'Faltam {v}. Nunca desista, {nome}!', 'Recuar, poupar e voltar mais forte.']}
 };
 // Uma fala própria por tema e humor: [feliz, ok, triste].
 const FALAS_TEMA = {

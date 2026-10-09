@@ -15,13 +15,9 @@ function funVisit(){
   try { localStorage.setItem(FUN_KEY, JSON.stringify(funState)); } catch(e){}
 }
 const pick = a => a[Math.floor(Math.random() * a.length)];
-const FUN_LINES = {
-  feliz:['Sobrando {v} este mês, {nome}. Tô até mais gordinho!', 'Mês no azul! Já posso sonhar com milho premium?', 'Olha esse saldo de {v}, {nome}. Orgulho define.', 'Assim eu encho rapidinho. Continua, {nome}!'],
-  ok:['Tudo sob controle por aqui, {nome}. Bora registrar os gastos?', 'Equilibrado, como todo porquinho deveria ser.', 'Nem aperto, nem folga. Seguimos de olho.', 'Me conta, {nome}: o que você gastou hoje?'],
-  triste:['Faltam {v} para fechar o mês, {nome}. Respira, a gente ajeita.', 'Tô sentindo um vento aqui dentro… saiu mais do que entrou.', 'Mês no vermelho em {v}. Bora rever os gastos, {nome}?', 'Ai, minhas moedinhas! Segura o cartão um pouquinho.']
-};
 const FUN_SAVED = {
-  expenses:['Anotado! A carteira sentiu, mas sobreviveu.', 'Gasto registrado. O porquinho viu tudo.', 'Mais um pra conta. Literalmente.', 'Registrado! Saber para onde vai o dinheiro já é meio caminho.'],
+  expenses:['Anotado! A carteira sentiu, mas sobreviveu.', 'Gasto registrado. O porquinho viu tudo.', 'Mais um pra conta. Literalmente.',
+    'Registrado! Saber para onde vai o dinheiro já é meio caminho.'],
   installments:['Parcelado registrado. O você do futuro mandou um abraço meio torto.', 'Anotado! Parcela é gasto de pijama: discreto, mas tá lá.'],
   incomes:['Dinheiro na conta, {nome}! O porquinho fez a dancinha.', 'Caiu! Hora de fingir costume.', 'Ganho registrado. Continue assim, {nome}!'],
   investments:['Investimento registrado. O seu eu do futuro agradece.', 'Plantou hoje, colhe depois.'],
@@ -30,7 +26,8 @@ const FUN_SAVED = {
   invAdd:['Aporte feito. Juros compostos, podem trabalhar!', 'Aporte registrado. Devagar e sempre.']
 };
 const FUN_PAID = ['Conta paga! Menos um boleto no mundo.', 'Pago! Boleto derrotado.', 'Em dia! O porquinho respira aliviado.'];
-const FUN_LEVELS = [[0, 'Cofrinho vazio'], [5, 'Aprendiz da poupança'], [15, 'Caçador de boletos'], [30, 'Mestre do orçamento'], [50, 'Guardião do cofrinho'], [75, 'Lenda das finanças'], [100, 'Mito do porquinho']];
+const FUN_LEVELS = [[0, 'Cofrinho vazio'], [5, 'Aprendiz da poupança'], [15, 'Caçador de boletos'], [30, 'Mestre do orçamento'],
+  [50, 'Guardião do cofrinho'], [75, 'Lenda das finanças'], [100, 'Mito do porquinho']];
 // Mensagens com o nome da pessoa: {nome} vira o nome; sem nome cadastrado, some junto com a vírgula.
 const comNome = s => myName() ? s.replace(/\{nome\}/g, myName()) : s.replace(/,? ?\{nome\}/g, '').replace(/^\s*[a-zà-ú]/, c => c.toUpperCase());
 // Texto do aviso depois de salvar um formulário (e confete nas boas notícias).
@@ -63,7 +60,7 @@ function challengeHtml(){
   return `<div class="card"><b>${I('target')} Desafio de ${monthName(curYM).split(' ')[0]}</b>
     <div class="hint" style="margin-top:4px">Gaste menos de ${fmt(c.target)} em ${esc(nome)} (foi o gasto do mês passado).</div>
     <div class="bar"><i style="width:${pct}%;background:${c.ok ? 'var(--in)' : 'var(--out)'}"></i></div>
-    <div class="hint" style="margin-top:0">${c.ok ? `Até agora: ${fmt(c.used)}. Ainda cabem ${fmt(c.target - c.used)}.` : `Passou em ${fmt(c.used - c.target)}. Mês que vem tem outro!`}</div></div>`;
+    <div class="semTopo hint">${c.ok ? `Até agora: ${fmt(c.used)}. Ainda cabem ${fmt(c.target - c.used)}.` : `Passou em ${fmt(c.used - c.target)}. Mês que vem tem outro!`}</div></div>`;
 }
 // Conquistas em níveis. Cada família: [ícone, nome, como ganhar (n => texto), valor atual, metas]; cada meta é uma
 // conquista ("Anotador I", "Anotador II"…). Tudo é calculado dos dados, nada fica guardado (só quais já foram avisadas).
@@ -82,9 +79,11 @@ function funFamilies(){
     ['income', 'Ganha-pão', n => `lance ${plural(n, 'ganho', 'ganhos')}`, db.incomes.length, [1, 5, 10, 25, 50, 100]],
     ['gift', 'Renda extra', n => `lance ${plural(n, 'ganho avulso', 'ganhos avulsos')}`, db.incomes.filter(x => !x.fixed).length, [1, 5, 10]],
     ['card', 'Parcelador', n => `cadastre ${plural(n, 'compra parcelada', 'compras parceladas')}`, db.installments.length, [1, 3, 5, 10]],
-    ['key', 'Livre de parcelas', n => `quite ${plural(n, 'compra parcelada', 'compras parceladas')}`, db.installments.filter(p => p.paid >= p.n).length, [1, 3, 5, 10]],
+    ['key', 'Livre de parcelas', n => `quite ${plural(n, 'compra parcelada', 'compras parceladas')}`,
+      db.installments.filter(p => p.paid >= p.n).length, [1, 3, 5, 10]],
     ['leaf', 'Investidor', n => `cadastre ${plural(n, 'investimento', 'investimentos')}`, db.investments.length, [1, 3, 5, 10]],
-    ['trend', 'Patrimônio', n => `tenha ${reais(n)} investidos`, sum(db.investments, x => x.value), [1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000]],
+    ['trend', 'Patrimônio', n => `tenha ${reais(n)} investidos`, sum(db.investments, x => x.value),
+      [1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000]],
     ['target', 'Sonhador', n => `crie ${plural(n, 'meta', 'metas')}`, db.goals.length, [1, 3, 5]],
     ['diamond', 'Meta batida', n => `alcance ${plural(n, 'meta', 'metas')}`, db.goals.filter(g => g.saved >= g.target).length, [1, 3, 5, 10]],
     ['smile', 'Mês no azul', n => `feche ${plural(n, 'mês', 'meses')} no azul (nos últimos 2 anos)`, ano2.filter(azul).length, [1, 3, 6, 12, 24]],
@@ -94,20 +93,24 @@ function funFamilies(){
     ['camera', 'Organizado', n => `anexe ${plural(n, 'comprovante', 'comprovantes')}`, db.expenses.filter(x => x.photo).length, [1, 5, 10, 25, 50]],
     ['tag', 'Etiquetador', n => `use ${plural(n, 'etiqueta diferente', 'etiquetas diferentes')}`, new Set(db.expenses.flatMap(tagsOf)).size, [1, 5, 10]],
     ['box', 'Variado', n => `lance gastos em ${n} categorias diferentes`, new Set(db.expenses.map(x => x.cat)).size, [5, 10, 15, 20]],
-    ['sliders', 'Planejador', n => `defina orçamento para ${plural(n, 'categoria', 'categorias')}`, Object.values(db.budgets).filter(v => v > 0).length, [1, 3, 5, 10]],
+    ['sliders', 'Planejador', n => `defina orçamento para ${plural(n, 'categoria', 'categorias')}`,
+      Object.values(db.budgets).filter(v => v > 0).length, [1, 3, 5, 10]],
     ['bank', 'Banqueiro', n => `cadastre ${plural(n, 'conta bancária', 'contas bancárias')}`, db.accounts.length, [1, 2, 3, 5]],
     ['exchange', 'Transferidor', n => `registre ${plural(n, 'transferência', 'transferências')}`, db.transfers.length, [1, 5, 10]],
     ['people', 'Rachador', n => `divida ${plural(n, 'gasto', 'gastos')} com alguém`, db.expenses.filter(x => x.who).length, [1, 5, 10, 25]],
     ['calendar', 'Assinante consciente', n => `cadastre ${plural(n, 'assinatura', 'assinaturas')}`, db.expenses.filter(isSub).length, [1, 3, 5]],
-    ['coins', 'Sobrou!', n => `termine um mês com ${reais(n)} sobrando (no último ano)`, Math.max(0, ...ultimos(12).map(m => totalIn(m) - totalOut(m))), [100, 500, 1000, 2500, 5000, 10000]],
-    ['book', 'Constância', n => `tenha lançamentos em ${plural(n, 'mês', 'meses')}`, new Set([...db.expenses, ...db.incomes].map(x => x.start)).size, [1, 3, 6, 12, 24, 36]],
+    ['coins', 'Sobrou!', n => `termine um mês com ${reais(n)} sobrando (no último ano)`,
+      Math.max(0, ...ultimos(12).map(m => totalIn(m) - totalOut(m))), [100, 500, 1000, 2500, 5000, 10000]],
+    ['book', 'Constância', n => `tenha lançamentos em ${plural(n, 'mês', 'meses')}`, new Set([...db.expenses, ...db.incomes].map(x => x.start)).size,
+      [1, 3, 6, 12, 24, 36]],
     ['search', 'Detalhista', n => `lance ${n} gastos avulsos num mesmo mês`, avulsosNoMes, [10, 30, 60]],
     ['checked', 'Em dia', () => 'tenha contas com vencimento e nenhuma atrasada', emDia ? 1 : 0, [1]],
     ['heart', 'Em dupla', () => 'use a conta compartilhada', sync.shared ? 1 : 0, [1]]];
 }
 // Lista plana: [ícone, nome, como ganhar, já ganhou, família, nível].
 function funBadgeList(){
-  return funFamilies().flatMap(([ic, nome, como, v, metas], f) => metas.map((n, i) => [ic, metas.length > 1 ? `${nome} ${ROMANOS[i]}` : nome, como(n), v >= n, f, i]));
+  return funFamilies().flatMap(([ic, nome, como, v, metas], f) => metas.map((n, i) => [ic, metas.length > 1 ? `${nome} ${ROMANOS[i]}` : nome, como(n),
+    v >= n, f, i]));
 }
 // Avisa (uma vez) cada conquista nova. Na primeira vez que roda, só anota as que já existiam.
 function funCheck(){
@@ -278,95 +281,160 @@ function pigSvg(mood, tema = db.prefs.skin){
 // Falas do mascote, por tema (a de cada dia muda, e tocar nele troca). {v} = valor do saldo do mês; {nome} = nome da pessoa.
 const FUN_TEMA = {
   '':{
-    feliz:['Sobrando {v} este mês, {nome}. Tô até mais gordinho!', 'Mês no azul! Já posso sonhar com milho premium?', 'Olha esse saldo de {v}, {nome}. Orgulho define.', 'Assim eu encho rapidinho. Continua, {nome}!',
-      '{v} de folga. Guarda um pouquinho pra mim?', 'Hoje eu durmo tranquilo: sobrou {v}.', 'Se continuar assim, vou precisar de um cofrinho maior.', 'Oinc de alegria: as contas fecharam com {v} sobrando!'],
-    ok:['Tudo sob controle por aqui, {nome}. Bora registrar os gastos?', 'Equilibrado, como todo porquinho deveria ser.', 'Nem aperto, nem folga. Seguimos de olho.', 'Me conta, {nome}: o que você gastou hoje?',
-      'Mês no fio da navalha. Um cafezinho a menos e a gente respira.', 'Anotou tudo? Gasto esquecido é moedinha que foge.', 'Tá empatado. Eu torço pelo time do "sobrou".', 'Sem sustos por enquanto. Gosto assim.'],
-    triste:['Faltam {v} para fechar o mês, {nome}. Respira, a gente ajeita.', 'Tô sentindo um vento aqui dentro… saiu mais do que entrou.', 'Mês no vermelho em {v}. Bora rever os gastos, {nome}?', 'Ai, minhas moedinhas! Segura o cartão um pouquinho.',
-      'Faltando {v}. Que tal olhar as assinaturas?', 'Não é o fim do mundo, {nome}: é só {v}. Mas vamos cuidar.', 'Eu emagreci {v} este mês. Me ajuda?', 'Cartão, senta lá um pouco. Faltam {v}.']},
+    feliz:['Sobrando {v} este mês, {nome}. Tô até mais gordinho!', 'Mês no azul! Já posso sonhar com milho premium?',
+      'Olha esse saldo de {v}, {nome}. Orgulho define.', 'Assim eu encho rapidinho. Continua, {nome}!',
+      '{v} de folga. Guarda um pouquinho pra mim?', 'Hoje eu durmo tranquilo: sobrou {v}.', 'Se continuar assim, vou precisar de um cofrinho maior.',
+      'Oinc de alegria: as contas fecharam com {v} sobrando!'],
+    ok:['Tudo sob controle por aqui, {nome}. Bora registrar os gastos?', 'Equilibrado, como todo porquinho deveria ser.',
+      'Nem aperto, nem folga. Seguimos de olho.', 'Me conta, {nome}: o que você gastou hoje?',
+      'Mês no fio da navalha. Um cafezinho a menos e a gente respira.', 'Anotou tudo? Gasto esquecido é moedinha que foge.',
+      'Tá empatado. Eu torço pelo time do "sobrou".', 'Sem sustos por enquanto. Gosto assim.'],
+    triste:['Faltam {v} para fechar o mês, {nome}. Respira, a gente ajeita.', 'Tô sentindo um vento aqui dentro… saiu mais do que entrou.',
+      'Mês no vermelho em {v}. Bora rever os gastos, {nome}?', 'Ai, minhas moedinhas! Segura o cartão um pouquinho.',
+      'Faltando {v}. Que tal olhar as assinaturas?', 'Não é o fim do mundo, {nome}: é só {v}. Mas vamos cuidar.',
+      'Eu emagreci {v} este mês. Me ajuda?', 'Cartão, senta lá um pouco. Faltam {v}.']},
   hacker:{
-    feliz:['> saldo: +{v}. Sistema estável.', 'Acesso concedido: {v} sobrando, {nome}.', 'Nenhum bug no orçamento. Bip bop.', 'Compilou sem erros: mês no azul.', 'Firewall do cofrinho ativo. {v} protegidos.', 'sudo guardar {v}. Feito.'],
-    ok:['> status: OK. Aguardando novos lançamentos.', 'Rodando em modo econômico, {nome}.', 'Ping no orçamento: resposta em 0 ms.', 'Log do dia vazio. Lançou tudo?', 'Sem alertas. Monitorando…', 'Entrada e saída empatadas. Zero a zero binário.'],
-    triste:['ALERTA: déficit de {v} detectado.', 'Erro 402: faltam {v}, {nome}.', 'Vazamento de moedas em andamento. Faltam {v}.', 'Orçamento invadido por boletos. Contra-atacar?', 'Memória cheia de parcelas. Faltam {v}.', '> encerrando gastos supérfluos…']},
+    feliz:['> saldo: +{v}. Sistema estável.', 'Acesso concedido: {v} sobrando, {nome}.', 'Nenhum bug no orçamento. Bip bop.',
+      'Compilou sem erros: mês no azul.', 'Firewall do cofrinho ativo. {v} protegidos.', 'sudo guardar {v}. Feito.'],
+    ok:['> status: OK. Aguardando novos lançamentos.', 'Rodando em modo econômico, {nome}.', 'Ping no orçamento: resposta em 0 ms.',
+      'Log do dia vazio. Lançou tudo?', 'Sem alertas. Monitorando…', 'Entrada e saída empatadas. Zero a zero binário.'],
+    triste:['ALERTA: déficit de {v} detectado.', 'Erro 402: faltam {v}, {nome}.', 'Vazamento de moedas em andamento. Faltam {v}.',
+      'Orçamento invadido por boletos. Contra-atacar?', 'Memória cheia de parcelas. Faltam {v}.', '> encerrando gastos supérfluos…']},
   boneca:{
-    feliz:['Sobrou {v}! Hoje o dia é rosa, {nome}.', 'Um arraso: mês no azul e brilho no olhar.', 'Com {v} de sobra, dá até pra sonhar com o castelo.', 'Linda, organizada e com {v} guardados.', 'Glitter e saldo positivo: combinação perfeita.', 'Hoje eu desfilo: fechamos com {v}!'],
-    ok:['Tudo no lugar, {nome}. Como um bom closet.', 'Nem sobra, nem falta: equilíbrio é chique.', 'Conta pra mim, {nome}: teve comprinha hoje?', 'Anotar os gastos também é autocuidado.', 'Mês comportado. Continuamos brilhando.', 'De olho na carteira e no brilho.'],
-    triste:['Faltam {v}… respira, {nome}, a gente dá um jeito.', 'O saldo ficou menos rosa: {v} no vermelho.', 'Hora de guardar o cartão na bolsinha. Faltam {v}.', 'Nem todo dia é de festa. Faltam {v}.', 'Vamos rever as comprinhas? Faltam {v}.', 'Sem drama: {v} a gente recupera.']},
+    feliz:['Sobrou {v}! Hoje o dia é rosa, {nome}.', 'Um arraso: mês no azul e brilho no olhar.',
+      'Com {v} de sobra, dá até pra sonhar com o castelo.', 'Linda, organizada e com {v} guardados.',
+      'Glitter e saldo positivo: combinação perfeita.', 'Hoje eu desfilo: fechamos com {v}!'],
+    ok:['Tudo no lugar, {nome}. Como um bom closet.', 'Nem sobra, nem falta: equilíbrio é chique.', 'Conta pra mim, {nome}: teve comprinha hoje?',
+      'Anotar os gastos também é autocuidado.', 'Mês comportado. Continuamos brilhando.', 'De olho na carteira e no brilho.'],
+    triste:['Faltam {v}… respira, {nome}, a gente dá um jeito.', 'O saldo ficou menos rosa: {v} no vermelho.',
+      'Hora de guardar o cartão na bolsinha. Faltam {v}.', 'Nem todo dia é de festa. Faltam {v}.', 'Vamos rever as comprinhas? Faltam {v}.',
+      'Sem drama: {v} a gente recupera.']},
   corrida:{
-    feliz:['Bandeirada! Mês fechando com {v} de vantagem.', 'Pole position: {v} sobrando, {nome}.', 'Volta mais rápida do orçamento!', 'Tanque cheio: {v} na reserva.', 'Ultrapassamos os boletos pela direita.', 'No pódio com {v}. Champanhe? Só de água.'],
-    ok:['Ritmo de corrida, {nome}. Sem forçar o motor.', 'Parada no box: lançou os gastos de hoje?', 'Pneus bons, estratégia mantida.', 'Lado a lado com os gastos. Segura a curva!', 'Sem bandeira amarela por enquanto.', 'Meio da prova: concentração total.'],
-    triste:['Bandeira vermelha: faltam {v}.', 'Motor no limite, {nome}. Faltam {v}.', 'Pneu furado no orçamento: {v} atrás.', 'Hora de tirar o pé. Faltam {v}.', 'Derrapamos na curva dos gastos. Faltam {v}.', 'Pit stop urgente: rever as despesas.']},
+    feliz:['Bandeirada! Mês fechando com {v} de vantagem.', 'Pole position: {v} sobrando, {nome}.', 'Volta mais rápida do orçamento!',
+      'Tanque cheio: {v} na reserva.', 'Ultrapassamos os boletos pela direita.', 'No pódio com {v}. Champanhe? Só de água.'],
+    ok:['Ritmo de corrida, {nome}. Sem forçar o motor.', 'Parada no box: lançou os gastos de hoje?', 'Pneus bons, estratégia mantida.',
+      'Lado a lado com os gastos. Segura a curva!', 'Sem bandeira amarela por enquanto.', 'Meio da prova: concentração total.'],
+    triste:['Bandeira vermelha: faltam {v}.', 'Motor no limite, {nome}. Faltam {v}.', 'Pneu furado no orçamento: {v} atrás.',
+      'Hora de tirar o pé. Faltam {v}.', 'Derrapamos na curva dos gastos. Faltam {v}.', 'Pit stop urgente: rever as despesas.']},
   neon:{
-    feliz:['A pista tá cheia: {v} sobrando, {nome}!', 'Batida boa e saldo positivo.', 'Solta o grave: fechamos com {v}!', 'Hoje o set é de vitória. Miau.', 'Luzes acesas, bolso tranquilo.', 'Remix perfeito: ganhar mais, gastar menos.'],
-    ok:['No ritmo, {nome}. Nem acelera, nem para.', 'Mixando ganhos e gastos sem desafinar.', 'Qual foi o gasto de hoje? Conta no microfone.', 'Volume no médio. Tudo sob controle.', 'Passando o som do orçamento.', 'Sem ruído na pista.'],
-    triste:['Desafinou: faltam {v}.', 'A música parou, {nome}. Faltam {v}.', 'Queimou um fusível no orçamento: {v}.', 'Baixa o volume dos gastos. Faltam {v}.', 'Set difícil hoje. Faltam {v}.', 'Hora de trocar o disco das despesas.']},
+    feliz:['A pista tá cheia: {v} sobrando, {nome}!', 'Batida boa e saldo positivo.', 'Solta o grave: fechamos com {v}!',
+      'Hoje o set é de vitória. Miau.', 'Luzes acesas, bolso tranquilo.', 'Remix perfeito: ganhar mais, gastar menos.'],
+    ok:['No ritmo, {nome}. Nem acelera, nem para.', 'Mixando ganhos e gastos sem desafinar.', 'Qual foi o gasto de hoje? Conta no microfone.',
+      'Volume no médio. Tudo sob controle.', 'Passando o som do orçamento.', 'Sem ruído na pista.'],
+    triste:['Desafinou: faltam {v}.', 'A música parou, {nome}. Faltam {v}.', 'Queimou um fusível no orçamento: {v}.',
+      'Baixa o volume dos gastos. Faltam {v}.', 'Set difícil hoje. Faltam {v}.', 'Hora de trocar o disco das despesas.']},
   papel:{
-    feliz:['Conforme os registros, sobram {v}. Excelente, {nome}.', 'A prudência rende: {v} de saldo.', 'Capítulo feliz no livro-caixa.', 'Quem anota, não se espanta. Sobram {v}.', 'Economia exemplar. Uh-uh!', 'Nota dez em finanças este mês.'],
-    ok:['Tudo devidamente anotado, {nome}?', 'O livro-caixa está em ordem.', 'Mês equilibrado, como recomenda a boa doutrina.', 'Uma coruja atenta não perde um centavo.', 'Sem novidades no balancete.', 'Estudando os seus gastos com calma.'],
-    triste:['Segundo meus cálculos, faltam {v}.', 'Página difícil, {nome}: {v} negativos.', 'Recomendo revisar as despesas. Faltam {v}.', 'A lição do mês: gastou-se {v} além.', 'Hora de consultar o orçamento.', 'Nem os sábios escapam de um mês apertado.']},
+    feliz:['Conforme os registros, sobram {v}. Excelente, {nome}.', 'A prudência rende: {v} de saldo.', 'Capítulo feliz no livro-caixa.',
+      'Quem anota, não se espanta. Sobram {v}.', 'Economia exemplar. Uh-uh!', 'Nota dez em finanças este mês.'],
+    ok:['Tudo devidamente anotado, {nome}?', 'O livro-caixa está em ordem.', 'Mês equilibrado, como recomenda a boa doutrina.',
+      'Uma coruja atenta não perde um centavo.', 'Sem novidades no balancete.', 'Estudando os seus gastos com calma.'],
+    triste:['Segundo meus cálculos, faltam {v}.', 'Página difícil, {nome}: {v} negativos.', 'Recomendo revisar as despesas. Faltam {v}.',
+      'A lição do mês: gastou-se {v} além.', 'Hora de consultar o orçamento.', 'Nem os sábios escapam de um mês apertado.']},
   praia:{
-    feliz:['Sombra, água fresca e {v} sobrando.', 'Maré boa, {nome}: fechamos no azul.', 'Dá até pra um picolé: sobram {v}.', 'Sol brilhando no orçamento.', 'Pé na areia e conta em dia.', 'Onda perfeita: {v} de saldo.'],
-    ok:['Mar calmo por aqui, {nome}.', 'Nem ressaca, nem maré alta.', 'Passou protetor no bolso hoje?', 'Brisa leve nas finanças.', 'De boa na rede, de olho nos gastos.', 'Anota aí antes do mergulho.'],
-    triste:['Maré baixa: faltam {v}.', 'Vem onda forte, {nome}. Faltam {v}.', 'O sol torrou {v} do orçamento.', 'Hora de recolher a canga dos gastos.', 'Areia no cofrinho. Faltam {v}.', 'Ressaca de boletos. Vamos com calma.']},
+    feliz:['Sombra, água fresca e {v} sobrando.', 'Maré boa, {nome}: fechamos no azul.', 'Dá até pra um picolé: sobram {v}.',
+      'Sol brilhando no orçamento.', 'Pé na areia e conta em dia.', 'Onda perfeita: {v} de saldo.'],
+    ok:['Mar calmo por aqui, {nome}.', 'Nem ressaca, nem maré alta.', 'Passou protetor no bolso hoje?', 'Brisa leve nas finanças.',
+      'De boa na rede, de olho nos gastos.', 'Anota aí antes do mergulho.'],
+    triste:['Maré baixa: faltam {v}.', 'Vem onda forte, {nome}. Faltam {v}.', 'O sol torrou {v} do orçamento.',
+      'Hora de recolher a canga dos gastos.', 'Areia no cofrinho. Faltam {v}.', 'Ressaca de boletos. Vamos com calma.']},
   noite:{
-    feliz:['O céu gira em festa: sobram {v}, {nome}.', 'Pintei o mês de azul. E sobrou {v}.', 'As estrelas brilham mais com a conta em dia.', 'Uma obra-prima de orçamento.', 'Pinceladas certeiras: {v} de saldo.', 'Hoje até o cipreste dança.'],
-    ok:['Noite tranquila na vila, {nome}.', 'Cada gasto é uma pincelada. Anotou?', 'O quadro do mês está tomando forma.', 'Nem tempestade, nem calmaria.', 'Olhando as estrelas e as contas.', 'Tons equilibrados na paleta.'],
-    triste:['Faltou tinta: {v} a menos.', 'Noite turbulenta, {nome}. Faltam {v}.', 'O redemoinho levou {v}.', 'Até os gênios tiveram meses difíceis.', 'Vamos repintar esse orçamento.', 'Céu fechado. Faltam {v}.']},
+    feliz:['O céu gira em festa: sobram {v}, {nome}.', 'Pintei o mês de azul. E sobrou {v}.', 'As estrelas brilham mais com a conta em dia.',
+      'Uma obra-prima de orçamento.', 'Pinceladas certeiras: {v} de saldo.', 'Hoje até o cipreste dança.'],
+    ok:['Noite tranquila na vila, {nome}.', 'Cada gasto é uma pincelada. Anotou?', 'O quadro do mês está tomando forma.',
+      'Nem tempestade, nem calmaria.', 'Olhando as estrelas e as contas.', 'Tons equilibrados na paleta.'],
+    triste:['Faltou tinta: {v} a menos.', 'Noite turbulenta, {nome}. Faltam {v}.', 'O redemoinho levou {v}.', 'Até os gênios tiveram meses difíceis.',
+      'Vamos repintar esse orçamento.', 'Céu fechado. Faltam {v}.']},
   bruxo:{
-    feliz:['Feitiço de multiplicar moedas: sobram {v}!', 'Dez pontos para {nome}: mês no azul.', 'O cofre encantado guardou {v}.', 'Poção da economia funcionando.', 'Nem precisei de varinha: sobrou {v}.', 'Mágica mesmo é fechar o mês com folga.'],
-    ok:['Nada de travessuras no orçamento, {nome}.', 'Caldeirão em fogo baixo. Tudo sob controle.', 'Anotou os gastos no pergaminho?', 'Equilíbrio digno de um bom feiticeiro.', 'A coruja ainda não trouxe más notícias.', 'Sem feitiços estranhos por aqui.'],
-    triste:['Alguém lançou um feitiço de sumiço: faltam {v}.', 'Faltam {v}, {nome}. Hora de um contrafeitiço.', 'O dragão do cofre está com fome: {v}.', 'Poção errada este mês. Faltam {v}.', 'Nem toda mágica dá certo. Vamos rever.', 'Menos dez pontos para os gastos.']},
+    feliz:['Feitiço de multiplicar moedas: sobram {v}!', 'Dez pontos para {nome}: mês no azul.', 'O cofre encantado guardou {v}.',
+      'Poção da economia funcionando.', 'Nem precisei de varinha: sobrou {v}.', 'Mágica mesmo é fechar o mês com folga.'],
+    ok:['Nada de travessuras no orçamento, {nome}.', 'Caldeirão em fogo baixo. Tudo sob controle.', 'Anotou os gastos no pergaminho?',
+      'Equilíbrio digno de um bom feiticeiro.', 'A coruja ainda não trouxe más notícias.', 'Sem feitiços estranhos por aqui.'],
+    triste:['Alguém lançou um feitiço de sumiço: faltam {v}.', 'Faltam {v}, {nome}. Hora de um contrafeitiço.',
+      'O dragão do cofre está com fome: {v}.', 'Poção errada este mês. Faltam {v}.', 'Nem toda mágica dá certo. Vamos rever.',
+      'Menos dez pontos para os gastos.']},
   espaco:{
-    feliz:['Órbita estável: {v} sobrando, {nome}.', 'Missão cumprida, mês no azul!', 'Combustível de sobra: {v}.', 'Pousamos com {v} no tanque.', 'Rumo às estrelas, sem dívidas.', 'Central, aqui é o cofrinho: tudo certo.'],
-    ok:['Navegando em velocidade de cruzeiro, {nome}.', 'Sem turbulência no orçamento.', 'Registrou os gastos no diário de bordo?', 'Gravidade normal por aqui.', 'Radar limpo. Seguimos.', 'Trajetória mantida.'],
-    triste:['Houston, faltam {v}.', 'Alerta de combustível: {v} a menos.', 'Entramos num buraco negro de gastos, {nome}.', 'Chuva de meteoros no orçamento: {v}.', 'Corrigindo a rota. Faltam {v}.', 'Oxigênio baixo no cofrinho.']},
+    feliz:['Órbita estável: {v} sobrando, {nome}.', 'Missão cumprida, mês no azul!', 'Combustível de sobra: {v}.', 'Pousamos com {v} no tanque.',
+      'Rumo às estrelas, sem dívidas.', 'Central, aqui é o cofrinho: tudo certo.'],
+    ok:['Navegando em velocidade de cruzeiro, {nome}.', 'Sem turbulência no orçamento.', 'Registrou os gastos no diário de bordo?',
+      'Gravidade normal por aqui.', 'Radar limpo. Seguimos.', 'Trajetória mantida.'],
+    triste:['Houston, faltam {v}.', 'Alerta de combustível: {v} a menos.', 'Entramos num buraco negro de gastos, {nome}.',
+      'Chuva de meteoros no orçamento: {v}.', 'Corrigindo a rota. Faltam {v}.', 'Oxigênio baixo no cofrinho.']},
   floresta:{
-    feliz:['Colheita boa: sobram {v}, {nome}.', 'A toca está cheia para o inverno.', 'Guardei {v} debaixo da árvore.', 'Dia de sol na floresta e na conta.', 'Raposa esperta guarda antes de gastar.', 'Folhas verdes, saldo verde.'],
-    ok:['Tudo calmo na trilha, {nome}.', 'Nem seca, nem enchente.', 'Farejou algum gasto hoje? Anota.', 'Passo a passo, sem pressa.', 'A floresta está em equilíbrio.', 'De orelha em pé nos gastos.'],
-    triste:['A toca ficou vazia: faltam {v}.', 'Inverno chegando, {nome}. Faltam {v}.', 'Alguém comeu as provisões: {v}.', 'Trilha difícil este mês.', 'Hora de guardar mais nozes.', 'Faltam {v}. Vamos farejar onde cortar.']},
+    feliz:['Colheita boa: sobram {v}, {nome}.', 'A toca está cheia para o inverno.', 'Guardei {v} debaixo da árvore.',
+      'Dia de sol na floresta e na conta.', 'Raposa esperta guarda antes de gastar.', 'Folhas verdes, saldo verde.'],
+    ok:['Tudo calmo na trilha, {nome}.', 'Nem seca, nem enchente.', 'Farejou algum gasto hoje? Anota.', 'Passo a passo, sem pressa.',
+      'A floresta está em equilíbrio.', 'De orelha em pé nos gastos.'],
+    triste:['A toca ficou vazia: faltam {v}.', 'Inverno chegando, {nome}. Faltam {v}.', 'Alguém comeu as provisões: {v}.', 'Trilha difícil este mês.',
+      'Hora de guardar mais nozes.', 'Faltam {v}. Vamos farejar onde cortar.']},
   retro:{
-    feliz:['+{v} PONTOS! FASE CONCLUÍDA.', 'NOVO RECORDE, {nome}!', 'VIDA EXTRA: sobram {v}.', 'CHEFÃO DOS BOLETOS DERROTADO.', 'COMBO DE ECONOMIA x3!', 'Moedas coletadas: {v}.'],
-    ok:['FASE EM ANDAMENTO…', 'PRESS START para lançar um gasto.', 'Sem inimigos à vista, {nome}.', 'Energia no meio da barra.', 'Jogo salvo.', 'Modo normal ativado.'],
-    triste:['GAME OVER? Ainda não: faltam {v}.', 'Você perdeu {v} moedas, {nome}.', 'Chefão dos boletos na tela!', 'Energia baixa. Faltam {v}.', 'CONTINUE? 9… 8… 7…', 'Insira mais moedas no cofrinho.']},
+    feliz:['+{v} PONTOS! FASE CONCLUÍDA.', 'NOVO RECORDE, {nome}!', 'VIDA EXTRA: sobram {v}.', 'CHEFÃO DOS BOLETOS DERROTADO.',
+      'COMBO DE ECONOMIA x3!', 'Moedas coletadas: {v}.'],
+    ok:['FASE EM ANDAMENTO…', 'PRESS START para lançar um gasto.', 'Sem inimigos à vista, {nome}.', 'Energia no meio da barra.', 'Jogo salvo.',
+      'Modo normal ativado.'],
+    triste:['GAME OVER? Ainda não: faltam {v}.', 'Você perdeu {v} moedas, {nome}.', 'Chefão dos boletos na tela!', 'Energia baixa. Faltam {v}.',
+      'CONTINUE? 9… 8… 7…', 'Insira mais moedas no cofrinho.']},
   dragao:{
-    feliz:['Voo tranquilo: sobram {v}, {nome}.', 'Tesouro protegido: {v} guardados.', 'Nenhum invasor no ninho de moedas.', 'Rugido de alegria: mês no azul!', 'Planando com {v} de folga.', 'Dragão bem alimentado, bolso também.'],
-    ok:['Céu limpo sobre a ilha, {nome}.', 'De olho no tesouro.', 'Pousou algum gasto hoje? Anota.', 'Asas abertas, vento a favor.', 'Tudo calmo na caverna.', 'Patrulha sem novidades.'],
-    triste:['Fogo no orçamento: faltam {v}.', 'O tesouro encolheu {v}, {nome}.', 'Tempestade à frente. Faltam {v}.', 'Queimamos {v} a mais.', 'Hora de voar baixo nos gastos.', 'O ninho precisa de mais moedas.']},
+    feliz:['Voo tranquilo: sobram {v}, {nome}.', 'Tesouro protegido: {v} guardados.', 'Nenhum invasor no ninho de moedas.',
+      'Rugido de alegria: mês no azul!', 'Planando com {v} de folga.', 'Dragão bem alimentado, bolso também.'],
+    ok:['Céu limpo sobre a ilha, {nome}.', 'De olho no tesouro.', 'Pousou algum gasto hoje? Anota.', 'Asas abertas, vento a favor.',
+      'Tudo calmo na caverna.', 'Patrulha sem novidades.'],
+    triste:['Fogo no orçamento: faltam {v}.', 'O tesouro encolheu {v}, {nome}.', 'Tempestade à frente. Faltam {v}.', 'Queimamos {v} a mais.',
+      'Hora de voar baixo nos gastos.', 'O ninho precisa de mais moedas.']},
   grandprix:{
-    feliz:['Vitória de ponta a ponta: sobram {v}!', 'Bandeira quadriculada, {nome}: mês no azul.', 'Largada perfeita e {v} no tanque.', 'Campeão da economia desta temporada.', 'Volta de honra com {v} de sobra.', 'Motor cantando, bolso sorrindo.'],
-    ok:['Reta longa, {nome}. Ritmo constante.', 'Conferindo os mostradores do orçamento.', 'Passou no box hoje? Anota o gasto.', 'Nada de sustos na pista.', 'Seguimos no vácuo dos gastos.', 'Corrida limpa até aqui.'],
-    triste:['Rodamos na curva: faltam {v}.', 'Bandeira amarela, {nome}. Faltam {v}.', 'O motor pediu arrego: {v} atrás.', 'Abandonar? Jamais. Mas faltam {v}.', 'Hora de trocar a estratégia.', 'Perdemos posições para os boletos.']},
+    feliz:['Vitória de ponta a ponta: sobram {v}!', 'Bandeira quadriculada, {nome}: mês no azul.', 'Largada perfeita e {v} no tanque.',
+      'Campeão da economia desta temporada.', 'Volta de honra com {v} de sobra.', 'Motor cantando, bolso sorrindo.'],
+    ok:['Reta longa, {nome}. Ritmo constante.', 'Conferindo os mostradores do orçamento.', 'Passou no box hoje? Anota o gasto.',
+      'Nada de sustos na pista.', 'Seguimos no vácuo dos gastos.', 'Corrida limpa até aqui.'],
+    triste:['Rodamos na curva: faltam {v}.', 'Bandeira amarela, {nome}. Faltam {v}.', 'O motor pediu arrego: {v} atrás.',
+      'Abandonar? Jamais. Mas faltam {v}.', 'Hora de trocar a estratégia.', 'Perdemos posições para os boletos.']},
   rua:{
-    feliz:['Quarto de milha vencido: sobram {v}.', 'Nitro guardado, {nome}: {v} no bolso.', 'Família, contas pagas e {v} sobrando.', 'Arrancada limpa neste mês.', 'Motor turbinado, carteira também.', 'Ganhamos o racha contra os boletos.'],
-    ok:['Rodando na boa, {nome}.', 'Sem pisar fundo no cartão.', 'Abasteceu hoje? Lança o gasto.', 'Noite calma no asfalto.', 'De olho no retrovisor dos gastos.', 'Marcha lenta, tudo sob controle.'],
-    triste:['Queimamos a largada: faltam {v}.', 'Acabou o nitro, {nome}. Faltam {v}.', 'Motor fundido no orçamento: {v}.', 'Perdemos o racha deste mês.', 'Hora de voltar pra garagem e rever os gastos.', 'O tanque secou. Faltam {v}.']},
+    feliz:['Quarto de milha vencido: sobram {v}.', 'Nitro guardado, {nome}: {v} no bolso.', 'Família, contas pagas e {v} sobrando.',
+      'Arrancada limpa neste mês.', 'Motor turbinado, carteira também.', 'Ganhamos o racha contra os boletos.'],
+    ok:['Rodando na boa, {nome}.', 'Sem pisar fundo no cartão.', 'Abasteceu hoje? Lança o gasto.', 'Noite calma no asfalto.',
+      'De olho no retrovisor dos gastos.', 'Marcha lenta, tudo sob controle.'],
+    triste:['Queimamos a largada: faltam {v}.', 'Acabou o nitro, {nome}. Faltam {v}.', 'Motor fundido no orçamento: {v}.',
+      'Perdemos o racha deste mês.', 'Hora de voltar pra garagem e rever os gastos.', 'O tanque secou. Faltam {v}.']},
   drift:{
-    feliz:['Curva perfeita: sobram {v}, {nome}.', 'Deslizando com {v} de folga.', 'O rei do drift fecha no azul.', 'Fumaça nos pneus, não na carteira.', 'Controle total: {v} guardados.', 'Descida da montanha sem um arranhão.'],
-    ok:['Carro alinhado, {nome}.', 'Entrando na curva com calma.', 'Anotou o gasto antes da próxima curva?', 'Traseira firme, orçamento também.', 'Noite tranquila na cidade.', 'Ajustando o ponto de frenagem.'],
-    triste:['Saímos de traseira: faltam {v}.', 'Bateu no muro, {nome}. Faltam {v}.', 'Pneus carecas no orçamento: {v}.', 'Curva fechada demais este mês.', 'Hora de treinar o controle dos gastos.', 'Perdemos a traseira. Faltam {v}.']},
+    feliz:['Curva perfeita: sobram {v}, {nome}.', 'Deslizando com {v} de folga.', 'O rei do drift fecha no azul.',
+      'Fumaça nos pneus, não na carteira.', 'Controle total: {v} guardados.', 'Descida da montanha sem um arranhão.'],
+    ok:['Carro alinhado, {nome}.', 'Entrando na curva com calma.', 'Anotou o gasto antes da próxima curva?', 'Traseira firme, orçamento também.',
+      'Noite tranquila na cidade.', 'Ajustando o ponto de frenagem.'],
+    triste:['Saímos de traseira: faltam {v}.', 'Bateu no muro, {nome}. Faltam {v}.', 'Pneus carecas no orçamento: {v}.',
+      'Curva fechada demais este mês.', 'Hora de treinar o controle dos gastos.', 'Perdemos a traseira. Faltam {v}.']},
   fusca:{
-    feliz:['Bip-bip! Sobraram {v}, {nome}.', 'Pequeno, valente e com {v} no porta-luvas.', 'Cruzamos a linha na frente dos boletos.', 'Motor traseiro, saldo dianteiro.', 'Hoje eu empino de alegria.', 'Quem diria: o fusquinha venceu o mês.'],
-    ok:['Rodando redondinho, {nome}.', 'Devagar e sempre a gente chega.', 'Parou pra abastecer? Anota aí.', 'Nenhum barulho estranho no orçamento.', 'Farol aceso, olho nos gastos.', 'Na estrada, sem pressa.'],
-    triste:['Enguiçou: faltam {v}.', 'Preciso de um empurrãozinho, {nome}. Faltam {v}.', 'Furou o pneu do orçamento: {v}.', 'Subida difícil este mês.', 'Vamos pra oficina rever os gastos.', 'Engasguei. Faltam {v}.']},
+    feliz:['Bip-bip! Sobraram {v}, {nome}.', 'Pequeno, valente e com {v} no porta-luvas.', 'Cruzamos a linha na frente dos boletos.',
+      'Motor traseiro, saldo dianteiro.', 'Hoje eu empino de alegria.', 'Quem diria: o fusquinha venceu o mês.'],
+    ok:['Rodando redondinho, {nome}.', 'Devagar e sempre a gente chega.', 'Parou pra abastecer? Anota aí.', 'Nenhum barulho estranho no orçamento.',
+      'Farol aceso, olho nos gastos.', 'Na estrada, sem pressa.'],
+    triste:['Enguiçou: faltam {v}.', 'Preciso de um empurrãozinho, {nome}. Faltam {v}.', 'Furou o pneu do orçamento: {v}.',
+      'Subida difícil este mês.', 'Vamos pra oficina rever os gastos.', 'Engasguei. Faltam {v}.']},
   vikings:{
-    feliz:['Saque glorioso: sobram {v}, {nome}!', 'O baú está cheio. Skol!', 'Os deuses sorriem: {v} de folga.', 'Banquete garantido neste mês.', 'Velas ao vento e ouro no porão.', 'Digno de uma saga: mês no azul.'],
-    ok:['Mar calmo no fiorde, {nome}.', 'Remando no ritmo.', 'Algum gasto na travessia? Anota.', 'O escudo está firme.', 'Sem tempestade à vista.', 'O clã está em paz com as contas.'],
-    triste:['O baú foi saqueado: faltam {v}.', 'Inverno duro, {nome}. Faltam {v}.', 'Naufragaram {v} moedas.', 'Os corvos trazem más notícias.', 'Hora de afiar o machado nos gastos.', 'Faltam {v}. À luta!']},
+    feliz:['Saque glorioso: sobram {v}, {nome}!', 'O baú está cheio. Skol!', 'Os deuses sorriem: {v} de folga.', 'Banquete garantido neste mês.',
+      'Velas ao vento e ouro no porão.', 'Digno de uma saga: mês no azul.'],
+    ok:['Mar calmo no fiorde, {nome}.', 'Remando no ritmo.', 'Algum gasto na travessia? Anota.', 'O escudo está firme.', 'Sem tempestade à vista.',
+      'O clã está em paz com as contas.'],
+    triste:['O baú foi saqueado: faltam {v}.', 'Inverno duro, {nome}. Faltam {v}.', 'Naufragaram {v} moedas.', 'Os corvos trazem más notícias.',
+      'Hora de afiar o machado nos gastos.', 'Faltam {v}. À luta!']},
   espartano:{
-    feliz:['Vitória! Sobram {v}, {nome}.', 'Disciplina dá resultado: {v} guardados.', 'O orçamento resistiu como uma muralha.', 'Batalha vencida este mês.', 'Escudo erguido, saldo positivo.', 'Honra e {v} no cofre.'],
-    ok:['Formação mantida, {nome}.', 'Guardando a passagem do orçamento.', 'Algum gasto em combate? Anota.', 'Sem baixas por enquanto.', 'Vigília tranquila.', 'Treino diário: anotar tudo.'],
-    triste:['Perdemos terreno: faltam {v}.', 'Batalha dura, {nome}. Faltam {v}.', 'O inimigo levou {v}.', 'Recuar para reagrupar os gastos.', 'Um guerreiro não desiste: vamos rever.', 'A muralha cedeu. Faltam {v}.']}
+    feliz:['Vitória! Sobram {v}, {nome}.', 'Disciplina dá resultado: {v} guardados.', 'O orçamento resistiu como uma muralha.',
+      'Batalha vencida este mês.', 'Escudo erguido, saldo positivo.', 'Honra e {v} no cofre.'],
+    ok:['Formação mantida, {nome}.', 'Guardando a passagem do orçamento.', 'Algum gasto em combate? Anota.', 'Sem baixas por enquanto.',
+      'Vigília tranquila.', 'Treino diário: anotar tudo.'],
+    triste:['Perdemos terreno: faltam {v}.', 'Batalha dura, {nome}. Faltam {v}.', 'O inimigo levou {v}.', 'Recuar para reagrupar os gastos.',
+      'Um guerreiro não desiste: vamos rever.', 'A muralha cedeu. Faltam {v}.']}
 };
 // Temas por categoria (js/temas.js e js/temas2.js): cinco falas próprias do tema por humor (FALAS_TEMA + FALAS_MAIS + FALAS_MAIS2).
 // As falas da categoria só entram se um tema ainda não tiver as suas em FALAS_MAIS.
 for (const [k, [feliz, ok, triste]] of Object.entries(FALAS_TEMA)){
   const m = FALAS_MAIS[k], n = FALAS_MAIS2[k] || [[], [], []], c = FALAS_CAT[temaCat(k)] || FALAS_CAT.gerais;
-  FUN_TEMA[k] = m ? {feliz:[feliz, ...m[0], ...n[0]], ok:[ok, ...m[1], ...n[1]], triste:[triste, ...m[2], ...n[2]]} : {feliz:[feliz, ...c.feliz], ok:[ok, ...c.ok], triste:[triste, ...c.triste]};
+  FUN_TEMA[k] = m ? {feliz:[feliz, ...m[0], ...n[0]], ok:[ok, ...m[1], ...n[1]], triste:[triste, ...m[2], ...n[2]]} : {feliz:[feliz, ...c.feliz],
+    ok:[ok, ...c.ok], triste:[triste, ...c.triste]};
 }
 // Bloco do Resumo: o porquinho reage ao saldo do mês atual. Tocar nele troca a fala.
 function funMascot(){
   const net = totalIn(curYM) - totalOutPrev(curYM), mood = funMood();
-  const falas = (FUN_TEMA[db.prefs.skin] || FUN_TEMA[''])[mood], ganhas = funBadgeList().filter(b => b[3]).length, nivel = [...FUN_LEVELS].reverse().find(l => ganhas >= l[0])[1];
+  const falas = (FUN_TEMA[db.prefs.skin] || FUN_TEMA[''])[mood], ganhas = funBadgeList().filter(b => b[3]).length,
+  nivel = [...FUN_LEVELS].reverse().find(l => ganhas >= l[0])[1];
   return `<div class="card fun" data-onclick="funPoke()"><div class="pigBox">${pigSvg(mood)}</div>
     <div class="mid"><div class="bubble">${esc(comNome(falas[(now.getDate() + funState.tap) % falas.length])).replace('{v}', fmt(Math.abs(net)))}</div>
     <small>${I('trophy', 13)} ${nivel}${funState.streak > 1 ? ` · ${I('flame', 13)} ${funState.streak} dias seguidos` : ''}</small></div></div>`;
@@ -380,11 +448,13 @@ function funPoke(){
 // Bloco do Resumo: quantas já foram ganhas, as últimas de cada família e as três mais perto de sair.
 function funBadges(){
   const fams = funFamilies(), list = funBadgeList(), ganhas = list.filter(b => b[3]).length;
-  const proximas = fams.map(([ic, nome, como, v, metas]) => { const i = metas.findIndex(n => v < n); return i < 0 ? null : {ic, nome:metas.length > 1 ? `${nome} ${ROMANOS[i]}` : nome, como:como(metas[i]), pct:Math.min(99, v / metas[i] * 100)}; })
+  const proximas = fams.map(([ic, nome, como, v, metas]) => { const i = metas.findIndex(n => v < n);
+    return i < 0 ? null : {ic, nome:metas.length > 1 ? `${nome} ${ROMANOS[i]}` : nome, como:como(metas[i]), pct:Math.min(99, v / metas[i] * 100)}; })
     .filter(Boolean).sort((a, b) => b.pct - a.pct).slice(0, 3);
-  const topo = fams.map(([ic, nome, , v, metas]) => { const n = metas.filter(m => v >= m).length; return n ? [ic, metas.length > 1 ? `${nome} ${ROMANOS[n - 1]}` : nome] : null; }).filter(Boolean);
+  const topo = fams.map(([ic, nome, , v, metas]) => { const n = metas.filter(m => v >= m).length;
+    return n ? [ic, metas.length > 1 ? `${nome} ${ROMANOS[n - 1]}` : nome] : null; }).filter(Boolean);
   return `${challengeHtml()}<h2>Conquistas <button data-onclick="openBadges()">Ver todas (${ganhas} de ${list.length})</button></h2>
-  <div class="card"><div class="bar" style="margin-top:0"><i style="width:${ganhas / list.length * 100}%"></i></div>
+  <div class="card"><div class="semTopo bar"><i style="width:${ganhas / list.length * 100}%"></i></div>
     ${topo.length ? `<div class="badges">${topo.map(([ic, nome]) => `<button class="on" data-onclick="openBadges()"><span>${I(ic, 24)}</span>${nome}</button>`).join('')}</div>` : ''}
     ${proximas.length ? `<div class="hint" style="margin:10px 0 2px">Mais perto de ganhar:</div>${proximas.map(p => `<div class="catrow"><div class="top"><span>${I(p.ic, 16)} ${p.nome}</span><b>${Math.floor(p.pct)}%</b></div>
       <div class="hint" style="margin-top:2px">${cap(p.como)}</div><div class="bar"><i style="width:${p.pct}%"></i></div></div>`).join('')}` : ''}</div>`;
@@ -394,10 +464,10 @@ function openBadges(){
   settingsOpen = false; F = null;
   const list = funBadgeList(), ganhas = list.filter(b => b[3]).length;
   showSheet(`<h3>Conquistas: ${ganhas} de ${list.length}</h3>
-    <div class="hint" style="margin-top:0">Cada uma tem níveis: a próxima aparece quando você passa da anterior.</div>
+    <div class="semTopo hint">Cada uma tem níveis: a próxima aparece quando você passa da anterior.</div>
     ${funFamilies().map(([ic, nome, como, v, metas]) => { const n = metas.filter(m => v >= m).length, prox = metas[n]; return `
-      <div class="item" style="cursor:default">${tile(ic)}<div class="mid"><b>${nome}${n ? ' ' + (metas.length > 1 ? ROMANOS[n - 1] : '') : ''}</b>
-        <small style="white-space:normal">${prox == null ? 'Todos os níveis conquistados!' : cap(como(prox))}</small>
+      <div class="semCursor item">${tile(ic)}<div class="mid"><b>${nome}${n ? ' ' + (metas.length > 1 ? ROMANOS[n - 1] : '') : ''}</b>
+        <small class="quebra">${prox == null ? 'Todos os níveis conquistados!' : cap(como(prox))}</small>
         <div class="lvls">${metas.map((m, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</div></div>
         <div class="val ${n === metas.length ? 'in' : 'muted'}">${n}/${metas.length}</div></div>`; }).join('')}
     <div class="btns foot"><button class="btn primary" data-onclick="closeForm()">Fechar</button></div>`);
@@ -419,7 +489,8 @@ function funCount(){
     // O número vem de data-v (bigNum), não do texto: o texto já formatado ("R$ 4.002", "R$ 29,3 mil") não volta a número.
     const fim = +el.dataset.v, curto = el.dataset.f === 'c', t0 = performance.now(), final = el.textContent;
     if (!fim) return;
-    const passo = t => { const k = Math.min(1, (t - t0) / 650); el.textContent = k < 1 ? (curto ? fmtCurto : fmt)(fim * (1 - Math.pow(1 - k, 3))) : final; if (k < 1) requestAnimationFrame(passo); };
+    const passo = t => { const k = Math.min(1, (t - t0) / 650);
+      el.textContent = k < 1 ? (curto ? fmtCurto : fmt)(fim * (1 - Math.pow(1 - k, 3))) : final; if (k < 1) requestAnimationFrame(passo); };
     requestAnimationFrame(passo);
   });
 }

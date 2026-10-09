@@ -1,0 +1,67 @@
+// Cofrim — Erros explicados para quem não é técnico: o que aconteceu, por que pode ter acontecido e o que fazer. Um
+// catálogo só (ERROS) para o APK e a versão web; avisoErro(tipo, titulo) mostra a explicação na caixa de aviso do app.
+// O lado Android chama window.onErroNativo(tipo) quando a câmera, a escolha de arquivos ou outra tela do celular falha.
+// Erros inesperados de tela continuam indo para o Diagnóstico e, uma vez por abertura, mostram um aviso com o que fazer.
+// Depende de dialogos.js (tell) e lixeira.js (showAcao).
+const ERROS = {
+  internet: ['Não foi possível falar com a internet agora.',
+    ['Sem internet, ou com o sinal fraco', 'O Google está instável neste momento', 'A sessão da sua conta Google expirou'],
+    ['Confira o Wi-Fi ou os dados móveis e tente de novo', 'Espere alguns minutos e tente outra vez',
+      'Se continuar, entre de novo com a conta Google em Configurações › Conta e sincronização']],
+  arquivo: ['Não foi possível ler este arquivo.',
+    ['O arquivo não é do tipo certo (extrato: OFX ou CSV; backup: o arquivo .json salvo pelo Cofrim)',
+      'O arquivo veio incompleto ou estragado (por exemplo, o download foi interrompido)', 'O celular não deixou o app abrir o arquivo'],
+    ['Baixe o arquivo de novo no app ou no site do banco', 'No banco, procure "exportar extrato" e escolha OFX ou CSV',
+      'Escolha o arquivo pelo app Arquivos do celular']],
+  imagem: ['Não foi possível abrir essa imagem.',
+    ['A imagem está num formato que o app não lê (por exemplo, HEIC, das fotos do iPhone)', 'A imagem está estragada ou é grande demais'],
+    ['Tire uma foto nova pelo próprio app', 'Escolha outra imagem, ou um print (captura de tela) dela']],
+  gravar: ['Não deu para salvar as últimas alterações neste aparelho.',
+    ['O armazenamento do celular (ou do navegador) está cheio',
+      'Na versão web, o navegador está numa janela anônima ou não deixa o site guardar dados'],
+    ['Libere espaço apagando fotos, vídeos ou apps que você não usa', 'Na versão web, use uma janela normal e deixe o site guardar dados',
+      'Salve um backup agora em Configurações › Dados e ajustes › Backup em arquivo',
+      'Com a conta Google ligada, o que já sincronizou continua guardado no seu Google Drive']],
+  decifrar: ['Não foi possível abrir os dados guardados neste navegador.',
+    ['O navegador apagou parte dos dados do site (limpeza de dados, cookies ou cache)', 'O navegador ou o perfil do navegador foi trocado'],
+    ['Entre com a sua conta Google: os dados voltam pela sincronização',
+      'Se você tem um backup em arquivo, importe em Configurações › Dados e ajustes › Backup em arquivo']],
+  atualizacao: ['Não foi possível procurar ou baixar a atualização.',
+    ['Sem internet, ou com o sinal fraco', 'O site das atualizações está fora do ar por um momento', 'Pouco espaço livre no celular para baixar'],
+    ['Confira a internet e tente de novo em Configurações › Procurar atualizações', 'Libere espaço no celular',
+      'Se preferir, baixe a atualização pelo navegador']],
+  camera: ['Não foi possível usar a câmera.',
+    ['Outro app está usando a câmera', 'O Cofrim não tem permissão para usar a câmera'],
+    ['Feche outros apps de câmera e tente de novo', 'No Android: Configurações › Apps › Cofrim › Permissões › Câmera › Permitir',
+      'Ou escolha a foto da galeria']],
+  arquivos: ['Não foi possível abrir a escolha de arquivos.',
+    ['O celular não tem um app de arquivos ativo'],
+    ['Ative ou instale um app de arquivos (por exemplo, Arquivos do Google) e tente de novo']],
+  salvarArquivo: ['Não foi possível salvar o arquivo.',
+    ['Pouco espaço livre no celular', 'A pasta escolhida não aceita gravar (pasta de outro app ou cartão de memória)'],
+    ['Escolha a pasta Downloads (Transferências)', 'Libere espaço no celular e tente de novo']],
+  navegador: ['Não foi possível abrir o link.', ['Nenhum navegador está instalado ou ativo no celular'],
+    ['Instale ou ative o Chrome (ou outro navegador) e tente de novo']],
+  inesperado: ['Algo deu errado nesta tela.',
+    ['Um dado chegou num formato que o app não esperava', 'O app está mais antigo que o de outro aparelho que mexeu nos dados'],
+    ['Seus dados continuam guardados. Feche e abra o app de novo', 'Procure atualizações em Configurações',
+      'Se continuar, toque 7 vezes no número da versão nas Configurações, abra o Diagnóstico e use "Copiar" para enviar a quem dá suporte']]
+};
+// Texto completo de um erro: título (ou o título próprio de quem chamou), causas e soluções.
+function erroTexto(tipo, titulo){
+  const [t, causas, solucoes] = ERROS[tipo] || ERROS.inesperado;
+  return `${titulo || t}\n\nPor que pode ter acontecido:\n${causas.map(c => '• ' + c).join('\n')}\n\nO que fazer:\n${solucoes.map(c => '• ' + c).join('\n')}`;
+}
+function avisoErro(tipo, titulo){ return tell(erroTexto(tipo, titulo)); }
+// Chamado pelo lado Android (MainActivity/Ponte) quando uma tela do celular falha.
+function onErroNativo(tipo){ avisoErro(ERROS[tipo] ? tipo : 'inesperado'); }
+// Erro inesperado (já registrado no Diagnóstico por logErr): um aviso por abertura, com o que fazer. Só os erros de tela
+// ("error"); promessas recusadas são quase sempre a internet, que cada função já explica. Fora da página de
+// testes, onde os erros são provocados de propósito.
+let erroAvisado = false;
+function erroInesperado(){
+  if (erroAvisado || window.TESTE) return;
+  erroAvisado = true;
+  setTimeout(() => { try { showAcao('Algo deu errado nesta tela.', 'O que fazer', () => avisoErro('inesperado')); } catch(e){} }, 300);
+}
+addEventListener('error', erroInesperado);

@@ -1,12 +1,15 @@
-// Cofrim — Assistente, relatório do mês e importação de extrato.
-// Carregado pelo index.html, nesta ordem: dados.js, telas.js, assistente.js, formularios.js, divertido.js, config.js, sincronizacao.js, entrada.js, inicio.js.
+// Cofrim — Assistente (perguntas sobre os dados), render() e navegação (go, voltar), seletores de mês e ano, gestos e CSV.
+// Carregado na ordem do index.html (lista e dependências em docs/MAPA.md).
 // ---------- Assistente: responde perguntas sobre os dados do app ----------
 // Não usa IA nem internet: reconhece na pergunta o assunto (gastos, ganhos, saldo, parcelas, investimentos…),
 // o período e os filtros (categoria, banco, forma de pagamento, palavra da descrição) e faz a conta nos dados.
-const CAT_WORDS = {moradia:['moradia','casa','habitacao'], alimentacao:['alimentacao','comida','alimento'], transporte:['transporte','locomocao'], saude:['saude'],
+const CAT_WORDS = {moradia:['moradia','casa','habitacao'], alimentacao:['alimentacao','comida','alimento'], transporte:['transporte','locomocao'],
+  saude:['saude'],
   lazer:['lazer','diversao'], educacao:['educacao','estudo'], compras:['compras'], contas:['assinatura'], emprestimo:['emprestimo']};
-const INC_WORDS = {salario:['salario'], freelance:['freela','extra'], rendimentos:['rendimentos'], va:['vale alimentacao'], vr:['vale refeicao'], vt:['vale transporte'], vendas:['venda']};
-const PAY_WORDS = {credito:['credito'], debito:['debito'], pix:['pix'], dinheiro:['dinheiro','especie'], boleto:['boleto'], va:['vale alimentacao'], vr:['vale refeicao'], vt:['vale transporte']};
+const INC_WORDS = {salario:['salario'], freelance:['freela','extra'], rendimentos:['rendimentos'], va:['vale alimentacao'], vr:['vale refeicao'],
+  vt:['vale transporte'], vendas:['venda']};
+const PAY_WORDS = {credito:['credito'], debito:['debito'], pix:['pix'], dinheiro:['dinheiro','especie'], boleto:['boleto'], va:['vale alimentacao'],
+  vr:['vale refeicao'], vt:['vale transporte']};
 const CHAT_STOP = new Set(('quanto quantos quais qual gastei gasto gastos gastar ganhei ganho ganhos esse este essa esta nesse neste desse deste mes meses ano com para por que foi meu minha meus minhas tenho total valor ' +
   'passado atual proximo sobre onde mais maior menos como esta estao pagar paguei recebi tive foram reais ultimo ultimos comparado comparando compare media saldo quero saber dizer mostre mostra').split(' '));
 const CHAT_HINTS = ['Quanto gastei este mês?', 'Onde gastei mais este ano?', 'Quanto vai sobrar no fim do mês?', 'Quais contas vencem este mês?'];
@@ -47,7 +50,8 @@ function entryHtml(i){
   const e = chatEntries[i], C = e.col === 'incomes' ? CAT_GANHO : CAT_GASTO;
   if (e.done) return e.done;
   return `<b>Lançar este ${e.col === 'incomes' ? 'ganho' : 'gasto'}?</b>` +
-    chatRows([[e.desc, e.value], ['Categoria', (C[e.cat] || C.outros)[1]], ...(e.bank ? [['Banco', e.bank]] : []), ...(e.pay ? [['Pagamento', PAY[e.pay]]] : []), ['Mês', cap(monthName(curYM))]]) +
+    chatRows([[e.desc, e.value], ['Categoria', (C[e.cat] || C.outros)[1]], ...(e.bank ? [['Banco', e.bank]] : []),
+      ...(e.pay ? [['Pagamento', PAY[e.pay]]] : []), ['Mês', cap(monthName(curYM))]]) +
     `<div class="btns"><button class="btn primary" data-onclick="entryDo(${i},'ok')">Lançar</button><button class="btn" data-onclick="entryDo(${i},'edit')">Editar</button></div>
     <div class="btns" style="margin-top:6px"><button class="btn" data-onclick="entryDo(${i},'no')">Não era isso</button></div>`;
 }
@@ -65,7 +69,8 @@ function entryDo(i, op){
     e.done = 'Desfeito: o lançamento foi removido.';
   } else if (op === 'edit'){
     e.done = 'Abri o formulário já preenchido para você conferir e salvar.';
-    openForm(e.col, null, {vals:{desc:e.desc, value:moneyStr(e.value), cat:e.cat, bank:e.bank, ...(e.col === 'expenses' ? {pay:e.pay} : {fixed:''})}, more:true});
+    openForm(e.col, null,
+      {vals:{desc:e.desc, value:moneyStr(e.value), cat:e.cat, bank:e.bank, ...(e.col === 'expenses' ? {pay:e.pay} : {fixed:''})}, more:true});
   } else e.done = falaTema(e.q, answer(e.q));
   const log = document.getElementById('chatLog');
   if (log) log.innerHTML = chatHtml();
@@ -77,7 +82,8 @@ function onVoz(text){
 }
 const findKey = (t, map) => Object.keys(map).find(k => map[k].some(w => t.includes(w)));
 const chatRows = items => items.map(([name, v]) => `<div class="catrow"><div class="top"><span>${esc(name)}</span><b>${typeof v === 'number' ? fmt(v) : v}</b></div></div>`).join('');
-const topBy = (items, key, n = 5) => { const g = {}; items.forEach(x => g[key(x)] = (g[key(x)] || 0) + x.value); return Object.entries(g).sort((a,b) => b[1] - a[1]).slice(0, n); };
+const topBy = (items, key, n = 5) => { const g = {}; items.forEach(x => g[key(x)] = (g[key(x)] || 0) + x.value);
+  return Object.entries(g).sort((a,b) => b[1] - a[1]).slice(0, n); };
 const allBanks = () => [...new Set([...db.expenses, ...db.installments].map(x => x.bank).filter(Boolean))];
 
 // Período citado na pergunta; sem citação, o mês atual.
@@ -88,7 +94,8 @@ function parsePeriod(t){
   if (/mes passado|ultimo mes/.test(t)) return one(addMonths(curYM, -1));
   if (/mes que vem|proximo mes/.test(t)) return one(addMonths(curYM, 1));
   const last = t.match(/ultimos (\d+) meses/);
-  if (last){ const n = Math.min(36, Math.max(1, +last[1])); return {months:[...Array(n)].map((_,i) => addMonths(curYM, i - n + 1)), label:`nos últimos ${n} meses`}; }
+  if (last){ const n = Math.min(36, Math.max(1, +last[1]));
+    return {months:[...Array(n)].map((_,i) => addMonths(curYM, i - n + 1)), label:`nos últimos ${n} meses`}; }
   const mi = MESES.findIndex(n => new RegExp('\\b' + plain(n) + '\\b').test(t));
   if (mi >= 0) return one(ymOf(yr || y, mi));
   if (/ano passado/.test(t)) return yearOf(y - 1);
@@ -111,7 +118,8 @@ function chatExpenses(t, P){
   if (word) items = items.filter(x => plain(x.desc).includes(word));
   if (bank) items = items.filter(x => x.bank === bank);
   if (pay) items = items.filter(x => x.pay === pay);
-  const what = [cat && 'com ' + esc(CAT_GASTO[cat][1].toLowerCase()), word && `com "${esc(word)}"`, bank && 'no ' + esc(bank), pay && 'em ' + PAY[pay].toLowerCase()].filter(Boolean).join(' ');
+  const what = [cat && 'com ' + esc(CAT_GASTO[cat][1].toLowerCase()), word && `com "${esc(word)}"`, bank && 'no ' + esc(bank),
+    pay && 'em ' + PAY[pay].toLowerCase()].filter(Boolean).join(' ');
   return {items, what, filtered:!!(cat || word || bank || pay)};
 }
 // Com um tema especial (e o app em português), a resposta ganha uma abertura e um fecho no clima do tema (FALAS_ASSIST,
@@ -184,7 +192,8 @@ function answer(q){
   if (/provento|dividendo|\bjcp\b/.test(t)){
     // Sem período na pergunta, soma todos os proventos já registrados.
     const dated = /\bmes\b|\bmeses\b|\bano\b|20\d\d/.test(t) || MESES.some(n => t.includes(' ' + plain(n) + ' '));
-    const rows = held.map(v => [v.ticker, sum((v.divs || []).filter(d => !dated || P.months.includes(d.date.slice(0, 7))), d => d.value)]).filter(r => r[1] > 0);
+    const rows = held.map(v => [v.ticker,
+      sum((v.divs || []).filter(d => !dated || P.months.includes(d.date.slice(0, 7))), d => d.value)]).filter(r => r[1] > 0);
     if (!rows.length) return 'Não encontrei proventos registrados nesse período. Para registrar, use "Registrar provento" no cartão do ativo, na aba Investir.';
     return `Você recebeu <b>${fmt(sum(rows, r => r[1]))}</b> em proventos ${dated ? P.label : 'até hoje'}.` + chatRows(rows);
   }
@@ -235,7 +244,8 @@ function answer(q){
     const total = sum(ex.items, x => x.value);
     let cmp = '';
     if (single && /compar|aumentou|diminuiu|a mais|a menos|mes anterior/.test(t)){ // mesma conta no mês anterior
-      const prevM = addMonths(P.months[0], -1), prev = sum(chatExpenses(t.replace(/mes passado|ultimo mes/g, ' '), {months:[prevM]}).items, x => x.value), d = total - prev;
+      const prevM = addMonths(P.months[0], -1),
+      prev = sum(chatExpenses(t.replace(/mes passado|ultimo mes/g, ' '), {months:[prevM]}).items, x => x.value), d = total - prev;
       cmp = ` São ${fmt(Math.abs(d))} ${d >= 0 ? 'a mais' : 'a menos'} que em ${monthName(prevM)} (${fmt(prev)}).`;
     }
     return `${future ? 'A previsão é gastar' : 'Você gastou'} <b>${fmt(total)}</b> ${ex.what} ${P.label}, em ${ex.items.length} lançamento${ex.items.length > 1 ? 's' : ''}.${cmp}` +
@@ -245,8 +255,10 @@ function answer(q){
 }
 function chatHtml(){
   // A saudação vem em três balões curtos (quem é, o que responde, como lançar), mais fáceis de ler que um texto só.
-  const ola = db.prefs.fun ? ['Oinc! Sou o porquinho de plantão.', 'Pergunte o que quiser sobre os seus números: eu faço as contas aqui mesmo no aparelho, sem contar nada para a internet.']
-    : ['Olá! Sou o assistente do app.', 'Pergunte sobre os dados que você cadastrou. As respostas são calculadas aqui no aparelho, sem enviar nada para a internet.'];
+  const ola = db.prefs.fun ? ['Oinc! Sou o porquinho de plantão.',
+    'Pergunte o que quiser sobre os seus números: eu faço as contas aqui mesmo no aparelho, sem contar nada para a internet.']
+    : ['Olá! Sou o assistente do app.',
+      'Pergunte sobre os dados que você cadastrou. As respostas são calculadas aqui no aparelho, sem enviar nada para a internet.'];
   if (lang() === 'pt' && myName()) ola[0] = ola[0].replace(/^(Oinc|Olá)!/, `$1, ${esc(myName()).replace(/\$/g, '$$$$')}!`);
   return [...ola, 'Para lançar um gasto, escreva por exemplo "mercado 45 nubank crédito".'].map(t => `<div class="msg ola">${t}</div>`).join('') +
     // As sugestões vêm logo depois da saudação: aparecem enquanto nada foi enviado e, depois, ficam no começo da
@@ -271,7 +283,7 @@ function viewChat(){
   <div style="height:70px"></div>
   <form class="chatbar" data-onsubmit="sendChat();return false">
     <input id="chatIn" placeholder="Pergunte ou lance: mercado 45 pix" autocomplete="off" enterkeyhint="send">
-    ${window.Android && Android.ouvir ? `<button type="button" class="btn" style="flex:none;padding:11px 12px" data-onclick="Android.ouvir()" aria-label="Falar">${I('mic', 20)}</button>` : ''}
+    ${temNativo('ouvir') ? `<button type="button" class="btn" style="flex:none;padding:11px 12px" data-onclick="nativo('ouvir')" aria-label="Falar">${I('mic', 20)}</button>` : ''}
     <button class="btn primary" style="flex:none;padding:11px 14px" aria-label="Enviar">${I('send', 20)}</button>
   </form>`;
 }
@@ -311,6 +323,9 @@ function render(){
   a11y(document.getElementById('app'));
   if (db.prefs.fun && !window.TESTE) setTimeout(funCheck, 0); // conquista nova: aviso com confete
 }
+// As regras avisam quando os dados mudam sozinhos (telaAtualizar, em util.js): redesenha, salvo com uma folha aberta.
+function redesenharSeLivre(sempre){ if (sempre || !sheetOpen()) render(); }
+aoAtualizar(redesenharSeLivre);
 // Barra fina que aparece no topo quando a tela rola: mantém à vista o nome da aba e, em Gastos, o mês.
 function drawTopbar(){
   const mes = state.tab === 'gastos' && state.gsub === 'mes';
@@ -321,7 +336,8 @@ function drawTopbar(){
 // Leitor de tela e teclado: o que é clicável e não é botão passa a se anunciar como botão; setas ganham nome.
 function a11y(root){
   root.querySelectorAll('[data-onclick]:not(button):not(a):not(input)').forEach(e => { e.setAttribute('role', 'button'); e.tabIndex = 0; });
-  root.querySelectorAll('button:not([aria-label])').forEach(b => { const t = b.textContent.trim(); if (t === '‹') b.setAttribute('aria-label', 'Anterior'); else if (t === '›') b.setAttribute('aria-label', 'Próximo'); });
+  root.querySelectorAll('button:not([aria-label])').forEach(b => { const t = b.textContent.trim();
+    if (t === '‹') b.setAttribute('aria-label', 'Anterior'); else if (t === '›') b.setAttribute('aria-label', 'Próximo'); });
 }
 document.addEventListener('keydown', e => {
   if ((e.key === 'Enter' || e.key === ' ') && e.target.getAttribute && e.target.getAttribute('role') === 'button'){ e.preventDefault(); e.target.click(); }
@@ -342,51 +358,9 @@ function renderIn(){
   funCount();
 }
 // antesChat = a tela de onde o assistente foi aberto: é para ela que o "voltar" do assistente leva.
-function go(t){ if (t === 'chat' && state.tab !== 'chat') state.antesChat = state.tab; state.tab = t; state.parcDet = ''; renderIn(); scrollTo(0,0); if (t === 'invest') refreshQuotes(); }
+function go(t){ if (t === 'chat' && state.tab !== 'chat') state.antesChat = state.tab; state.tab = t; state.parcDet = ''; renderIn(); scrollTo(0,0);
+  if (t === 'invest') refreshQuotes(); }
 const sairChat = () => go(visTabs().includes(state.antesChat) ? state.antesChat : visTabs()[0]);
-// ---------- Botão de menu do título (três barras) ----------
-// Abre um painel pequeno, preso ao botão, com "Configurações", "Sugestões de gasto" (só no Android, com as sugestões
-// ligadas ou alguma guardada) e, nas telas com blocos, "Reorganizar esta tela" (o que o antigo botão de personalizar
-// abria). Com só as Configurações, o toque vai direto a elas. Sugestões novas (nem lançadas nem ignoradas): um ponto no
-// botão e o número ao lado do item. O painel fecha ao tocar fora, com o voltar do Android e com Esc; Tab e Enter navegam nele.
-const reorganizar = tab => tab === 'resumo' ? 'openResumoEdit()' : LAYOUT[tab] ? `openLayoutEdit('${tab}')` : '';
-const sugNoMenu = () => !!(window.Android && Android.avisosBanco) && ((Android.avisosLigado && Android.avisosLigado()) || sugLog().length > 0 || sugNovas() > 0);
-const sugNovas = () => bankNotes().filter(n => parseBankNote(n)).length;
-function menuItens(tab){
-  const l = [['gear', 'Configurações', "openSettings('')"]];
-  if (sugNoMenu()) l.push(['sparkle', 'Sugestões de gasto', 'openSugestoes()', sugNovas()]);
-  if (reorganizar(tab)) l.push(['sliders', 'Reorganizar esta tela', reorganizar(tab)]);
-  return l;
-}
-const menuBtn = tab => {
-  const l = menuItens(tab), n = l.reduce((t, x) => t + (x[3] || 0), 0), rot = `Menu${n ? `, ${n} ${n > 1 ? 'sugestões novas' : 'sugestão nova'}` : ''}`;
-  return l.length > 1
-    ? `<button class="iconbtn menuBtn" data-onclick="abrirMenu(this,'${tab}')" aria-label="${rot}" aria-haspopup="menu" aria-expanded="false">${I('menu', 24)}${n ? '<b class="menuPonto"></b>' : ''}</button>`
-    : `<button class="iconbtn menuBtn" data-onclick="openSettings('')" aria-label="Menu">${I('menu', 24)}</button>`;
-};
-function abrirMenu(btn, tab){
-  if (fecharMenu()) return; // segundo toque no botão fecha
-  const el = document.createElement('div');
-  el.id = 'menuTopo'; el.setAttribute('role', 'menu');
-  el.innerHTML = menuItens(tab).map(([ic, txt, acao, n]) => `<button role="menuitem" data-onclick="fecharMenu();${acao}">${I(ic, 20)}${txt}${n ? `<b class="menuN">${n > 99 ? '99+' : n}</b>` : ''}</button>`).join('');
-  btn.parentElement.appendChild(el);
-  btn.setAttribute('aria-expanded', 'true');
-  el.querySelector('button').focus({preventScroll:true});
-}
-function fecharMenu(focar){
-  const el = document.getElementById('menuTopo');
-  if (!el) return false;
-  const btn = el.parentElement.querySelector('.menuBtn');
-  el.remove();
-  if (btn){ btn.setAttribute('aria-expanded', 'false'); if (focar) btn.focus({preventScroll:true}); }
-  return true;
-}
-// Toque fora do painel: só fecha (o toque não chega ao que estava embaixo).
-document.addEventListener('click', e => {
-  const el = document.getElementById('menuTopo');
-  if (!el || el.contains(e.target) || (e.target.closest && e.target.closest('.menuBtn'))) return;
-  e.stopPropagation(); e.preventDefault(); fecharMenu();
-}, true);
 // Botão "voltar" do Android (chamado pelo APK). Retorna false quando o app deve fechar.
 function onBack(){
   if (fecharMenu()) return true;
@@ -404,14 +378,7 @@ function onBack(){
   return false;
 }
 function goMonth(m){ state.month = m; state.gsub = 'mes'; go('gastos'); }
-// Seletores abertos ao tocar no ano (Resumo) ou no mês (Gastos).
-function pickYear(){
-  settingsOpen = false; F = null;
-  const cur = now.getFullYear(), from = Math.min(state.year, cur) - 5;
-  showSheet(`<h3>Escolher ano</h3><div class="filters">${[...Array(12)].map((_,i) => from + i).map(y =>
-    `<button class="btn ${y === state.year ? 'primary' : ''}" data-onclick="state.year=${y};closeForm();render()">${y}</button>`).join('')}</div>
-    <div class="btns"><button class="btn" data-onclick="closeForm()">Cancelar</button></div>`);
-}
+// Seletores abertos ao tocar no mês e ano (Resumo) ou no mês (Gastos).
 // Resumo: o filtro é de mês e ano. state.rmes guarda o mês escolhido e state.year acompanha o ano dele.
 const resumoMes = () => state.year + (state.rmes || curYM).slice(4);
 function setResumoMes(m){ state.rmes = m; state.year = +m.slice(0, 4); state.dia = 0; }
@@ -420,14 +387,14 @@ function pickResumo(y = state.year){
   settingsOpen = false; F = null;
   const sel = resumoMes();
   showSheet(`<h3>Escolher mês e ano</h3>
-    <div class="nav" style="box-shadow:none;background:var(--bg)"><button data-onclick="pickResumo(${y - 1})" aria-label="Ano anterior">‹</button><b>${y}</b><button data-onclick="pickResumo(${y + 1})" aria-label="Próximo ano">›</button></div>
+    <div class="plano nav"><button data-onclick="pickResumo(${y - 1})" aria-label="Ano anterior">‹</button><b>${y}</b><button data-onclick="pickResumo(${y + 1})" aria-label="Próximo ano">›</button></div>
     <div class="filters">${MESES.map((n,i) => { const m = ymOf(y, i); return `<button class="btn ${m === sel ? 'primary' : ''}" style="text-transform:capitalize${m === curYM ? ';outline:2px solid var(--brand)' : ''}" data-onclick="setResumoMes('${m}');closeForm();render()">${n.slice(0,3)}</button>`; }).join('')}</div>
     <div class="btns"><button class="btn" data-onclick="setResumoMes(curYM);closeForm();render()">Mês atual</button><button class="btn" data-onclick="closeForm()">Cancelar</button></div>`);
 }
 function pickMonth(y = +state.month.slice(0, 4)){
   settingsOpen = false; F = null;
   showSheet(`<h3>Escolher mês</h3>
-    <div class="nav" style="box-shadow:none;background:var(--bg)"><button data-onclick="pickMonth(${y - 1})">‹</button><b>${y}</b><button data-onclick="pickMonth(${y + 1})">›</button></div>
+    <div class="plano nav"><button data-onclick="pickMonth(${y - 1})">‹</button><b>${y}</b><button data-onclick="pickMonth(${y + 1})">›</button></div>
     <div class="filters">${MESES.map((n,i) => { const m = ymOf(y, i); return `<button class="btn ${m === state.month ? 'primary' : ''}" style="text-transform:capitalize${m === curYM ? ';outline:2px solid var(--brand)' : ''}" data-onclick="state.month='${m}';closeForm();render()">${n.slice(0,3)}</button>`; }).join('')}</div>
     <div class="btns"><button class="btn" data-onclick="state.month=curYM;closeForm();render()">Mês atual</button><button class="btn" data-onclick="closeForm()">Cancelar</button></div>`);
 }
@@ -435,7 +402,8 @@ function pickMonth(y = +state.month.slice(0, 4)){
 // Na aba Gastos, deslizar o dedo para os lados troca o mês.
 // Dentro da lista de lançamentos o gesto é do item (ver abaixo), então a troca de mês vale só fora dela.
 let touchX = 0, touchY = 0, touchInList = false;
-document.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; touchY = e.touches[0].clientY; touchInList = !!e.target.closest('#expList'); }, {passive:true});
+document.addEventListener('touchstart',
+  e => { touchX = e.touches[0].clientX; touchY = e.touches[0].clientY; touchInList = !!e.target.closest('#expList'); }, {passive:true});
 document.addEventListener('touchend', e => {
   // Só troca de mês com a tela de Gastos à mostra: nada por cima (folha, seletor, diálogo, foto, login, convite do bloqueio).
   if (touchInList || state.tab !== 'gastos' || state.gsub !== 'mes' || sheetOpen() || pickerOpen()
@@ -478,201 +446,14 @@ function exportCsv(){
   const y = state.month.slice(0, 4), rows = [['Mês', 'Tipo', 'Descrição', 'Categoria', 'Banco', 'Forma de pagamento', 'Detalhe', 'Valor']];
   for (let i = 0; i < 12; i++){
     const m = ymOf(+y, i);
-    for (const x of incomesAll(m)) rows.push([m, 'Ganho', x.desc, (CAT_GANHO[x.cat] || CAT_GANHO.outros)[1], '', '', x.fixed === 'y' ? 'anual' : x.fixed ? 'fixo' : 'avulso', x.value]);
+    for (const x of incomesAll(m)) rows.push([m, 'Ganho', x.desc, (CAT_GANHO[x.cat] || CAT_GANHO.outros)[1], '', '',
+      x.fixed === 'y' ? 'anual' : x.fixed ? 'fixo' : 'avulso', x.value]);
     for (const x of expensesAll(m)) rows.push([m, 'Gasto', x.desc, (CAT_GASTO[x.cat] || CAT_GASTO.outros)[1], x.bank || '', PAY[x.pay] || '',
       x.kind === 'installment' ? parcTag(x) : x.fixed === 'y' ? 'anual' : x.fixed ? 'fixo' : 'avulso', x.value]);
   }
   const csv = '﻿' + rows.map(r => r.map(csvCell).join(';')).join('\r\n'), name = `financas-${y}.csv`;
-  if (window.Android && Android.exportar) return Android.exportar(csv, name);
+  if (temNativo('exportar')) return nativo('exportar', csv, name);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
   a.download = name; a.click();
 }
-
-// ---------- Relatório do mês (PDF) ----------
-// Monta o relatório em #report e manda imprimir; na tela de impressão do Android escolhe-se "Salvar como PDF".
-function printReport(){
-  const m = state.month, ins = incomesOf(m), outs = expensesOf(m), tin = sum(ins, x => x.value), tout = sum(outs, x => x.value);
-  const table = (head, rows, total) => `<table><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}
-    ${total != null ? `<tr class="sum"><td colspan="${head.length - 1}">Total</td><td>${fmt(total)}</td></tr>` : ''}</table>`;
-  const kind = x => x.kind === 'installment' ? parcTag(x) : x.fixed === 'y' ? 'anual' : x.fixed ? 'fixo' : x.day ? 'dia ' + x.day : 'avulso';
-  const cats = topBy(outs, x => (CAT_GASTO[x.cat] || CAT_GASTO.outros)[1], 99), budgets = budgetStatus(m), inv = invoices(m);
-  const title = monthName(m);
-  document.getElementById('report').innerHTML = `
-    <div class="capa"><h1>Relatório de ${title.replace(' ', ' de ')}</h1>
-    <small>Cofrim${myName() ? ' · ' + esc(myName()) : ''} · gerado em ${now.toLocaleDateString('pt-BR')}</small></div>
-    <div class="boxes"><div class="in"><small>Ganhos</small><b>${fmt(tin)}</b></div><div class="out"><small>Gastos</small><b>${fmt(tout)}</b></div><div class="${tin - tout < 0 ? 'out' : 'in'}"><small>Saldo</small><b>${fmt(tin - tout)}</b></div></div>
-    <h2>Gastos por categoria</h2>${cats.length ? table(['Categoria', '% do total', 'Valor'], cats.map(([n, v]) => [esc(n), Math.round(v / tout * 100) + '%', fmt(v)]), tout) : '<small>Nenhum gasto.</small>'}
-    ${budgets.length ? `<h2>Orçamento</h2>${table(['Categoria', 'Limite', 'Usado'], budgets.map(b => [esc((CAT_GASTO[b.cat] || CAT_GASTO.outros)[1]), fmt(b.lim), `${fmt(b.used)} (${Math.round(b.pct)}%)`]))}` : ''}
-    ${inv.length ? `<h2>Faturas do cartão</h2>${table(['Banco', 'Valor'], inv.map(([b, v]) => [esc(b), fmt(v)]), sum(inv, x => x[1]))}` : ''}
-    <h2>Ganhos</h2>${ins.length ? table(['Descrição', 'Categoria', 'Valor'], ins.map(x => [esc(x.desc), esc((CAT_GANHO[x.cat] || CAT_GANHO.outros)[1]), fmt(x.value)]), tin) : '<small>Nenhum ganho.</small>'}
-    <h2>Gastos</h2>${outs.length ? table(['Descrição', 'Categoria', 'Banco / pagamento', 'Tipo', 'Valor'], outs.map(x => [esc(x.desc), esc((CAT_GASTO[x.cat] || CAT_GASTO.outros)[1]), [x.bank && esc(x.bank), PAY[x.pay]].filter(Boolean).join(' · '), kind(x), fmt(x.value)]), tout) : '<small>Nenhum gasto.</small>'}
-    ${db.accounts.length && m === curYM ? `<h2>Saldo das contas hoje</h2>${table(['Conta', 'Saldo'], db.accounts.map(a => [esc(a.name), fmt(accountBalance(a))]), sum(db.accounts, accountBalance))}` : ''}
-    ${db.investments.length && m === curYM ? `<h2>Investimentos hoje</h2>${table(['Investimento', 'Valor'], db.investments.map(v => [esc(v.name), fmt(v.value)]), sum(db.investments, v => v.value))}` : ''}
-    <div class="rodape">Relatório gerado pelo app Cofrim</div>`;
-  const name = 'relatorio-' + m;
-  if (window.Android && Android.imprimir) Android.imprimir(name); else window.print();
-}
-
-// ---------- Importar extrato do banco (OFX ou CSV) ----------
-// Palavras comuns na descrição → categoria sugerida (o usuário pode trocar antes de importar).
-const GUESS = [['alimentacao', /mercado|supermerc|padaria|restaur|ifood|lanch|pizza|acougue|hortifruti|burger|cafe/], ['transporte', /uber|\b99 ?(app|pop|taxi)|posto|combust|gasolina|estacion|pedagio|metro|onibus/],
-  ['saude', /farmac|drog|hospital|clinica|medic|dentist|laborat/], ['moradia', /aluguel|condomin|iptu/], ['contas', /energia|\bluz\b|\bagua\b|internet|telefon|netflix|spotify|claro|vivo|\btim\b|assinatura/],
-  ['lazer', /cinema|teatro|\bbar\b|viagem|hotel|steam|ingresso/], ['educacao', /curso|escola|faculdade|livr|udemy/], ['compras', /amazon|mercado ?livre|magalu|shopee|\bloja|shopping|americanas/]];
-// db.catMemo lembra a categoria que o usuário já escolheu para cada descrição; tem prioridade sobre o palpite.
-const guessCat = d => { const t = plain(d), g = GUESS.find(([, re]) => re.test(t));
-  if (db.catMemo[t] && CAT_GASTO[db.catMemo[t]]) return db.catMemo[t]; return g && !(g[0] === 'alimentacao' && /mercado ?(livre|pago)/.test(t)) ? g[0] : /mercado ?livre/.test(t) ? 'compras' : 'outros'; };
-const parseNum = s => { s = String(s).replace(/[R$\s"]/g, ''); if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.'); return parseFloat(s); };
-function parseDate(s){
-  let m = String(s).trim().match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-  if (m) return `${m[3]}-${m[2]}-${m[1]}`;
-  m = String(s).trim().match(/^(\d{4})-?(\d{2})-?(\d{2})/);
-  return m ? `${m[1]}-${m[2]}-${m[3]}` : '';
-}
-// Devolve [{date:'AAAA-MM-DD', desc, amount}] (amount negativo = saída) ou null se o formato não foi reconhecido.
-function parseStatement(text){
-  const rows = [];
-  if (/<STMTTRN>/i.test(text)){ // OFX: um bloco <STMTTRN> por lançamento
-    for (const blk of text.split(/<STMTTRN>/i).slice(1)){
-      const tag = n => { const m = blk.match(new RegExp('<' + n + '>([^<\\r\\n]*)', 'i')); return m ? m[1].trim() : ''; };
-      const date = parseDate(tag('DTPOSTED')), amount = parseFloat(tag('TRNAMT').replace(',', '.'));
-      if (date && !isNaN(amount)) rows.push({date, desc:tag('MEMO') || tag('NAME') || 'Sem descrição', amount});
-    }
-    return rows;
-  }
-  const lines = text.split(/\r?\n/).filter(l => l.trim());
-  if (lines.length < 2) return null;
-  const delim = (lines[0].match(/;/g) || []).length >= (lines[0].match(/,/g) || []).length ? ';' : ',';
-  const split = l => { const out = []; let cur = '', q = false; for (const ch of l){ if (ch === '"') q = !q; else if (ch === delim && !q){ out.push(cur); cur = ''; } else cur += ch; } out.push(cur); return out.map(c => c.trim()).map(c => /^'[=+\-@\t\r]/.test(c) ? c.slice(1) : c); }; // ' posto por csvCell
-  const head = split(lines[0]).map(plain), col = (...names) => head.findIndex(h => names.some(n => h.includes(n)));
-  const ci = {date:col('data', 'date'), desc:col('descri', 'histor', 'title', 'titulo', 'estabelecimento', 'lancamento', 'memo'), amount:col('valor', 'amount', 'quantia')};
-  if (ci.date < 0 || ci.amount < 0) return null;
-  for (const l of lines.slice(1)){
-    const c = split(l), date = parseDate(c[ci.date] || ''), amount = parseNum(c[ci.amount] || '');
-    if (date && !isNaN(amount) && amount !== 0) rows.push({date, desc:(ci.desc >= 0 && c[ci.desc]) || 'Sem descrição', amount});
-  }
-  return rows;
-}
-// Extratos em revisão: arqs = um por arquivo {nome, flip (fatura de cartão), bank, de, ate, n}; rows = os lançamentos de
-// todos, por data {date, desc, amount, on, cat, dup, rep, a (o arquivo)}; pay = forma de pagamento dos gastos.
-let stmt = null;
-// O extrato precisa ser texto (OFX ou CSV). PDF, planilhas do Excel e fotos não são lidos, nem arquivos grandes demais
-// (o celular pode ficar sem memória). Qualquer erro vira aviso e vai para o Diagnóstico: a importação nunca derruba a tela.
-const STMT_MAX = 5 * 1024 * 1024, LER_ERRO = 'Não foi possível ler este arquivo.';
-const stmtLog = (onde, e) => logErr('importar extrato', onde + ': ' + ((e && (e.stack || e.message)) || e));
-// Antes de ler: tipo e tamanho. Devolve o aviso ou ''.
-function stmtRecusa(file){
-  if (/\.(pdf|xlsx?|ods|docx?|zip|rar|jpe?g|png|gif|heic|webp)$/i.test(file.name || '') || /^(image|video|audio)\/|pdf|zip|spreadsheet|excel|officedocument/i.test(file.type || ''))
-    return LER_ERRO + '\n\nO extrato precisa estar em OFX ou CSV (no app ou no site do banco, procure "exportar extrato"). PDF, planilhas do Excel e fotos não são lidos.';
-  if (file.size > STMT_MAX) return LER_ERRO + '\n\nEle é grande demais (mais de 5 MB). Exporte um período menor, como um mês.';
-  return '';
-}
-// Banco do extrato, pelo <ORG> do OFX ou pelo nome do arquivo ("nubank-outubro.ofx"); '' se não reconhecer.
-function stmtBanco(text, nome){
-  const org = (String(text).match(/<ORG>([^<\r\n]*)/i) || [])[1] || '', s = ' ' + plain(org + ' ' + nome).replace(/[^a-z0-9]+/g, ' ') + ' ';
-  if (s.includes(' nu pagamentos ')) return 'Nubank';
-  return BANKS.find(b => s.includes(' ' + plain(b).replace(/[^a-z0-9]+/g, ' ') + ' ')) || '';
-}
-// Lê um arquivo já aceito: devolve {rows, bank} ou {erro}.
-function stmtLer(file){
-  return new Promise(ok => {
-    const falhou = (onde, e) => { stmtLog(onde, e); ok({erro:LER_ERRO}); };
-    const r = new FileReader();
-    r.onerror = () => falhou('leitura', r.error);
-    r.onload = () => {
-      try {
-        let text;
-        try { text = new TextDecoder('utf-8', {fatal:true}).decode(r.result); } catch(e){ text = new TextDecoder('windows-1252').decode(r.result); } // extratos antigos não usam UTF-8
-        const rows = parseStatement(text);
-        if (!rows) return ok({erro:'Não reconheci o formato deste arquivo. Use o extrato em OFX, ou um CSV com colunas de data e valor.'});
-        if (!rows.length) return ok({erro:'Não encontrei lançamentos neste arquivo.'});
-        ok({rows, bank:stmtBanco(text, file.name || '')});
-      } catch(e){ falhou('arquivo ' + (file.type || String(file.name).split('.').pop()) + ' de ' + Math.round(file.size / 1024) + ' KB', e); }
-    };
-    try { r.readAsArrayBuffer(file); } catch(e){ falhou('leitura', e); }
-  });
-}
-// Um ou vários extratos de uma vez (de meses ou bancos diferentes): cada lançamento vai para o mês e o dia da data dele.
-// O mesmo lançamento em dois arquivos (períodos que se cruzam) vem desmarcado no segundo.
-async function importStatement(input){
-  const files = [...(input.files || [])];
-  input.value = ''; // deixa escolher os mesmos arquivos de novo
-  if (!files.length) return; // escolha cancelada
-  const nome = (f, k) => f.name || 'arquivo ' + (k + 1), recusas = files.map(stmtRecusa);
-  if (recusas.every(Boolean)) return tell(files.length === 1 ? recusas[0] : 'Não consegui ler nenhum dos arquivos.\n\n'
-    + files.map((f, k) => `${nome(f, k)}: ${recusas[k].replace(LER_ERRO + '\n\n', '')}`).join('\n'));
-  const lidos = await Promise.all(files.map((f, k) => recusas[k] ? {erro:recusas[k]} : stmtLer(f)));
-  const bons = [], ruins = [];
-  lidos.forEach((l, k) => (l.erro ? ruins : bons).push({...l, nome:nome(files[k], k)}));
-  if (!bons.length) return tell(files.length === 1 ? ruins[0].erro : 'Não consegui ler nenhum dos arquivos.\n\n'
-    + ruins.map(l => `${l.nome}: ${l.erro.replace(LER_ERRO + '\n\n', '')}`).join('\n'));
-  const visto = new Map(), rows = [];
-  bons.forEach((l, a) => l.rows.forEach(x => {
-    const k = x.date + '|' + x.desc + '|' + x.amount, rep = visto.has(k) && visto.get(k) !== a;
-    if (!visto.has(k)) visto.set(k, a);
-    rows.push({...x, on:!rep, rep, a, cat:guessCat(x.desc)});
-  }));
-  rows.sort((x, y) => x.date < y.date ? -1 : x.date > y.date ? 1 : 0);
-  const datas = l => l.rows.map(x => x.date).sort();
-  stmt = {arqs:bons.map(l => ({nome:l.nome, flip:false, bank:l.bank, n:l.rows.length, de:datas(l)[0], ate:datas(l).pop()})), rows, pay:'',
-    ruins:ruins.map(l => `${l.nome}: ${l.erro.replace(LER_ERRO + '\n\n', '')}`)};
-  openStatement();
-}
-const stmtIsExpense = x => (stmt.arqs[x.a].flip ? -x.amount : x.amount) < 0;
-// Já existe um lançamento igual (mesma descrição, valor e mês)? Vem desmarcado para não duplicar.
-const stmtDup = x => (stmtIsExpense(x) ? db.expenses : db.incomes).some(e => e.desc === x.desc && Math.abs(e.value - Math.abs(x.amount)) < .005 && e.start === x.date.slice(0, 7) && (!e.day || e.day === +x.date.slice(8)));
-// Período de um arquivo: "05/10/2026" ou "01/09/2026 a 31/10/2026".
-const stmtPeriodo = a => a.de === a.ate ? fmtDate(a.de) : `${fmtDate(a.de)} a ${fmtDate(a.ate)}`;
-function openStatement(){
-  settingsOpen = false; F = null;
-  stmt.rows.forEach(x => { const d = stmtDup(x); if (d && !x.dup) x.on = false; x.dup = d; });
-  const varios = stmt.arqs.length > 1, shown = stmt.rows.slice(0, 300), meses = [...new Set(stmt.rows.map(x => x.date.slice(0, 7)))];
-  const arqHtml = (a, k) => `${varios ? `<div class="stmtArq"><b>${esc(a.nome)}</b><span class="muted">${a.n} lançamentos · ${stmtPeriodo(a)}</span></div>` : ''}
-    <label>${varios ? 'Este extrato é' : 'Este arquivo é'}</label>
-    <div class="btns" style="margin-top:0">${[[false,'Extrato da conta'],[true,'Fatura de cartão']].map(([v,t]) => `<button class="btn ${a.flip === v ? 'primary' : ''}" data-onclick="stmt.arqs[${k}].flip=${v};openStatement()">${t}</button>`).join('')}</div>
-    ${a.flip ? '<div class="hint">Na fatura, os valores positivos são compras: eles entram como gastos.</div>' : ''}
-    <label>Banco / conta (opcional)</label>
-    <input value="${esc(a.bank)}" id="stmtBank${k}" placeholder="Ex.: Nubank" data-oninput="stmt.arqs[${k}].bank=this.value"><div class="chips sug" id="sug_stmt${k}" hidden></div>`;
-  let mesAntes = '';
-  showSheet(`<h3>${varios ? `Importar ${stmt.arqs.length} extratos` : 'Importar extrato'}</h3>
-    <div class="hint" style="margin-top:0">${stmt.rows.length} lançamentos encontrados${varios ? ` em ${stmt.arqs.length} arquivos` : ''}${meses.length > 1 ? `, de ${meses.length} meses` : ''}. Cada um entra no dia e no mês da data dele. Valores negativos entram como gastos e positivos como ganhos.</div>
-    ${stmt.ruins.length ? `<div class="hint warn">Não li: ${stmt.ruins.map(esc).join('; ')}</div>` : ''}
-    ${stmt.arqs.map(arqHtml).join('')}
-    <label>Forma de pagamento dos gastos (opcional)</label>
-    <button type="button" class="pickBtn" data-onclick="pickList('Forma de pagamento',[['','Não informar'],...Object.entries(PAY)],stmt.pay,v=>{stmt.pay=v;openStatement()})"><span>${PAY[stmt.pay] || 'Não informar'}</span>${I('chev')}</button>
-    <label>Lançamentos</label>
-    ${shown.map((x, i) => { const exp = stmtIsExpense(x), m = x.date.slice(0, 7), cab = meses.length > 1 && m !== mesAntes ? `<div class="stmtMes">${cap(monthName(m))}</div>` : ''; mesAntes = m;
-      return `${cab}<div class="stmt"><button type="button" class="iconbtn ${x.on ? 'in' : 'muted'}" data-onclick="stmtToggle(${i},this)" aria-label="Importar este lançamento">${I(x.on ? 'checked' : 'unchecked', 24)}</button>
-      <div class="mid"><b>${esc(x.desc)}</b><span class="muted">${fmtDate(x.date)}${varios ? ' · ' + esc(stmt.arqs[x.a].bank || stmt.arqs[x.a].nome) : ''}${x.dup ? ' · já existe' : x.rep ? ' · repetido em outro extrato' : ''}</span>
-      ${exp ? `<button type="button" class="pickBtn sm" style="margin-top:4px;width:auto;max-width:100%" data-onclick="pickList('Categoria',opts(CAT_GASTO),stmt.rows[${i}].cat,v=>{stmt.rows[${i}].cat=v;openStatement()})"><span>${esc((CAT_GASTO[x.cat] || CAT_GASTO.outros)[1])}</span>${I('chev', 14)}</button>` : ''}</div>
-      <b class="${exp ? 'out' : 'in'}">${fmt(Math.abs(x.amount))}</b></div>`; }).join('')}
-    ${stmt.rows.length > shown.length ? `<div class="hint">Mostrando os primeiros ${shown.length}; os demais também serão importados.</div>` : ''}
-    <div class="btns foot"><button class="btn" data-onclick="closeForm()">Cancelar</button><button class="btn primary" id="stmtGo" data-onclick="commitStatement()">${stmtLabel()}</button></div>`);
-  stmt.arqs.forEach((a, k) => sugBind(document.getElementById('stmtBank' + k), document.getElementById('sug_stmt' + k), bankSuggestions()));
-}
-function stmtToggle(i, b){
-  const x = stmt.rows[i];
-  x.on = !x.on;
-  b.className = 'iconbtn ' + (x.on ? 'in' : 'muted'); b.innerHTML = I(x.on ? 'checked' : 'unchecked', 24);
-  document.getElementById('stmtGo').textContent = stmtLabel();
-}
-const stmtLabel = () => `Importar ${stmt.rows.filter(x => x.on).length} lançamentos`;
-function commitStatement(){
-  const added = [], meses = new Set(); // added: [coleção, id] para o "Desfazer"
-  for (const x of stmt.rows.filter(r => r.on)){
-    const exp = stmtIsExpense(x),
-    base = {id:uid(), desc:x.desc, value:Math.abs(x.amount), fixed:false, start:x.date.slice(0, 7), end:'', bank:stmt.arqs[x.a].bank.trim()};
-    const rec = exp ? {...base, cat:x.cat, pay:stmt.pay, day:+x.date.slice(8), due:''} : {...base, cat:'outros'};
-    db[exp ? 'expenses' : 'incomes'].push(touch(rec));
-    if (exp) db.catMemo[plain(x.desc)] = x.cat;
-    added.push([exp ? 'expenses' : 'incomes', rec.id]); meses.add(rec.start);
-  }
-  if (!added.length) return closeForm();
-  state.month = [...meses].sort().pop(); // mostra o mês mais recente importado
-  save(); closeForm(); render();
-  showUndo(`${added.length} lançamentos importados${meses.size > 1 ? ` em ${meses.size} meses` : ''}`, () => {
-    for (const [col, id] of added){ db[col] = db[col].filter(r => r.id !== id); db.tomb[id] = Date.now(); }
-    save(); render();
-  });
-}
-

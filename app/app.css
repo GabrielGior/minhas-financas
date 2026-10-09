@@ -1,12 +1,14 @@
 :root{
   --bg:#f3f5fa; --card:#ffffff; --text:#0f172a; --muted:#64748b; --line:#e5e9f2;
   --brand:#6b33b4; --brand2:#4c1e7f; --hero1:#6b33b4; --hero2:#4c1e7f; --in:#047857; --out:#b91c1c; --yield:#92400e;
+  --on-brand:#fff; /* texto sobre a cor de destaque (botão principal, mensagem, dia escolhido) */
   --shadow:0 4px 18px rgba(15,23,42,.07); color-scheme:light;
 }
-/* Claro/escuro e cor de destaque são aplicados por applyTheme() (data-mode e variáveis --brand/--hero). */
+/* Tokens do tema: claro/escuro (data-mode) e cor de destaque (--brand/--brand2/--hero*, de uma cor pronta ou de um
+   tema especial) vêm de applyTheme() em js/aparencia.js. Componentes usam só as variáveis. */
 :root[data-mode=dark]{
   --bg:#0b1020; --card:#151b2e; --text:#eef2ff; --muted:#94a3b8; --line:#232b42;
-  --in:#34d399; --out:#f87171; --yield:#fbbf24;
+  --in:#34d399; --out:#f87171; --yield:#fbbf24; --on-brand:#0b1020;
   --shadow:0 4px 18px rgba(0,0,0,.35); color-scheme:dark;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -79,8 +81,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .catrow .bar{margin:5px 0 0;height:7px}
 .btns{display:flex;gap:8px;margin-top:12px}
 .btn{flex:1;padding:11px;border-radius:12px;background:var(--line);font-weight:600}
-.btn.primary{background:var(--brand);color:#fff}
-[data-mode=dark] .btn.primary{color:#0b1020}
+.btn.primary{background:var(--brand);color:var(--on-brand)}
 .sw{width:42px;height:42px;border-radius:50%;flex:none}
 .sw.on{outline:3px solid var(--text);outline-offset:2px}
 .swatches{display:flex;gap:12px;flex-wrap:wrap;padding:4px 2px}
@@ -92,8 +93,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .tabs div{display:flex;width:100%;max-width:520px}
 .tabs .marca{display:none}
 .msg{max-width:88%;width:fit-content;padding:10px 13px;border-radius:16px 16px 16px 5px;margin:0 0 8px;background:var(--card);box-shadow:var(--shadow);animation:pop .18s ease-out}
-.msg.me{margin-left:auto;border-radius:16px 16px 5px 16px;background:var(--brand);color:#fff}
-[data-mode=dark] .msg.me{color:#0b1020}
+.msg.me{margin-left:auto;border-radius:16px 16px 5px 16px;background:var(--brand);color:var(--on-brand)}
 .msg .fala{display:block;margin:0 0 4px;color:var(--muted);font-style:italic}.msg .fala.fim{margin:6px 0 0}
 .msg .catrow{margin:6px 0 0}.msg .catrow .top{font-size:13.5px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
@@ -243,8 +243,7 @@ textarea{width:100%;height:260px;font:12px/1.4 ui-monospace,monospace;color:var(
 .cal button{aspect-ratio:1;border-radius:12px;font-weight:600}
 .cal button:active{background:var(--line)}
 .cal button.today{outline:2px solid var(--brand);outline-offset:-2px}
-.cal button.on{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff}
-[data-mode=dark] .cal button.on{color:#0b1020}
+.cal button.on{background:linear-gradient(135deg,var(--brand),var(--brand2));color:var(--on-brand)}
 .bigVal{display:flex;align-items:baseline;gap:8px;background:var(--bg);border:1.5px solid var(--line);border-radius:18px;padding:8px 16px}
 .bigVal span{font-size:20px;font-weight:700;color:var(--muted)}
 .bigVal input{border:0;background:none;padding:4px 0;font-size:34px;font-weight:700;letter-spacing:-.02em;border-radius:0}
@@ -990,3 +989,6 @@ ul.causas{margin:0 0 4px;padding-left:20px;color:var(--muted);font-size:14px}
 .iconbtn.menuBtn{position:relative}
 .menuPonto{position:absolute;top:6px;right:5px;width:9px;height:9px;border-radius:50%;background:var(--brand);box-shadow:0 0 0 2px var(--bg)}
 #menuTopo .menuN{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--brand);color:#fff;font-size:11.5px;font-weight:700;line-height:20px;text-align:center}
+/* Utilitários de layout (no lugar de style="…" repetido nas telas). !important: valem como o style que substituem. */
+.semTopo{margin-top:0!important}.semCursor{cursor:default!important}.cresce{flex:1!important}.quebra{white-space:normal!important}
+.quebraLinha{flex-wrap:wrap!important}.plano{box-shadow:none!important;background:var(--bg)!important}

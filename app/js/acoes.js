@@ -212,7 +212,8 @@ function acaoValor(n, esc){
       const novo = n.op === '=' ? v : n.op === '+=' ? atual() + v : atual() - v;
       return acaoGravar(n.alvo, novo, esc);
     }
-    case 'inc': { const antes = acaoValor(n.alvo, esc); acaoGravar(n.alvo, n.op === '++' ? antes + 1 : antes - 1, esc); return n.pre ? (n.op === '++' ? antes + 1 : antes - 1) : antes; }
+    case 'inc': { const antes = acaoValor(n.alvo, esc); acaoGravar(n.alvo, n.op === '++' ? antes + 1 : antes - 1, esc);
+      return n.pre ? (n.op === '++' ? antes + 1 : antes - 1) : antes; }
     case 'seta': return (...args) => {
       const s = {pai:esc, raiz:esc.raiz, v:Object.fromEntries(n.ps.map((p, i) => [p, args[i]]))};
       if (!n.l) return acaoValor(n.v, s);

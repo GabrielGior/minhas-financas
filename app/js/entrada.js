@@ -15,14 +15,20 @@ function demoDados(){
   const fixo = (desc, cat, value, due, mais = {}) => ({id:id(), desc, cat, value, start:m(-2), fixed:true, end:'', due, u:1, ...mais});
   const expenses = [
     fixo('Aluguel', 'moradia', 1450, 10, {bank:'Banco Verde', pay:'boleto'}), fixo('Internet', 'internet', 99.9, 15, {bank:'Banco Azul', pay:'credito'}),
-    fixo('Streaming de filmes', 'contas', 39.9, 8, {bank:'Banco Azul', pay:'credito'}), fixo('Streaming de música', 'contas', 21.9, 20, {bank:'Banco Azul', pay:'credito'}),
+    fixo('Streaming de filmes', 'contas', 39.9, 8, {bank:'Banco Azul', pay:'credito'}),
+    fixo('Streaming de música', 'contas', 21.9, 20, {bank:'Banco Azul', pay:'credito'}),
     fixo('Academia', 'academia', 89.9, 5, {bank:'Banco Verde', pay:'debito'})];
   for (const k of [-2, -1, 0]) expenses.push(
-    g('Mercado do Bairro', 'mercado', 412.35 + k * 18, k, 6, {bank:'Banco Azul', pay:'credito'}), g('Supermercado Central', 'mercado', 238.6 - k * 11, k, 20, {bank:'Banco Verde', pay:'debito'}),
-    g('Padaria Central', 'alimentacao', 46.8, k, 3, {bank:'Banco Verde', pay:'pix'}), g('Combustível', 'combustivel', 180 + k * 12, k, 12, {bank:'Banco Azul', pay:'credito'}),
-    g('Transporte por app', 'transporte', 64.5, k, 17, {bank:'Banco Azul', pay:'credito'}), g('Cinema', 'cinema', 58, k, 22, {bank:'Banco Azul', pay:'credito'}),
-    g('Restaurante Sabor', 'restaurante', 96.4, k, 14, {bank:'Banco Azul', pay:'credito'}), g('Farmácia', 'farmacia', 37.9, k, 9, {bank:'Banco Verde', pay:'debito'}),
-    g('Mercado do Bairro', 'mercado', 186.4 + k * 9, k, 11, {pay:'va', emp:'Pluxee'}), g('Almoço no centro', 'restaurante', 38.5, k, 8, {pay:'vr', emp:'Alelo'}));
+    g('Mercado do Bairro', 'mercado', 412.35 + k * 18, k, 6, {bank:'Banco Azul', pay:'credito'}),
+    g('Supermercado Central', 'mercado', 238.6 - k * 11, k, 20, {bank:'Banco Verde', pay:'debito'}),
+    g('Padaria Central', 'alimentacao', 46.8, k, 3, {bank:'Banco Verde', pay:'pix'}),
+    g('Combustível', 'combustivel', 180 + k * 12, k, 12, {bank:'Banco Azul', pay:'credito'}),
+    g('Transporte por app', 'transporte', 64.5, k, 17, {bank:'Banco Azul', pay:'credito'}),
+    g('Cinema', 'cinema', 58, k, 22, {bank:'Banco Azul', pay:'credito'}),
+    g('Restaurante Sabor', 'restaurante', 96.4, k, 14, {bank:'Banco Azul', pay:'credito'}),
+    g('Farmácia', 'farmacia', 37.9, k, 9, {bank:'Banco Verde', pay:'debito'}),
+    g('Mercado do Bairro', 'mercado', 186.4 + k * 9, k, 11, {pay:'va', emp:'Pluxee'}),
+    g('Almoço no centro', 'restaurante', 38.5, k, 8, {pay:'vr', emp:'Alelo'}));
   // Um lançamento com histórico de alterações (o que mudou ao editar).
   expenses[0].h = [{t:Date.now() - 20 * 864e5, d:'valor R$ 1.390,00 → R$ 1.450,00'}];
   return {
@@ -32,19 +38,24 @@ function demoDados(){
       {id:id(), desc:'Crédito VR', cat:'vr', value:600, fixed:true, start:m(-2), end:'', day:1, emp:'Alelo', u:1}],
     expenses,
     installments:[{id:id(), desc:'Geladeira', cat:'casa', total:2400, n:10, paid:2, start:m(-2), bank:'Banco Azul', pay:'credito', u:1},
-      {id:id(), tipo:'financiamento', desc:'Financiamento do carro', credor:'Financeira Exemplo', conta:'Banco Azul', cat:'transporte', total:28800, n:24, paid:12, start:m(-12), due:15, taxa:1.2, u:1}],
+      {id:id(), tipo:'financiamento', desc:'Financiamento do carro', credor:'Financeira Exemplo', conta:'Banco Azul', cat:'transporte', total:28800,
+        n:24, paid:12, start:m(-12), due:15, taxa:1.2, u:1}],
     accounts:[{id:id(), name:'Banco Verde', initial:2300, since:m(-2), u:1}, {id:id(), name:'Banco Azul', initial:800, since:m(-2), u:1}],
-    goals:[{id:id(), name:'Reserva de emergência', target:15000, saved:6200, date:m(12), u:1}, {id:id(), name:'Viagem de férias', target:6000, saved:1800, date:m(8), u:1}],
+    goals:[{id:id(), name:'Reserva de emergência', target:15000, saved:6200, date:m(12), u:1},
+      {id:id(), name:'Viagem de férias', target:6000, saved:1800, date:m(8), u:1}],
     investments:[{id:id(), name:'CDB Banco Verde', cat:'rendafixa', value:6200, index:'cdi', pct:105, monthly:300, broker:'Corretora Alfa', accYM:m(-2), u:1},
       {id:id(), name:'Tesouro Selic', cat:'tesouro', value:3500, index:'selic', pct:100, monthly:0, broker:'Corretora Beta', accYM:m(-2), u:1},
       {id:id(), name:'LCI Banco Azul', cat:'rendafixa', value:2000, index:'cdi', pct:92, monthly:0, broker:'Corretora Alfa', accYM:m(-2), u:1},
-      {id:id(), cat:'acoes', ticker:'EXMP3', name:'EXMP3', assetName:'Empresa Exemplo', quote:27.4, quoteAt:Date.now(), lots:[{qty:40, paid:24.1, date:m(-6) + '-10'}, {qty:20, paid:26.3, date:m(-2) + '-05'}],
+      {id:id(), cat:'acoes', ticker:'EXMP3', name:'EXMP3', assetName:'Empresa Exemplo', quote:27.4, quoteAt:Date.now(),
+        lots:[{qty:40, paid:24.1, date:m(-6) + '-10'}, {qty:20, paid:26.3, date:m(-2) + '-05'}],
         index:'pre', pct:0, monthly:0, broker:'Corretora Beta', u:1}].map(v => (v.ticker && recalc(v), v)), // ação: quantidade, preço médio e valor
     quotesAt:Date.now(), // cotação fictícia: não procura na internet
     // Lixeira: um gasto excluído há dois dias (dá para restaurar).
-    trash:[{col:'expenses', rec:{id:id(), desc:'Lanche duplicado', cat:'alimentacao', value:23.9, start:m(0), day:hoje, fixed:false, end:'', u:1}, at:Date.now() - 2 * 864e5}],
+    trash:[{col:'expenses', rec:{id:id(), desc:'Lanche duplicado', cat:'alimentacao', value:23.9, start:m(0), day:hoje, fixed:false, end:'', u:1},
+      at:Date.now() - 2 * 864e5}],
     transfers:[{id:id(), from:'Banco Verde', to:'Banco Azul', value:500, month:m(-1), day:6, u:1}],
-    previsoes:[{id:id(), cat:'combustivel', mes:m(0), value:300, dia:25, rep:true, ex:{}, u:1}, {id:id(), cat:'farmacia', mes:m(0), value:80, dia:31, rep:false, ex:{}, u:1}],
+    previsoes:[{id:id(), cat:'combustivel', mes:m(0), value:300, dia:25, rep:true, ex:{}, u:1},
+      {id:id(), cat:'farmacia', mes:m(0), value:80, dia:31, rep:false, ex:{}, u:1}],
     budgets:{mercado:700, restaurante:250, transporte:1500, cinema:100},
     cardClose:{'Banco Azul':25}, cardDue:{'Banco Azul':5}, cardAcc:{'Banco Azul':'Banco Azul'}, cardLimit:{'Banco Azul':4000}};
 }
@@ -59,7 +70,8 @@ async function demoLigar(){
   demoReal = JSON.stringify(db);
   demoOn = true;
   // Na demonstração, o Resumo completo: todos os blocos, para mostrar tudo o que o app oferece.
-  loadDb({...demoDados(), prefs:{...db.prefs, name:'', greet:'', resumo:Object.keys(RESUMO).map(k => ({k, on:true})), resumoEnxuto:false, resumoAuto:[]}}); rollover();
+  loadDb({...demoDados(), prefs:{...db.prefs, name:'', greet:'', resumo:Object.keys(RESUMO).map(k => ({k, on:true})), resumoEnxuto:false, resumoAuto:[]}});
+  rollover();
   chatLog.length = 0; state.tab = 'resumo'; state.month = curYM; state.year = +curYM.slice(0, 4);
   document.getElementById('gate').hidden = true;
   demoCentral(); // a central da demonstração (só na memória) já com alguns avisos
@@ -115,7 +127,7 @@ async function loginGoogle(){
     await syncNow(true);
     if (!sync.linked){ msg.textContent = sync.err || 'Não foi possível entrar. Tente de novo.'; return; }
     // Conta diferente da última usada neste aparelho: boas-vindas, tutorial e novidades de novo.
-    const conta = Android.conta ? Android.conta() : '';
+    const conta = temNativo('conta') ? nativo('conta') : '';
     if (conta && conta !== sync.account) Object.assign(sync, {account:conta, tour:false, welcomed:false, forceNews:true, askedShare:false, famOk:false});
     // Quem nunca usou o app (conta sem nenhum dado): sem a tela de novidades, que só faz sentido para quem já usava.
     if (sync.forceNews && contaVazia()) semNovidades();
@@ -129,7 +141,8 @@ async function loginGoogle(){
 let welcomeOn = false;
 const WELCOME = [
   ['briefcase', 'Cadastre seu salário', 'Ele entra sozinho em todos os meses.', () => db.incomes.some(x => x.fixed), () => openForm('incomes')],
-  ['home', 'Cadastre um gasto fixo', 'Aluguel, internet, academia…', () => db.expenses.some(x => x.fixed), () => openForm('expenses', null, {vals:{fixed:'1', cat:'moradia'}, more:true})],
+  ['home', 'Cadastre um gasto fixo', 'Aluguel, internet, academia…', () => db.expenses.some(x => x.fixed),
+    () => openForm('expenses', null, {vals:{fixed:'1', cat:'moradia'}, more:true})],
   ['bank', 'Cadastre uma conta do banco', 'Para acompanhar o saldo dela.', () => db.accounts.length > 0, () => openForm('accounts')]];
 function maybeWelcome(){
   if (sync.welcomed || db.incomes.length || db.expenses.length || db.accounts.length || db.installments.length) return false;
@@ -140,7 +153,7 @@ function openWelcome(){
   settingsOpen = false; F = null;
   const feitos = WELCOME.filter(s => s[3]()).length;
   showSheet(`<h3>${greeting() || 'Boas-vindas!'}</h3>
-    <div class="hint" style="margin-top:0">Três passos para o app começar a mostrar o seu mês. Dá para pular e fazer depois.</div>
+    <div class="semTopo hint">Três passos para o app começar a mostrar o seu mês. Dá para pular e fazer depois.</div>
     ${WELCOME.map(([ic, t, s, ok], i) => `<div class="item" data-onclick="welcomeGo(${i})">${tile(ic)}<div class="mid"><b>${i + 1}. ${t}</b><small>${s}</small></div><span class="${ok() ? 'in' : 'muted'}">${I(ok() ? 'checked' : 'unchecked', 26)}</span></div>`).join('')}
     <div class="btns foot"><button class="btn primary" data-onclick="welcomeDone()">${feitos === WELCOME.length ? 'Concluir' : 'Pular por agora'}</button></div>`);
   welcomeOn = true;
@@ -154,16 +167,16 @@ function welcomeDone(){ sync.welcomed = true; saveSync(); closeForm(); startShee
 let nameGreet = '';
 function askName(daConfig){
   settingsOpen = false; F = null;
-  const sugestao = db.prefs.name || (window.Android && Android.nome ? Android.nome() : '');
+  const sugestao = db.prefs.name || (temNativo('nome') ? nativo('nome') : '');
   nameGreet = db.prefs.greet || 'e';
   // A saudação do topo sai do sexo informado: "Bem-vindo", "Bem-vinda" ou, sem informar, "Boas-vindas".
   const opcoes = () => [['o', 'Masculino'], ['a', 'Feminino'], ['e', 'Prefiro não dizer']].map(([k, t]) => `<button type="button" class="btn ${nameGreet === k ? 'primary' : ''}" style="padding:11px 4px" data-onclick="nameGreet='${k}';this.parentNode.querySelectorAll('.btn').forEach(b=>b.classList.toggle('primary',b===this))">${t}</button>`).join('');
   showSheet(`<h3>Como você quer ser chamado?</h3>
-    <div class="hint" style="margin-top:0">O nome aparece no topo do Resumo e nas mensagens do app. Fica só neste app: numa conta compartilhada, cada pessoa vê o próprio nome no seu celular.</div>
+    <div class="semTopo hint">O nome aparece no topo do Resumo e nas mensagens do app. Fica só neste app: numa conta compartilhada, cada pessoa vê o próprio nome no seu celular.</div>
     <label for="nmIn">Seu nome</label>
     <input id="nmIn" type="text" maxlength="30" autocomplete="given-name" value="${esc(sugestao)}" data-onkeydown="if(event.key==='Enter')nameSave(${!!daConfig})">
     <label>Sexo</label>
-    <div class="btns" style="margin-top:0">${opcoes()}</div>
+    <div class="semTopo btns">${opcoes()}</div>
     <div class="err" id="nmErr"></div>
     <div class="btns foot">${daConfig ? `<button class="btn" data-onclick="openSettings('perfil')">Cancelar</button>` : ''}<button class="btn primary" data-onclick="nameSave(${!!daConfig})">${daConfig ? 'Salvar' : 'Continuar'}</button></div>`);
 }
@@ -177,15 +190,20 @@ function nameSave(daConfig){
 }
 // Tutorial: boas-vindas e um passeio rápido pelas funções. Abre sozinho uma vez por conta; dá para rever no Perfil.
 const TOUR = [
-  ['piggy', () => `${greeting() || 'Boas-vindas!'}`, 'Este é o Cofrim: seus ganhos, gastos, contas e investimentos num lugar só, salvos na sua conta Google. Veja em um minuto como usar.'],
-  ['plus', 'Lançar é rápido', 'Toque no + (ou nos atalhos do Resumo) e informe só o valor e a categoria; o resto fica em "Mais opções". Os gastos que você mais repete viram botões.'],
+  ['piggy', () => `${greeting() || 'Boas-vindas!'}`,
+    'Este é o Cofrim: seus ganhos, gastos, contas e investimentos num lugar só, salvos na sua conta Google. Veja em um minuto como usar.'],
+  ['plus', 'Lançar é rápido',
+    'Toque no + (ou nos atalhos do Resumo) e informe só o valor e a categoria; o resto fica em "Mais opções". Os gastos que você mais repete viram botões.'],
   ['chart', 'Resumo', 'Gastos do mês e do ano, contas a vencer, gastos por categoria e contas bancárias. Há muito mais (previsão, gráficos, metas, investimentos): toque em "Ver mais informações no resumo", no fim da tela, ou no menu (três barras), no topo › Reorganizar esta tela.'],
-  ['receipt', 'Gastos do mês', 'Separados em Assinaturas, Fixos e anuais, Parceladas e Ocasionais, com busca e filtros. Deslize um lançamento para a esquerda para excluir; numa conta com vencimento, para a direita marca como paga.'],
+  ['receipt', 'Gastos do mês', 'Separados em Assinaturas, Fixos e anuais, Parceladas e Ocasionais, com busca e filtros. Deslize um lançamento para a esquerda para excluir; numa conta com vencimento, para a direita marca como paga. Na mesma aba ficam o orçamento, as previsões de gastos e a saúde financeira do mês.'],
+  ['sparkle', 'Lançamento automático e extratos', 'No Android, as compras e os Pix avisados pelo banco viram sugestões de gasto no Resumo: um toque lança. Em Gastos › Importar extrato, escolha um ou vários arquivos OFX ou CSV do banco e confira antes de importar.'],
   ['card', 'Parcelas e financiamentos', 'Em Gastos › Parceladas, cadastre compras parceladas, financiamentos e empréstimos. Toque num item para ver o saldo devedor e todas as parcelas, pagar, abater ou exportar em PDF.'],
-  ['trend', 'Investimentos e metas', 'Cadastre aplicações, ações e metas. O app projeta quanto vão render com CDI, Selic e IPCA e mostra quanto falta para cada meta.'],
+  ['trend', 'Investimentos e metas',
+    'Cadastre aplicações, ações e metas. O app projeta quanto vão render com CDI, Selic e IPCA e mostra quanto falta para cada meta.'],
   ['chat', 'Assistente', 'Pergunte "quanto gastei com mercado este mês?" ou escreva "gastei 30 no almoço" para lançar sem abrir formulário.'],
-  ['calendar', 'Lembretes', 'Começam desligados neste aparelho. Ligue em Configurações › Lembretes (o Android pede a permissão de notificações) e escolha os tipos: contas a vencer, antes e no dia, e parcelas de financiamentos. Desligue a economia de bateria do app para os avisos chegarem na hora.'],
-  ['people', 'Sua conta e a conta compartilhada', 'Tudo sincroniza com a sua conta Google, com uma cópia por dia. Em Configurações > Conta compartilhada, dá para dividir os dados com outra pessoa.'],
+  ['calendar', 'Lembretes', 'Começam desligados neste aparelho. Ligue em Configurações › Lembretes (o Android pede a permissão de notificações) e escolha os tipos: contas a vencer, antes e no dia, parcelas de financiamentos e os avisos das previsões de gastos. Desligue a economia de bateria do app para os avisos chegarem na hora.'],
+  ['people', 'Sua conta e a conta compartilhada',
+    'Tudo sincroniza com a sua conta Google, com uma cópia por dia. Em Configurações > Conta compartilhada, dá para dividir os dados com outra pessoa.'],
   ['gear', 'Do seu jeito', 'Tema, cores, abas do menu, bloqueio com senha, widgets na tela inicial (com ou sem os valores) e o modo divertido, com mais de 100 conquistas. Tudo em Configurações.']];
 function openTour(i, daConfig){
   settingsOpen = false; F = null;
@@ -213,13 +231,13 @@ const NOV_SEM_REGISTRO = '1.66';
 // updManual = a pessoa tocou em "Procurar atualizações": aí a resposta aparece sempre, mesmo que seja "já está em dia".
 let updManual = false, updPend = null;
 function procurarAtualizacao(){
-  if (!(window.Android && Android.atualizar)) return webProcurar();
-  updManual = true; toast('Procurando atualização…'); Android.atualizar();
+  if (!(temNativo('atualizar'))) return webProcurar();
+  updManual = true; toast('Procurando atualização…'); nativo('atualizar');
 }
 function onAtualizacao(tipo, versao, url, novas){
   const manual = updManual; updManual = false;
   if (tipo === 'nada') return tell(`Você já está na versão mais recente (${APP_VERSION}).`);
-  if (tipo === 'erro') return tell('Não consegui procurar atualizações. Confira a internet e tente de novo.');
+  if (tipo === 'erro') return avisoErro('atualizacao');
   if (tipo !== 'web' && tipo !== 'apk') return;
   // A procura roda a cada abertura (e na volta depois de 30 min fora); "Depois" vale só até a próxima, sem guardar nada.
   if (tipo === 'web' && !manual && F) return toast(`Versão ${versao} baixada. Ela entra na próxima vez que você abrir o app.`);
@@ -248,19 +266,20 @@ async function webVerificar(){
 // Versão web: confere a versão publicada; se for mais nova, recarrega (o app busca os arquivos novos na rede).
 async function webProcurar(){
   try {
-    const j = await comCarga('Procurando atualização…', async () => (await fetch('https://raw.githubusercontent.com/cofrim/cofrim-updater/main/versao.json?t=' + Date.now(), {cache:'no-store'})).json());
+    const j = await comCarga('Procurando atualização…',
+      async () => (await fetch('https://raw.githubusercontent.com/cofrim/cofrim-updater/main/versao.json?t=' + Date.now(), {cache:'no-store'})).json());
     if (verNum(j.versao) <= verNum(APP_VERSION)) return tell(`Você já está na versão mais recente (${APP_VERSION}).`);
     if (await ask(`Saiu a versão ${j.versao}. Atualizar agora? Seus dados não mudam.`, 'Atualizar')) location.reload();
-  } catch(e){ tell('Não consegui procurar atualizações. Confira a internet e tente de novo.'); }
+  } catch(e){ avisoErro('atualizacao'); }
 }
-const newsHtml = lista => lista.map(([t, s]) => `<div class="item" style="cursor:default"><span class="in">${I('sparkle', 22)}</span><div class="mid"><b style="white-space:normal">${esc(t)}</b><small>${esc(s)}</small></div></div>`).join('');
+const newsHtml = lista => lista.map(([t, s]) => `<div class="semCursor item"><span class="in">${I('sparkle', 22)}</span><div class="mid"><b class="quebra">${esc(t)}</b><small>${esc(s)}</small></div></div>`).join('');
 // Aviso de versão nova, com a prévia do que vem nela. url vazio: as telas já foram baixadas e basta recarregar;
 // com url: é preciso baixar e instalar o APK.
 function openUpdate(versao, novas, url){
   settingsOpen = false; F = null;
   updUrl = url; updVer = versao;
   showSheet(`<h3>Nova versão ${esc(versao)} disponível</h3>
-    <div class="hint" style="margin-top:0">${url ? 'Esta atualização precisa ser instalada: o app baixa o arquivo e o Android pede sua confirmação. Seus dados continuam no aparelho e na sua conta.' : 'A atualização já foi baixada. Seus dados não mudam.'}</div>
+    <div class="semTopo hint">${url ? 'Esta atualização precisa ser instalada: o app baixa o arquivo e o Android pede sua confirmação. Seus dados continuam no aparelho e na sua conta.' : 'A atualização já foi baixada. Seus dados não mudam.'}</div>
     ${updNews(novas)}
     <div class="btns foot"><button class="btn" data-onclick="closeForm()">Depois</button><button class="btn primary" data-onclick="updateNow()">${url ? 'Baixar e instalar' : 'Atualizar agora'}</button></div>`);
 }
@@ -275,9 +294,9 @@ function updNews(novas){
 }
 function updateNow(){
   closeForm();
-  if (updUrl) return Android.instalarApk ? Android.instalarApk(updUrl) : Android.abrir(updUrl);
+  if (updUrl) return temNativo('instalarApk') ? nativo('instalarApk', updUrl) : nativo('abrir', updUrl);
   try { localStorage.setItem(VER_KEY, updVer); } catch(e){} // a prévia já mostrou as novidades: não repete ao recarregar
-  if (window.Android && Android.recarregar) Android.recarregar(); else location.reload(); // na web, o service worker busca os arquivos novos
+  if (temNativo('recarregar')) nativo('recarregar'); else location.reload(); // na web, o service worker busca os arquivos novos
 }
 // Andamento do APK novo baixado pelo próprio app (Android.instalarApk): baixando, permissao (a pessoa precisa liberar
 // "instalar apps desconhecidos" na tela que abriu), pronto (abriu a instalação do Android) ou erro.
@@ -286,7 +305,8 @@ function onApkEstado(e){
   if (apkCarga){ apkCarga(); apkCarga = null; }
   if (e === 'baixando') apkCarga = cargaOn('Baixando a atualização…');
   else if (e === 'permissao') tell('Para instalar, o Android pede uma permissão: na tela que abriu, ligue "Permitir desta fonte" para o Cofrim e volte ao app.');
-  else if (e === 'erro') ask('Não foi possível baixar a atualização agora. Quer baixar pelo navegador?', 'Abrir no navegador').then(sim => { if (sim) Android.abrir(updUrl); });
+  else if (e === 'erro') ask('Não foi possível baixar a atualização agora. Quer baixar pelo navegador?',
+    'Abrir no navegador').then(sim => { if (sim) nativo('abrir', updUrl); });
 }
 // Conta sem nada lançado nem versão vista: é a primeira vez da pessoa no app.
 const contaVazia = () => !db.verVista && COLS.every(c => !db[c].length);
@@ -315,7 +335,7 @@ function maybeNews(sempre){
   const desde = !sempre && last && verNum(last) < verNum(APP_VERSION) ? verNum(last) : verNum(APP_VERSION) - 1;
   const novas = Object.entries(NOVIDADES).filter(([v]) => verNum(v) > desde && verNum(v) <= verNum(APP_VERSION)).sort((a, b) => verNum(b[0]) - verNum(a[0]));
   showSheet(`<h3>Novidades da versão ${APP_VERSION}</h3>
-    ${novas.length ? novas.map(([v, lista]) => (novas.length > 1 ? `<label>Versão ${v}</label>` : '') + newsHtml(lista)).join('') : '<div class="hint" style="margin-top:0">Correções e pequenas melhorias.</div>'}
+    ${novas.length ? novas.map(([v, lista]) => (novas.length > 1 ? `<label>Versão ${v}</label>` : '') + newsHtml(lista)).join('') : '<div class="semTopo hint">Correções e pequenas melhorias.</div>'}
     <div class="btns foot"><button class="btn primary" data-onclick="${sempre ? "openSettings('perfil')" : 'closeForm();askLock()'}">Entendi</button></div>`);
   return true;
 }
@@ -347,7 +367,7 @@ function answerLock(on){
 const backupArquivo = () => `cofrim-backup-${dayStr(Date.now())}.json`;
 function exportData(){
   // No APK, o salvamento do arquivo é feito pelo lado nativo (MainActivity).
-  if (window.Android && Android.exportar) return Android.exportar(JSON.stringify(db, null, 2), backupArquivo());
+  if (temNativo('exportar')) return nativo('exportar', JSON.stringify(db, null, 2), backupArquivo());
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(db, null, 2)], {type:'application/json'}));
   a.download = backupArquivo(); a.click();
@@ -357,11 +377,13 @@ async function salvarCopiaDrive(){
   if (demoBloqueia()) return;
   if (!(canSync() && sync.on)) return tell('Entre com a sua conta Google para salvar uma cópia no Drive.');
   const nome = backupArquivo(), PASTA = 'application/vnd.google-apps.folder';
-  const lista = async q => JSON.parse(ok(await arq('GET', `${DRIVE}/drive/v3/files?spaces=drive&q=${encodeURIComponent(q + ' and trashed=false')}&fields=files(id)`)).text).files;
+  const lista = async q => JSON.parse(ok(await arq('GET',
+    `${DRIVE}/drive/v3/files?spaces=drive&q=${encodeURIComponent(q + ' and trashed=false')}&fields=files(id)`)).text).files;
   try {
     await comCarga('Salvando a cópia no seu Google Drive…', async () => {
       let pasta = (await lista(`name='Cofrim' and mimeType='${PASTA}'`))[0];
-      if (!pasta) pasta = JSON.parse(ok(await arq('POST', `${DRIVE}/drive/v3/files?fields=id`, JSON.stringify({name:'Cofrim', mimeType:PASTA}), 'application/json')).text);
+      if (!pasta) pasta = JSON.parse(ok(await arq('POST', `${DRIVE}/drive/v3/files?fields=id`, JSON.stringify({name:'Cofrim', mimeType:PASTA}),
+        'application/json')).text);
       const f = (await lista(`name='${nome}' and '${pasta.id}' in parents`))[0], json = JSON.stringify(db, null, 2), b = 'cofrim-boundary';
       if (f) ok(await arq('PATCH', `${DRIVE}/upload/drive/v3/files/${f.id}?uploadType=media`, json, 'application/json'));
       else ok(await arq('POST', `${DRIVE}/upload/drive/v3/files?uploadType=multipart`,
@@ -387,7 +409,7 @@ function importPerguntar(d){
   importando = d;
   settingsOpen = false; F = null;
   showSheet(`<h3>${I('upload', 22)} Importar backup</h3>
-    <div class="hint" style="margin-top:0">${esc(importResumo(d))} Substituir os dados atuais ou juntar com eles?</div>
+    <div class="semTopo hint">${esc(importResumo(d))} Substituir os dados atuais ou juntar com eles?</div>
     <div class="hint"><b>Substituir</b>: os dados passam a ser exatamente os do arquivo, em todos os aparelhos. <b>Juntar</b>: entra o que só está no arquivo; num lançamento que está nos dois, fica a alteração mais recente. Antes, o app guarda uma cópia dos dados atuais para dar para desfazer.</div>
     <div class="btns"><button class="btn danger" data-onclick="importarComo('substituir')">Substituir</button><button class="btn primary" data-onclick="importarComo('juntar')">Juntar</button></div>
     <div class="btns foot"><button class="btn" data-onclick="closeForm()">Cancelar</button></div>`);
@@ -397,7 +419,8 @@ async function importarComo(modo){
   if (!d || demoBloqueia()) return;
   closeForm();
   keepBefore('importar');
-  if (canSync() && sync.on) try { await copiaAntes('importar'); } catch(e){ logErr('cópia antes de importar', e.status ? e.status + ' ' + String(e.text).slice(0, 300) : e); } // sem internet, fica a cópia deste aparelho
+  if (canSync() && sync.on) try { await copiaAntes('importar'); } catch(e){ logErr('cópia antes de importar',
+    e.status ? e.status + ' ' + String(e.text).slice(0, 300) : e); } // sem internet, fica a cópia deste aparelho
   // Substituir, como restaurar uma versão salva: o que veio do arquivo fica como "alterado agora" e o que existe hoje mas
   // não está nele é marcado como excluído. Sem isso, a próxima sincronização trazia de volta da conta tudo o que não
   // estava no arquivo, e a troca não valia nos outros aparelhos.
@@ -409,15 +432,16 @@ function importTexto(texto){
   try {
     const d = JSON.parse(texto);
     if (!Array.isArray(d.incomes) || !Array.isArray(d.expenses)) throw 0;
-    if (newerDb(d)) return tell('Este backup foi feito por uma versão mais nova do app. Atualize o app para importar.');
+    if (newerDb(d)) return tell('Este backup foi feito por uma versão mais nova do app.\n\nO que fazer:\n• Atualize o app em Configurações › Procurar atualizações e importe de novo');
     importPerguntar(fixDb(d));
-  } catch(e){ if (e !== 0) logErr('importar backup', e); tell('Arquivo de backup inválido.'); }
+  } catch(e){ if (e !== 0) logErr('importar backup', e); avisoErro('arquivo', 'Arquivo de backup inválido: não é um backup do Cofrim ou está incompleto.'); }
 }
 function importData(input){
   if (demoOn){ input.value = ''; return demoBloqueia(); }
   const file = input.files && input.files[0]; if (!file) return;
+  if (file.size > DADOS_MAX){ input.value = ''; return tell(LER_ERRO + '\n\nO arquivo é grande demais para ser um backup do Cofrim.'); }
   const r = new FileReader();
-  r.onerror = () => { logErr('importar backup', 'leitura: ' + ((r.error && r.error.message) || r.error)); tell(LER_ERRO); input.value = ''; };
+  r.onerror = () => { logErr('importar backup', 'leitura: ' + ((r.error && r.error.message) || r.error)); avisoErro('arquivo'); input.value = ''; };
   r.onload = () => { importTexto(r.result); input.value = ''; };
-  try { r.readAsText(file); } catch(e){ logErr('importar backup', e); tell(LER_ERRO); input.value = ''; }
+  try { r.readAsText(file); } catch(e){ logErr('importar backup', e); avisoErro('arquivo'); input.value = ''; }
 }

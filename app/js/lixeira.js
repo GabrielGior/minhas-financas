@@ -1,0 +1,64 @@
+// Cofrim — Excluir lançamentos, lixeira (restaurar, esvaziar) e o aviso com "Desfazer". Depende de formularios.js.
+// Saiu de js/comprovantes.js (só mudou de arquivo); carregado logo depois dele no index.html.
+
+function removeItem(){ if (!F) return; const {col, id} = F; closeForm(); removeRec(col, id); } // segundo toque em "Excluir" depois que o formulário fechou
+// Exclui um lançamento e oferece "Desfazer" por alguns segundos.
+function removeRec(col, id){
+  const i = db[col].findIndex(x => x.id === id), rec = db[col][i];
+  if (i < 0) return tell(ARCH_MSG); // lançamento do arquivo de anos antigos
+  db[col].splice(i, 1);
+  db.tomb[id] = Date.now();
+  db.trash.push({col, rec, at:Date.now()});
+  save(); render();
+  showUndo('Excluído', () => { db[col].splice(i, 0, touch(rec)); delete db.tomb[id]; db.trash = db.trash.filter(t => t.rec !== rec); save(); render(); });
+}
+// Lixeira: lançamentos excluídos nos últimos 30 dias (neste aparelho), com opção de restaurar.
+const COL_NAMES = {incomes:'Ganho', expenses:'Gasto', installments:'Compra parcelada', investments:'Investimento', goals:'Meta', accounts:'Conta',
+  transfers:'Transferência', previsoes:'Previsão'};
+function openTrash(){
+  settingsOpen = false; F = null;
+  const list = db.trash.map((t, i) => ({t, i})).reverse();
+  showSheet(`<h3>Lixeira</h3>
+    <div class="semTopo hint">O que você exclui fica aqui por 30 dias, só neste aparelho.</div>
+    ${list.length ? list.map(({t, i}) => { const r = t.rec, dias = Math.floor((Date.now() - t.at) / 864e5), v = r.value ?? r.total ?? r.target; return `
+      <div class="semCursor item"><div class="mid"><b>${esc(r.desc || r.name || r.ticker || (r.from ? r.from + ' → ' + r.to : t.col === 'previsoes' ? prevNome(r.cat) : 'Sem nome'))}</b>
+        <small>${COL_NAMES[t.col] || ''}${v ? ' · ' + fmt(v) : ''} · excluído ${dias ? 'há ' + dias + ' dia' + (dias > 1 ? 's' : '') : 'hoje'}</small></div>
+        <button class="btn" style="flex:none;padding:8px 12px" data-onclick="trashRestore(${i});openTrash()">Restaurar</button></div>`; }).join('') : empty('trash', 'A lixeira está vazia.')}
+    <div class="btns foot">${list.length ? '<button class="btn danger" data-onclick="trashEmpty()">Esvaziar</button>' : ''}<button class="btn primary" data-onclick="openSettings('dados')">Voltar</button></div>`);
+}
+function trashRestore(i){
+  const t = db.trash.splice(i, 1)[0];
+  if (!db[t.col].some(r => r.id === t.rec.id)) db[t.col].push(touch(t.rec));
+  delete db.tomb[t.rec.id];
+  save(); render();
+}
+async function trashEmpty(){
+  if (!await ask('Esvaziar a lixeira?\nOs lançamentos excluídos não poderão mais ser restaurados.', 'Esvaziar', true)) return;
+  db.trash = []; save(); openTrash();
+}
+// Desfaz uma edição: volta ao estado guardado antes dela. O que mudou fica marcado como "alterado agora"
+// (e o que não existia, como excluído), para a volta valer também nos outros aparelhos.
+function restoreSnap(json){
+  const old = fixDb(JSON.parse(json)), t = Date.now();
+  for (const c of COLS){
+    const cur = new Map(db[c].map(r => [r.id, JSON.stringify(r)])), ids = new Set(old[c].map(r => r.id));
+    for (const r of old[c]) if (cur.get(r.id) !== JSON.stringify(r)) r.u = t;
+    for (const r of db[c]) if (!ids.has(r.id)) old.tomb[r.id] = t;
+  }
+  old.cfgMod = t; old.trash = db.trash;
+  loadDb(old); save(); render();
+  if (sheetOpen() && !F) closeForm();
+}
+let snackTimer = 0, undoFn = null;
+const showUndo = (text, fn, o) => showAcao(text, 'Desfazer', fn, o);
+// Aviso embaixo com um botão (Desfazer, Ver…); some sozinho depois de alguns segundos. Vai para a central de
+// notificações (o.central === false não vai); desfazer registra "Desfeito: …" quando o aviso foi registrado.
+function showAcao(text, botao, fn, o = {}){
+  const s = document.getElementById('snack'), foi = centralRegistra(text, o);
+  undoFn = foi && botao === 'Desfazer' ? () => { centralAdd('Desfeito: ' + text, 'info'); fn(); } : fn;
+  s.innerHTML = `${text} <button data-onclick="const f=undoFn;hideSnack();f()">${botao}</button>`;
+  s.hidden = false;
+  clearTimeout(snackTimer);
+  snackTimer = setTimeout(hideSnack, 6000);
+}
+// Aviso curto no rodapé, sem botão.

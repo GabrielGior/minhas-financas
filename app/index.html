@@ -44,7 +44,7 @@
 <!-- Carregando: faixa no topo durante qualquer espera de rede e cartão com texto nas ações demoradas (ver cargaDraw). -->
 <div id="carga" hidden aria-hidden="true"><i></i></div>
 <div id="cargaCx" hidden role="status"><span></span><b></b></div>
-<div id="saveWarn" hidden>Não consegui salvar as últimas alterações neste aparelho (armazenamento cheio?). Exporte um backup em Configurações antes de fechar o app.</div>
+<div id="saveWarn" hidden data-onclick="avisoErro('gravar')" role="button">Não consegui salvar as últimas alterações neste aparelho. Toque aqui para ver o que fazer.</div>
 <div id="lockAsk" hidden><div class="box">
   <button class="iconbtn x" data-onclick="answerLock(false)" aria-label="Não habilitar biometria" id="lockX"></button>
   <div class="big" id="lockIcon"></div>
@@ -68,18 +68,48 @@
 
 <!-- O código do app fica em js/, dividido por assunto; a ordem abaixo importa. -->
 <script src="js/acoes.js"></script>
+<script src="js/nativo.js"></script>
 <script src="js/temas.js"></script>
 <script src="js/temas2.js"></script>
+<script src="js/icones.js"></script>
+<script src="js/util.js"></script>
+<script src="js/cifra.js"></script>
 <script src="js/dados.js"></script>
+<script src="js/aparencia.js"></script>
+<script src="js/calculos.js"></script>
+<script src="js/previsoes.js"></script>
+<script src="js/rendimentos.js"></script>
+<script src="js/investimentos.js"></script>
+<script src="js/parcelas.js"></script>
+<script src="js/lembretes.js"></script>
 <script src="js/telas.js"></script>
+<script src="js/telas-previsoes.js"></script>
+<script src="js/saude.js"></script>
+<script src="js/telas-gastos.js"></script>
+<script src="js/telas-invest.js"></script>
+<script src="js/telas-planejamento.js"></script>
+<script src="js/noticias.js"></script>
+<script src="js/sugestoes.js"></script>
 <script src="js/assistente.js"></script>
+<script src="js/extrato.js"></script>
 <script src="js/formularios.js"></script>
+<script src="js/dialogos.js"></script>
+<script src="js/formularios-tela.js"></script>
+<script src="js/comprovantes.js"></script>
+<script src="js/lixeira.js"></script>
+<script src="js/erros.js"></script>
+<script src="js/central.js"></script>
 <script src="js/novidades.js"></script>
+<script src="js/novidades-antigas.js"></script>
 <script src="js/guia.js"></script>
 <script src="js/mascote-padrao.js"></script>
 <script src="js/divertido.js"></script>
 <script src="js/config.js"></script>
 <script src="js/sincronizacao.js"></script>
+<script src="js/conta-compartilhada.js"></script>
+<script src="js/nuvem.js"></script>
+<script src="js/copias.js"></script>
+<script src="js/arquivo-antigo.js"></script>
 <script src="js/entrada.js"></script>
 <script src="js/arte.js"></script>
 <script src="js/atos.js"></script>

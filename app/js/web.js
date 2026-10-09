@@ -6,7 +6,8 @@
 // Login: fluxo de redirecionamento do Google (a página vai ao Google e volta com o acesso no endereço, depois do #).
 // Janelas pop-up não funcionam em apps da tela de início do iPhone. O acesso vale 1 hora; ao abrir o app depois
 // disso, ele é renovado sem pedir nada (prompt=none), se a pessoa continuar conectada no Google.
-const WEB_CLIENT_ID = '357521269892-ja1te6htb465odtcp73vqu4e7j80330k.apps.googleusercontent.com'; // credencial OAuth do tipo "Aplicativo da Web" no projeto do Google Cloud
+const WEB_CLIENT_ID = '357521269892-ja1te6htb465odtcp73vqu4e7j80330k.apps.googleusercontent.com';
+// credencial OAuth do tipo "Aplicativo da Web" no projeto do Google Cloud
 // No PC (localhost) a prévia continua em modo de demonstração; ?web=1 testa a versão web (e a volta do Google, com #).
 const WEB_APP = !window.Android && location.protocol !== 'file:' && (location.hostname !== 'localhost' || /[?&]web=1/.test(location.search) || /^#(access_token|error)=/.test(location.hash) || /[#&]state=/.test(location.hash));
 if (WEB_APP) (() => {
@@ -117,7 +118,8 @@ if (WEB_APP) (() => {
     driveArquivo:(id, m, u, b, c, i) => { call(id, m, u, b, c, i, false, true); },
     conta:() => st.email || '',
     nome:() => st.name || '',
-    sair(){ if (st.t) fetch('https://oauth2.googleapis.com/revoke?token=' + encodeURIComponent(st.t), {method:'POST'}).catch(() => {}); st = {}; keep(); if (window.onSair) onSair(true); },
+    sair(){ if (st.t) fetch('https://oauth2.googleapis.com/revoke?token=' + encodeURIComponent(st.t), {method:'POST'}).catch(() => {}); st = {};
+      keep(); if (window.onSair) onSair(true); },
     copiar:t => { if (navigator.clipboard) navigator.clipboard.writeText(t).catch(() => {}); }
   };
 
@@ -173,10 +175,10 @@ async function instalarApp(){
   settingsOpen = false; F = null;
   const safari = !/CriOS|FxiOS|EdgiOS/.test(navigator.userAgent);
   showSheet(`<h3>Instalar o Cofrim</h3>${ehIphone()
-    ? `<div class="hint" style="margin-top:0">No iPhone e no iPad, o app entra na Tela de Início assim:</div>
+    ? `<div class="semTopo hint">No iPhone e no iPad, o app entra na Tela de Início assim:</div>
       <ol class="passos"><li>${safari ? 'Toque em <b>Compartilhar</b> (o quadrado com a seta para cima, na barra do Safari).' : 'Toque em <b>Compartilhar</b> (o quadrado com a seta para cima, ao lado do endereço). Se não aparecer, abra esta página no Safari.'}</li>
       <li>Role a lista e toque em <b>Adicionar à Tela de Início</b>.</li><li>Toque em <b>Adicionar</b>. O Cofrim aparece na Tela de Início, com o ícone do tema em uso.</li></ol>`
-    : `<div class="hint" style="margin-top:0">Este navegador não abriu a instalação sozinho. Faça pelo menu dele:</div>
+    : `<div class="semTopo hint">Este navegador não abriu a instalação sozinho. Faça pelo menu dele:</div>
       <ol class="passos"><li>Toque no menu do navegador (<b>⋮</b> ou <b>☰</b>).</li><li>Toque em <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.</li><li>Confirme. O Cofrim aparece na tela inicial como um app.</li></ol>
       <div class="hint">No Chrome do Android a instalação abre direto pelo botão. Para o app completo, com widgets e lembretes, há o app para Android na página do Cofrim.</div>`}
     <div class="btns foot"><button class="btn primary" data-onclick="closeForm()">Entendi</button></div>`);

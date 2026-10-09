@@ -14,7 +14,8 @@ const SHEET_TIPOS = [['', 'Só neste mês'], ['1', 'Fixo (todo mês)'], ['y', 'A
 const SHEET_TABS = {
   expenses:{nome:'Gastos', pay:true, cats:() => CAT_GASTO},
   incomes:{nome:'Ganhos', pay:false, cats:() => CAT_GANHO}};
-const sheetCols = T => ['ID', 'Mês (AAAA-MM)', 'Dia', 'Descrição', 'Categoria', 'Valor', 'Banco / conta', ...(T.pay ? ['Pagamento'] : []), 'Tipo', 'Até (AAAA-MM)', 'app'];
+const sheetCols = T => ['ID', 'Mês (AAAA-MM)', 'Dia', 'Descrição', 'Categoria', 'Valor', 'Banco / conta', ...(T.pay ? ['Pagamento'] : []), 'Tipo',
+  'Até (AAAA-MM)', 'app'];
 const colLetter = n => String.fromCharCode(64 + n);
 const sheetId = () => (db.prefs && db.prefs.sheet) || '';
 const sheetUrl = () => 'https://docs.google.com/spreadsheets/d/' + sheetId();
@@ -36,7 +37,8 @@ function sheetHash(cells){
 function sheetMonth(v){
   const s = String(v ?? '').trim(), ym = (y, m) => +m >= 1 && +m <= 12 ? `${y}-${String(+m).padStart(2, '0')}` : '';
   let m;
-  if (typeof v === 'number' && v > 20000){ const d = new Date(Date.UTC(1899, 11, 30) + v * 864e5); return {ym:ym(d.getUTCFullYear(), d.getUTCMonth() + 1), day:d.getUTCDate()}; }
+  if (typeof v === 'number' && v > 20000){ const d = new Date(Date.UTC(1899, 11, 30) + v * 864e5);
+    return {ym:ym(d.getUTCFullYear(), d.getUTCMonth() + 1), day:d.getUTCDate()}; }
   if ((m = s.match(/^(\d{4})-(\d{1,2})(?:-(\d{1,2}))?$/))) return {ym:ym(m[1], m[2]), day:+m[3] || 0};
   if ((m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/))) return {ym:ym(m[3], m[2]), day:+m[1]};
   if ((m = s.match(/^(\d{1,2})\/(\d{4})$/))) return {ym:ym(m[2], m[1])};
@@ -64,11 +66,13 @@ let sheetBusy = false;
 async function sheetSync(interactive){
   if (demoOn) return 0;
   const id = sheetId();
-  if (!id || !canSync() || !Android.driveFamilia || sheetBusy) return 0;
+  if (!id || !canSync() || !temNativo('driveFamilia') || sheetBusy) return 0;
   sheetBusy = true;
   try {
     const tabs = Object.keys(SHEET_TABS), faixa = col => `${SHEET_TABS[col].nome}!A2:${colLetter(sheetCols(SHEET_TABS[col]).length)}`;
-    const r = JSON.parse(ok(await fam('GET', `${SHEETS}/${id}/values:batchGet?${tabs.map(c => 'ranges=' + rng(faixa(c))).join('&')}&ranges=${rng('_app!A:A')}&valueRenderOption=UNFORMATTED_VALUE`, '', '', interactive)).text).valueRanges;
+    const r = JSON.parse(ok(await fam('GET',
+      `${SHEETS}/${id}/values:batchGet?${tabs.map(c => 'ranges=' + rng(faixa(c))).join('&')}&ranges=${rng('_app!A:A')}&valueRenderOption=UNFORMATTED_VALUE`, '',
+      '', interactive)).text).valueRanges;
     let antes = [];
     try { antes = JSON.parse(((r[2] || {}).values || []).map(v => v[0]).join('') || '[]'); } catch(e){}
     let veio = 0;
@@ -136,25 +140,31 @@ const sheetCreate = umaVez(async function(semPerguntar){
       {properties:{sheetId:8, title:'Como usar'}}, {properties:{sheetId:9, title:'_app', hidden:true}}]};
     const id = JSON.parse(ok(await fam('POST', SHEETS, JSON.stringify(corpo), 'application/json', true)).text).spreadsheetId;
     sync.famOk = true;
-    const ajuda = ['Esta planilha está ligada ao app Cofrim.', 'Para lançar por aqui, escreva numa linha vazia das abas Gastos ou Ganhos: mês, descrição e valor bastam.',
+    const ajuda = ['Esta planilha está ligada ao app Cofrim.',
+      'Para lançar por aqui, escreva numa linha vazia das abas Gastos ou Ganhos: mês, descrição e valor bastam.',
       'Mês no formato AAAA-MM (ex.: 2026-10); em branco, vale o mês atual. Categoria, Pagamento e Tipo têm lista de escolha.',
       'Você pode editar e apagar linhas: a mudança chega ao app na próxima sincronização (o que for apagado vai para a lixeira do app).',
       'O app regrava as abas a cada sincronização: não mude a ordem das colunas nem os títulos; fórmulas e anotações ficam melhor em outra aba.'];
     ok(await fam('POST', `${SHEETS}/${id}/values:batchUpdate`, JSON.stringify({valueInputOption:'RAW', data:[
-      ...tabs.map(col => ({range:`${SHEET_TABS[col].nome}!A1`, values:[sheetCols(SHEET_TABS[col])]})), {range:'Como usar!A1', values:ajuda.map(t => [t])}]}), 'application/json'));
+      ...tabs.map(col => ({range:`${SHEET_TABS[col].nome}!A1`, values:[sheetCols(SHEET_TABS[col])]})),
+      {range:'Como usar!A1', values:ajuda.map(t => [t])}]}), 'application/json'));
     const lista = v => ({condition:{type:'ONE_OF_LIST', values:v.map(t => ({userEnteredValue:t}))}, showCustomUi:true, strict:false});
     const req = [];
     tabs.forEach((col, i) => {
       const T = SHEET_TABS[col], sid = i + 1, n = sheetCols(T).length, p = T.pay ? 1 : 0;
       const colRange = (a, b) => ({sheetId:sid, startRowIndex:1, startColumnIndex:a, endColumnIndex:b});
-      const fmt = (a, b, numberFormat) => req.push({repeatCell:{range:colRange(a, b), cell:{userEnteredFormat:{numberFormat}}, fields:'userEnteredFormat.numberFormat'}});
-      req.push({repeatCell:{range:{sheetId:sid, startRowIndex:0, endRowIndex:1}, cell:{userEnteredFormat:{textFormat:{bold:true}}}, fields:'userEnteredFormat.textFormat.bold'}});
+      const fmt = (a, b, numberFormat) => req.push({repeatCell:{range:colRange(a, b), cell:{userEnteredFormat:{numberFormat}},
+        fields:'userEnteredFormat.numberFormat'}});
+      req.push({repeatCell:{range:{sheetId:sid, startRowIndex:0, endRowIndex:1}, cell:{userEnteredFormat:{textFormat:{bold:true}}},
+        fields:'userEnteredFormat.textFormat.bold'}});
       fmt(1, 3, {type:'TEXT'}); fmt(8 + p, 9 + p, {type:'TEXT'}); fmt(5, 6, {type:'NUMBER', pattern:'#,##0.00'});
       req.push({setDataValidation:{range:colRange(4, 5), rule:lista(Object.values(T.cats()).map(c => c[1]))}});
       if (T.pay) req.push({setDataValidation:{range:colRange(7, 8), rule:lista(Object.values(PAY))}});
       req.push({setDataValidation:{range:colRange(7 + p, 8 + p), rule:lista(SHEET_TIPOS.map(t => t[1]))}});
-      for (const k of [0, n - 1]) req.push({updateDimensionProperties:{range:{sheetId:sid, dimension:'COLUMNS', startIndex:k, endIndex:k + 1}, properties:{hiddenByUser:true}, fields:'hiddenByUser'}});
-      req.push({updateDimensionProperties:{range:{sheetId:sid, dimension:'COLUMNS', startIndex:3, endIndex:4}, properties:{pixelSize:240}, fields:'pixelSize'}});
+      for (const k of [0, n - 1]) req.push({updateDimensionProperties:{range:{sheetId:sid, dimension:'COLUMNS', startIndex:k, endIndex:k + 1},
+        properties:{hiddenByUser:true}, fields:'hiddenByUser'}});
+      req.push({updateDimensionProperties:{range:{sheetId:sid, dimension:'COLUMNS', startIndex:3, endIndex:4}, properties:{pixelSize:240},
+        fields:'pixelSize'}});
     });
     await fam('POST', `${SHEETS}/${id}:batchUpdate`, JSON.stringify({requests:req}), 'application/json'); // formatos: se falhar, a planilha funciona igual
     db.prefs.sheet = id; db.cfgMod = Date.now(); save();
@@ -167,7 +177,7 @@ const sheetCreate = umaVez(async function(semPerguntar){
     tell(/Sheets/.test(sharedMsg(e)) ? sharedMsg(e) : e.status === 0 ? 'Sem conexão com a internet.' : 'Não foi possível criar a planilha agora.');
   }
 });
-function sheetOpenUrl(){ if (window.Android && Android.abrir) Android.abrir(sheetUrl()); else window.open(sheetUrl(), '_blank', 'noopener'); }
+function sheetOpenUrl(){ if (temNativo('abrir')) nativo('abrir', sheetUrl()); else window.open(sheetUrl(), '_blank', 'noopener'); }
 async function sheetNow(){
   if (demoBloqueia()) return;
   const n = await comCarga('Sincronizando com a planilha…', () => sheetSync(true));
@@ -183,13 +193,13 @@ function openSheetLink(){
   settingsOpen = false; F = null;
   const on = !!sheetId();
   showSheet(`<h3 id="shLink">Planilha do Google</h3>
-    ${!canSync() ? '<div class="hint warn" style="margin-top:0">Prévia no PC: a planilha ligada só funciona no app instalado no celular ou na versão web.</div>' : on ? `
-    <div class="hint in" style="margin-top:0">${I('check', 14)} Ligada ao app${sync.sheetAt ? ' · sincronizada em ' + new Date(sync.sheetAt).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'}) : ''}.</div>
+    ${!canSync() ? '<div class="semTopo hint warn">Prévia no PC: a planilha ligada só funciona no app instalado no celular ou na versão web.</div>' : on ? `
+    <div class="semTopo hint in">${I('check', 14)} Ligada ao app${sync.sheetAt ? ' · sincronizada em ' + new Date(sync.sheetAt).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'}) : ''}.</div>
     ${sync.sheetErr ? `<div class="hint warn">${I('alert', 13)} ${esc(sync.sheetErr)}</div>` : ''}
     <div class="hint">Lance, edite ou apague gastos e ganhos na planilha ou no app: aparece nos dois. A planilha é atualizada a cada sincronização do app (ao abrir e depois de cada lançamento); o que você escrever nela chega ao app quando ele for aberto ou em "Sincronizar com a planilha".</div>
     <div class="btns"><button class="btn primary" data-onclick="sheetOpenUrl()">${I('doc')}Abrir a planilha</button><button class="btn" data-onclick="sheetNow()">${I('refresh')}Sincronizar com a planilha</button></div>
-    <div class="btns"><button class="btn danger" style="flex:1" data-onclick="sheetUnlink()">Desligar a planilha</button></div>` : `
-    <div class="hint" style="margin-top:0">O app cria uma planilha na sua conta Google com as abas Gastos e Ganhos e a mantém ligada: o que você lançar no app aparece na planilha, e o que escrever na planilha aparece no app.</div>
+    <div class="btns"><button class="cresce btn danger" data-onclick="sheetUnlink()">Desligar a planilha</button></div>` : `
+    <div class="semTopo hint">O app cria uma planilha na sua conta Google com as abas Gastos e Ganhos e a mantém ligada: o que você lançar no app aparece na planilha, e o que escrever na planilha aparece no app.</div>
     <div class="hint">Compras parceladas, investimentos e contas ficam só no app. O Google vai pedir sua autorização para o app criar e editar a planilha.</div>
     <div class="btns"><button class="btn primary" id="shCreate" data-onclick="sheetCreate()">${I('doc')}Criar a planilha ligada</button></div>`}
     <div class="btns foot"><button class="btn" data-onclick="closeForm()">Fechar</button></div>`);
