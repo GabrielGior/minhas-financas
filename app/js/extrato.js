@@ -196,5 +196,5 @@ function commitStatement(){
   showUndo(`${added.length} lançamentos importados${meses.size > 1 ? ` em ${meses.size} meses` : ''}`, () => {
     for (const [col, id] of added){ db[col] = db[col].filter(r => r.id !== id); db.tomb[id] = Date.now(); }
     save(); render();
-  });
+  }, {dest:{k:'gastos', m:state.month}});
 }

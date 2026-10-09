@@ -57,7 +57,7 @@ document.addEventListener('visibilitychange', () => {
   now = new Date();
   curYM = ymOf(now.getFullYear(), now.getMonth());
   funVisit();
-  if (sorteioDoDia()) toast(`${db.prefs.sorteio === 'tema' ? 'Tema' : 'Cor'} de hoje: ${sorteioNome()}`); // virou o dia com o app aberto
+  if (sorteioDoDia()) sorteioAviso(); // virou o dia com o app aberto
   rollover();
   if (!sheetOpen()) render();
   updateRates();
@@ -71,6 +71,7 @@ if (!window.TESTE) setInterval(() => { if (document.hidden || navigator.onLine =
   60e3);
 widgetFundoEnviar(); // fundo do tema para os widgets, se ainda não foi entregue
 avisosConfigEnviar(); // sugestões pelas notificações: a lista de apps permitidos e os bloqueados, para o lado nativo
+sugDaConta(); sugEspelhar(); // sugestões na conta, para a versão web (e o que ela fez com elas)
 if (temNativo('webOk')) nativo('webOk'); // APK: as telas abriram sem erro (confirma uma atualização recém-aplicada)
 if (window.webResume) webResume(); // versão web: continua o que estava sendo feito antes de ir ao login do Google
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});

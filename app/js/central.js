@@ -74,11 +74,11 @@ function centralTela(){
   centralItens.forEach((x, i) => {
     const d = centralDia(x.t), [ic, cor] = CENTRAL_TIPOS[x.tipo] || CENTRAL_TIPOS.info, nova = centralNovas.has(x.txt + '|' + d);
     if (d !== dia){ dia = d; html += `<label>${d === hoje ? 'Hoje' : d === ontem ? 'Ontem' : new Date(x.t).toLocaleDateString('pt-BR')}</label>`; }
-    html += `<div class="item centralItem${nova ? ' nova' : ''}" data-onclick="centralToque(${i})"><span class="centralIco" style="color:${cor}">${I(ic, 20)}</span><div class="mid">
+    html += `<div class="item centralItem${nova ? ' nova' : ''}" data-cent="${i}" data-onclick="centralToque(${i})"><span class="centralIco" style="color:${cor}">${I(ic, 20)}</span><div class="mid">
       <b class="quebra">${esc(x.txt)}</b><small>${centralQuando(x.t)}${x.ts.length > 1 ? ` · ${x.ts.length} vezes` : ''}${nova ? ' <em class="centralNova">Nova</em>' : ''}</small></div>${x.dest || x.ts.length > 1 ? `<span class="centralVai">${I('chev', 16)}</span>` : ''}</div>`;
   });
   showSheet(`<h3>${I('bell', 22)} Notificações</h3>
-    ${html || '<div class="semTopo hint">Nenhuma notificação por aqui.</div>'}
+    <div class="semTopo hint">${html ? 'Toque para abrir; arraste para o lado para apagar.' : 'Nenhuma notificação por aqui.'}</div>${html}
     <div class="btns foot">${centralItens.length ? '<button class="btn danger" data-onclick="centralLimpar()">Limpar</button>' : ''}<button class="btn primary" data-onclick="closeForm()">Fechar</button></div>`);
 }
 // Tocar: item repetido mostra cada vez que aconteceu; com destino, abre a tela dele.
@@ -93,6 +93,15 @@ function centralToque(i){
   }
   if (x.dest) centralAbrir(i);
 }
+// Arrastar um item para o lado (assistente.js) apaga só ele, com "Desfazer".
+function centralApagar(i){
+  const x = centralItens[i];
+  if (!x) return;
+  const mesmo = y => y.txt === x.txt && y.t === x.t;
+  centralGuardar(centralLer().filter(y => !mesmo(y)));
+  centralTela();
+  showUndo('Notificação apagada', () => { centralGuardar([...centralLer(), x]); if (sheetOpen()) centralTela(); }, {central:false});
+}
 function centralAbrir(i){
   const d = (centralItens[i] || {}).dest;
   if (!d) return;
@@ -104,6 +113,14 @@ function centralAbrir(i){
   else if (d.k === 'conflito') openConflitos();
   else if (d.k === 'sug') abrirSugestao(String(d.t)); // a sugestão do banco: o formulário dela (ou o histórico, se já saiu)
   else if (d.k === 'resumo') openSugestoes(); // itens antigos das sugestões (até a 1.77): não dá para saber qual era
+  else if (d.k === 'sugs') openSugestoes();
+  else if (d.k === 'appsIgn') openAppsIgnorados();
+  else if (d.k === 'conq') openBadges(d.n); // a tela das conquistas, com as que vieram neste aviso em destaque
+  else if (d.k === 'invest') go('invest');
+  else if (d.k === 'gastos'){ state.gsub = d.sub || 'mes'; if (d.m) state.month = d.m; go('gastos'); }
+  else if (d.k === 'lixeira') openTrash();
+  else if (d.k === 'novidades') maybeNews(true);
+  else if (d.k === 'cfg') openSettings(d.s || '');
 }
 async function centralLimpar(){
   if (await ask('Apagar todas as notificações desta central?', 'Limpar', true)){ centralLimparJa(); centralTela(); }

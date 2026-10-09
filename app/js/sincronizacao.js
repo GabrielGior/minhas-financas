@@ -113,7 +113,7 @@ async function trocarContaJa(semPerguntar){
       return tell(e.status === 0 ? 'Sem conexão com a internet: não deu para abrir a outra conta.' : semPermissao(e) || e.status === 401 ? erroAmigavel(e) : `Não foi possível abrir a conta ${destino} agora (${e.status}).`);
     } finally { trocando = false; }
     closeForm(); render(); scrollTo(0, 0);
-    toast(`Agora você está na conta ${destino}.`);
+    toast(`Agora você está na conta ${destino}.`, {dest:{k:'cfg', s:'compart'}});
     syncNow();
   });
 }
@@ -194,7 +194,7 @@ const shareInvite = umaVez(async function(email, quieto){
     return false;
   }
   sync.shared.with = [...new Set([...(sync.shared.with || []), email])]; saveSync();
-  if (!quieto){ toast('Convite enviado para ' + email); shareBack(); }
+  if (!quieto){ toast('Convite enviado para ' + email, {dest:{k:'cfg', s:'compart'}}); shareBack(); }
   return true;
 });
 // Cria a conta compartilhada com os dados deste aparelho e convida a outra pessoa.
@@ -224,7 +224,7 @@ const shareStart = umaVez(async function(email, semPerguntar, limpa = !!sync.lim
     if (limpa) ok(await fam('PUT', `${SHEETS}/${id}/values/${rng('leia-me!A4')}?valueInputOption=RAW`, JSON.stringify({values:[['LIMPA']]}),
       'application/json'));
     else { claimMine(); save(false); }
-    await sharedWrite(id, JSON.stringify(vazio || db));
+    await sharedWrite(id, paraPlanilha(vazio || db));
     sync.shared = {id, owner:true, with:[], limpa:!!limpa}; saveSync();
     // Só depois de a planilha estar gravada o aparelho passa a mostrar a conta vazia (os dados pessoais já estão na conta).
     if (vazio){ loadDb(vazio); rollover(); save(false); render(); }
@@ -282,7 +282,7 @@ const shareJoin = umaVez(async function(code, escolha){
   sync.shared = {id, owner:false, limpa:sharedInfo.limpa}; saveSync();
   await syncNow();
   closeForm(); render();
-  toast(comNome('Pronto, {nome}! Agora vocês veem os mesmos lançamentos.'));
+  toast(comNome('Pronto, {nome}! Agora vocês veem os mesmos lançamentos.'), {dest:{k:'cfg', s:'compart'}});
   if (shareFromStart){ shareFromStart = false; startSheets(); }
 });
 
@@ -388,11 +388,12 @@ function mergeDb(a, b){
   out.catMemo = {...b.catMemo, ...a.catMemo};
   out.yieldLog = {...b.yieldLog, ...a.yieldLog};
   out.netLog = {...b.netLog, ...a.netLog};
+  out.sugs = sugsJuntar(a.sugs, b.sugs);
   return out;
 }
 // Texto para comparar dois estados sem depender da ordem das chaves.
 const SYNCED = [...COLS, 'tomb', 'prefs', 'budgets', 'cardClose', 'cardDue', 'cardAcc', 'cardLimit', 'archUntil', 'cats', 'catMemo', 'yieldLog',
-  'netLog', 'membros'];
+  'netLog', 'membros', 'sugs'];
 const canon = d => JSON.stringify(SYNCED.map(k => d[k]),
   (k, v) => v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([x],[y]) => x < y ? -1 : 1)) : v);
 

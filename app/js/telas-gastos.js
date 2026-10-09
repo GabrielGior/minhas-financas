@@ -228,7 +228,8 @@ function pagarParc(id, d){
   p.paid = Math.max(0, Math.min(p.n, p.paid + d));
   if (p.paid === antes) return;
   touch(p); save(); render();
-  showUndo(d > 0 ? `Parcela ${p.paid}/${p.n} paga` : 'Pagamento desfeito', () => { p.paid = antes; touch(p); save(); render(); });
+  showUndo(d > 0 ? `Parcela ${p.paid}/${p.n} paga` : 'Pagamento desfeito', () => { p.paid = antes; touch(p); save(); render(); },
+    {dest:{k:'gastos', sub:'parc'}});
 }
 function parcMenu(id){
   pickList('Opções', [['editar', 'Editar'], ['pdf', 'Exportar PDF'], ['excluir', 'Excluir']], null, async v => {
@@ -269,7 +270,7 @@ function confirmarAbater(){
   const antes = JSON.stringify(db);
   abater(p, A, abat.modo, now.toLocaleDateString('sv'));
   save(); closeForm(); render();
-  showUndo('Abatimento registrado', () => restoreSnap(antes));
+  showUndo('Abatimento registrado', () => restoreSnap(antes), {dest:{k:'gastos', sub:'parc'}});
 }
 // PDF de um parcelamento: pela tela de impressão (no Android, "Salvar como PDF"), como o relatório do mês.
 function parcPdf(id){

@@ -99,7 +99,8 @@ async function sheetSync(interactive){
       const k = db[col].findIndex(x => x.id === i);
       if (k >= 0){ db.trash.push({col, rec:db[col][k], at:Date.now()}); db[col].splice(k, 1); db.tomb[i] = Date.now(); veio++; }
     }
-    if (veio){ save(); if (!sheetOpen()) render(); toast(`Planilha: ${veio} ${veio > 1 ? 'alterações vieram' : 'alteração veio'} para o app.`); }
+    if (veio){ save(); if (!sheetOpen()) render();
+      toast(`Planilha: ${veio} ${veio > 1 ? 'alterações vieram' : 'alteração veio'} para o app.`, {dest:{k:'cfg', s:'dados'}}); }
     // Regrava as abas com o estado do app (só se algo mudou em relação ao que está lá).
     const data = [], limpar = [], ids = [];
     let igual = true;
@@ -170,7 +171,7 @@ const sheetCreate = umaVez(async function(semPerguntar){
     db.prefs.sheet = id; db.cfgMod = Date.now(); save();
     await sheetSync();
     openSheetLink();
-    toast('Planilha criada e ligada ao app.');
+    toast('Planilha criada e ligada ao app.', {dest:{k:'cfg', s:'dados'}});
   } catch(e){
     logErr('criar planilha', e.status ? e.status + ' ' + String(e.text).slice(0, 300) : e);
     if (e.status === -1 || e.status === -5) return famNegado();

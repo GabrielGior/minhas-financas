@@ -21,7 +21,9 @@ const tituloTela = (title, tab, extra = '') => `<h1><span class="tit">${title}${
 // abria). Com só as Configurações, o toque vai direto a elas. Sugestões novas (nem lançadas nem ignoradas): um ponto no
 // botão e o número ao lado do item. O painel fecha ao tocar fora, com o voltar do Android e com Esc; Tab e Enter navegam nele.
 const reorganizar = tab => tab === 'resumo' ? 'openResumoEdit()' : LAYOUT[tab] ? `openLayoutEdit('${tab}')` : '';
-const sugNoMenu = () => !!(temNativo('avisosBanco')) && ((temNativo('avisosLigado') && nativo('avisosLigado')) || sugLog().length > 0 || sugNovas() > 0);
+// Na versão web, aparece quando o celular já mandou alguma sugestão pela sincronização.
+const sugNoMenu = () => temNativo('avisosBanco') ? ((temNativo('avisosLigado') && nativo('avisosLigado')) || sugLog().length > 0 || sugNovas() > 0)
+  : db.sugs.lista.length > 0;
 const sugNovas = () => bankNotes().filter(n => parseBankNote(n)).length;
 function menuItens(tab){
   const l = [['gear', 'Configurações', "openSettings('')"]];

@@ -164,7 +164,7 @@ async function apagarAgora(){
   const antes = JSON.stringify(db), agora = Date.now();
   for (const {col, x} of lista){ db[col].splice(db[col].indexOf(x), 1); db.tomb[x.id] = agora; db.trash.push({col, rec:x, at:agora}); }
   save(); closeForm(); render();
-  showUndo(`${n} ${n === 1 ? 'lançamento apagado' : 'lançamentos apagados'}`, () => restoreSnap(antes));
+  showUndo(`${n} ${n === 1 ? 'lançamento apagado' : 'lançamentos apagados'}`, () => restoreSnap(antes), {dest:{k:'lixeira'}});
 }
 
 // ---------- Puxar para atualizar ----------

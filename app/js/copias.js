@@ -23,17 +23,18 @@ async function syncNow(interactive){
     if (newerDb(remote)) throw {status:-3};
     if (sid && membroEu()) save(false); // este aparelho entra na lista de pessoas da conta
     if (baixar && !remote) throw {status:-8};
-    if (baixar){ keepBefore(); loadDb(sid ? {...remote, prefs:db.prefs} : remote); rollover(); save(false); if (!sheetOpen()) render();
+    if (baixar){ keepBefore(); loadDb(sid ? {...remote, prefs:db.prefs, sugs:db.sugs} : remote); rollover(); save(false); if (!sheetOpen()) render();
       } // "Baixar os dados da conta"
     if (!forcar && !remote && !mesma && incompleto(null, db)) throw {status:-7};
     if (remote){
       const cf = conflitos(db, remote, sync.at), merged = mergeDb(db, remote);
       if (!forcar && incompleto(remote, merged)) throw {status:-7};
-      if (sid) merged.prefs = db.prefs; // nome e aparência são de cada pessoa
+      if (sid) Object.assign(merged, {prefs:db.prefs, sugs:db.sugs}); // nome, aparência e sugestões são de cada pessoa
       if (canonS(merged) !== canonS(db)){
         const veio = incoming(db, merged), novas = sid ? atividade(db, merged) : [];
         keepBefore(); // cópia deste aparelho antes de juntar, para poder desfazer
         loadDb(merged); rollover(); save(false);
+        sugDaConta(); // celular: o que a versão web fez com as sugestões
         if (novas.length) ativAvisar(novas); // conta compartilhada: diz quem fez o quê
         else if (veio && !cf.length) toast(`Sincronizado: ${veio} ${veio > 1 ? 'alterações vieram' : 'alteração veio'} de outro aparelho.`, {dest:{k:'sync'}});
         if (cf.length) conflitoAvisar(cf); // por cima do aviso de cima: este pede atenção
@@ -44,7 +45,7 @@ async function syncNow(interactive){
     if (sid) vistoGuardar(db); else espiarComp(); // na conta pessoal, aproveita para espiar a compartilhada
     let ver = file && file.version, idc = file && file.id;
     if (mesma ? hashId(canonS(db)) !== sync.hash : !remote || canonS(db) !== canonS(remote)){
-      if (sid) await sharedWrite(sid, JSON.stringify(db));
+      if (sid) await sharedWrite(sid, paraPlanilha(db));
       else { const r = await driveWrite(file && file.id, 'financas.json', await fechaGz(JSON.stringify(db)));
         try { ({id:idc, version:ver} = JSON.parse(r.text)); } catch(e){ ver = ''; } }
     }

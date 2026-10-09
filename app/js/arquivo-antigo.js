@@ -38,7 +38,7 @@ async function archiveUntil(Y, semPerguntar){
     arch = novo; try { localStorage.setItem(ARCH_KEY, JSON.stringify(novo)); } catch(e){}
     save(); closeForm(); render();
     await syncNow();
-    toast(`${n} lançamentos arquivados.`);
+    toast(`${n} lançamentos arquivados.`, {dest:{k:'cfg', s:'dados'}});
   } catch(e){ logErr('arquivar', e); avisoErro('internet', 'Não foi possível arquivar agora. Nada foi tirado dos seus dados.'); }
 }
 async function archiveRestore(semPerguntar){
@@ -54,7 +54,7 @@ async function archiveRestore(semPerguntar){
   save(); closeForm(); render();
   await syncNow();
   try { const f = (await driveList("name='arquivo.json'"))[0]; if (f) ok(await drive('DELETE', `${DRIVE}/drive/v3/files/${f.id}`)); } catch(e){}
-  toast('Lançamentos trazidos de volta.');
+  toast('Lançamentos trazidos de volta.', {dest:{k:'cfg', s:'dados'}});
 }
 function archHtml(){
   const ultimo = String(now.getFullYear() - 1),

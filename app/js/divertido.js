@@ -113,8 +113,10 @@ function funBadgeList(){
     v >= n, f, i]));
 }
 // Avisa (uma vez) cada conquista nova. Na primeira vez que roda, só anota as que já existiam.
+// Na demonstração não confere: as conquistas viriam dos dados fictícios (aviso com confete logo ao entrar) e ficariam
+// guardadas como já ganhas, sem aviso quando a pessoa as ganhasse de verdade.
 function funCheck(){
-  if (!db.prefs.fun) return;
+  if (!db.prefs.fun || demoOn) return;
   const ganhas = funBadgeList().filter(b => b[3]).map(b => b[1]);
   if (!funState.got){ funState.got = ganhas; }
   else {
@@ -122,7 +124,8 @@ function funCheck(){
     if (!novas.length) return;
     funState.got = [...funState.got, ...novas];
     confetti();
-    toast(novas.length > 1 ? `${novas.length} conquistas desbloqueadas: ${novas.join(', ')}!` : comNome(`Conquista desbloqueada, {nome}: ${novas[0]}!`));
+    toast(novas.length > 1 ? `${novas.length} conquistas desbloqueadas: ${novas.join(', ')}!` : comNome(`Conquista desbloqueada, {nome}: ${novas[0]}!`),
+      {dest:{k:'conq', n:novas}}); // tocar no aviso (na central) abre as conquistas com estas em destaque
   }
   try { localStorage.setItem(FUN_KEY, JSON.stringify(funState)); } catch(e){}
 }
@@ -459,18 +462,23 @@ function funBadges(){
     ${proximas.length ? `<div class="hint" style="margin:10px 0 2px">Mais perto de ganhar:</div>${proximas.map(p => `<div class="catrow"><div class="top"><span>${I(p.ic, 16)} ${p.nome}</span><b>${Math.floor(p.pct)}%</b></div>
       <div class="hint" style="margin-top:2px">${cap(p.como)}</div><div class="bar"><i style="width:${p.pct}%"></i></div></div>`).join('')}` : ''}</div>`;
 }
-// Todas as conquistas, por família, com o nível de cada uma.
-function openBadges(){
+// Todas as conquistas, por família, com o nível de cada uma. novas: nomes recém-ganhos (ex.: "Anotador II", vindos do
+// aviso na central): a família de cada uma aparece em destaque, com "Nova!", e a tela rola até a primeira.
+function openBadges(novas = []){
   settingsOpen = false; F = null;
+  const nova = nome => (Array.isArray(novas) ? novas : []).some(n => n === nome || String(n).startsWith(nome + ' '));
   const list = funBadgeList(), ganhas = list.filter(b => b[3]).length;
   showSheet(`<h3>Conquistas: ${ganhas} de ${list.length}</h3>
     <div class="semTopo hint">Cada uma tem níveis: a próxima aparece quando você passa da anterior.</div>
     ${funFamilies().map(([ic, nome, como, v, metas]) => { const n = metas.filter(m => v >= m).length, prox = metas[n]; return `
-      <div class="semCursor item">${tile(ic)}<div class="mid"><b>${nome}${n ? ' ' + (metas.length > 1 ? ROMANOS[n - 1] : '') : ''}</b>
+      <div class="semCursor item${nova(nome) ? ' sugDestaque' : ''}">${tile(ic)}<div class="mid">
+        <b>${nome}${n ? ' ' + (metas.length > 1 ? ROMANOS[n - 1] : '') : ''}${nova(nome) ? ' <span class="tag in">Nova!</span>' : ''}</b>
         <small class="quebra">${prox == null ? 'Todos os níveis conquistados!' : cap(como(prox))}</small>
         <div class="lvls">${metas.map((m, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</div></div>
         <div class="val ${n === metas.length ? 'in' : 'muted'}">${n}/${metas.length}</div></div>`; }).join('')}
     <div class="btns foot"><button class="btn primary" data-onclick="closeForm()">Fechar</button></div>`);
+  const d = document.querySelector('#sheet .sugDestaque');
+  if (d) d.scrollIntoView({block:'center'});
 }
 function confetti(){
   if (!db.prefs.anim) return;

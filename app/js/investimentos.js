@@ -50,7 +50,7 @@ function checkPriceAlerts(){
     if (lado && v.alertHit !== lado) hits.push(`${v.ticker} ${lado === 'up' ? 'passou de' : 'caiu abaixo de'} ${fmtQ(lado === 'up' ? v.alertUp : v.alertDown)} (agora ${fmtQ(v.quote)})`);
     v.alertHit = lado;
   }
-  if (hits.length){ toast(hits.join(' · '));
+  if (hits.length){ toast(hits.join(' · '), {dest:{k:'invest'}});
     if (temNativo('notificar') && podeNotificar('preco')) nativo('notificar', 'Alerta de preço', hits.join('\n')); }
   return hits;
 }

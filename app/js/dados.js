@@ -47,7 +47,7 @@ function logErr(onde, e){
 }
 addEventListener('error', e => logErr('erro na tela', (e.error && e.error.stack) || (e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0)));
 addEventListener('unhandledrejection', e => logErr('promessa', e.reason));
-const APP_VERSION = '2.01'; // manter igual ao versionName do build.gradle
+const APP_VERSION = '2.10'; // manter igual ao versionName do build.gradle
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 const I = (name, size = 18) => `<svg class="ic" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
 // Categorias: [ícone, nome, cor]
@@ -117,6 +117,28 @@ function catLimpa(c){
 const PREV_PONTOS = {'50':'50% do previsto', '80':'80% do previsto', '90':'90% do previsto', chegou:'Chegou no previsto', passou:'Passou do previsto',
   fim:'Encerramento'};
 const PREV_PONTOS_PADRAO = ['80', 'passou', 'fim'];
+// Sugestões de gasto da conta (db.sugs = {limpas, lista}): o celular copia para cá as que leu das notificações (e a
+// situação de cada uma), e elas vão pela sincronização para a versão web, que lança e ignora como no app. Cada uma:
+// {t (hora do aviso, a chave), app, nome, texto, titulo, oculto, tipo, st, u (hora da última mudança: na junção, vale a
+// mais nova)}. limpas = hora do último "Limpar todas" (o que é de antes não volta). Ficam as de 90 dias, até 500.
+const SUG_ST = ['nova', 'aberta', 'lancada', 'ignorada'], SUGS_DIAS = 90, SUGS_MAX = 500;
+function sugsLimpas(s){
+  const o = s && typeof s === 'object' ? s : {}, limpas = Number(o.limpas) > 0 ? Number(o.limpas) : 0;
+  const desde = Date.now() - SUGS_DIAS * 864e5, txt = (v, n) => v == null ? '' : String(v).slice(0, n), porT = new Map();
+  for (const x of Array.isArray(o.lista) ? o.lista : []){
+    const t = Number(x && x.t);
+    if (!Number.isFinite(t) || t <= limpas || t < desde || !SUG_ST.includes(x.st)) continue;
+    const n = {t, app:txt(x.app, 120), nome:txt(x.nome, 60), texto:txt(x.texto, 400), titulo:txt(x.titulo, 120), st:x.st, u:Number(x.u) || t};
+    if (x.oculto) n.oculto = true;
+    if (x.tipo === 'vale' || x.tipo === 'carteira') n.tipo = x.tipo;
+    const a = porT.get(t);
+    if (!a || n.u >= a.u) porT.set(t, n);
+  }
+  return {limpas, lista:[...porT.values()].sort((a, b) => a.t - b.t).slice(-SUGS_MAX)};
+}
+// Junta as sugestões de dois lados (sincronização): de cada uma, a mudança mais recente; o "Limpar todas" mais novo vale.
+const sugsJuntar = (a, b) => sugsLimpas({limpas:Math.max((a && a.limpas) || 0, (b && b.limpas) || 0),
+  lista:[...((b && b.lista) || []), ...((a && a.lista) || [])]});
 function fixDb(d){
   for (const c of COLS) if (!Array.isArray(d[c])) d[c] = [];
   for (const k of ['tomb', 'budgets', 'cardClose', 'cardDue', 'cardAcc', 'cardLimit', 'yieldLog', 'netLog', 'catMemo', 'cats',
@@ -137,6 +159,7 @@ function fixDb(d){
     }
   }
   if (typeof d.archUntil !== 'string') d.archUntil = '';
+  d.sugs = sugsLimpas(d.sugs);
   if (d.prefs && typeof d.prefs === 'object' && 'prevPontos' in d.prefs){
     const l = d.prefs.prevPontos, ok = Array.isArray(l) ? Object.keys(PREV_PONTOS).filter(k => l.includes(k)) : [];
     if (!Array.isArray(l) || (l.length && !ok.length)) delete d.prefs.prevPontos; else d.prefs.prevPontos = ok;
@@ -331,7 +354,8 @@ const touch = r => { if (!r.u && !r.by && myName()) r.by = myName();
 function autoFile(){
   if (!(temNativo('backupArquivo')) || Date.now() - (sync.fileAt || 0) < 7*864e5) return;
   const dir = nativo('backupArquivo', JSON.stringify(db));
-  if (dir){ sync.fileAt = Date.now(); sync.fileDir = dir; saveSync(); centralAdd('Cópia semanal dos dados salva neste celular.', 'sucesso'); }
+  if (dir){ sync.fileAt = Date.now(); sync.fileDir = dir; saveSync();
+    centralAdd('Cópia semanal dos dados salva neste celular.', 'sucesso', 0, {k:'cfg', s:'dados'}); }
 }
 // Troca todos os dados pelos de um backup ou pelos que vieram da conta Google.
 function loadDb(d){

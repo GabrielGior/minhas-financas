@@ -122,14 +122,15 @@ function chatExpenses(t, P){
     pay && 'em ' + PAY[pay].toLowerCase()].filter(Boolean).join(' ');
   return {items, what, filtered:!!(cat || word || bank || pay)};
 }
-// Com um tema especial (e o app em português), a resposta ganha uma abertura e um fecho no clima do tema (FALAS_ASSIST,
-// em js/temas2.js). A escolha é fixa para cada pergunta: a mesma pergunta recebe sempre as mesmas falas.
+// Com um tema especial (e o app em português), a resposta ganha uma abertura e um fecho no clima do tema: as falas
+// exclusivas dele (FALAS_ASSIST, em js/temas2.js) ou, num tema sem falas próprias, as da categoria. A escolha é fixa para
+// cada pergunta: a mesma pergunta recebe sempre as mesmas falas.
 function falaTema(q, resp){
-  const k = db.prefs.skin, tema = FALAS_ASSIST[k], cat = FALAS_ASSIST_CAT[temaCat(k)];
-  if (!k || lang() !== 'pt' || (!tema && !cat)) return resp;
+  const k = db.prefs.skin, falas = FALAS_ASSIST[k] || FALAS_ASSIST_CAT[temaCat(k)];
+  if (!k || lang() !== 'pt' || !falas) return resp;
   let h = 0;
   for (const ch of plain(q).trim()) h = (h * 31 + ch.codePointAt(0)) >>> 0;
-  const ab = [...(tema ? [tema[0]] : []), ...(cat ? cat[0] : [])], fe = [...(tema ? [tema[1]] : []), ...(cat ? cat[1] : [])];
+  const [ab, fe] = falas;
   return `<span class="fala">${ab[h % ab.length]}</span>${resp}<span class="fala fim">${fe[(h >>> 4) % fe.length]}</span>`;
 }
 function answer(q){
@@ -297,7 +298,25 @@ addEventListener('scroll', () => {
   if (Math.abs(y - lastScroll) < 6) return;
   for (const id of ['fab', 'fabChat']) document.getElementById(id).classList.toggle('away', y > lastScroll && y > 80);
   lastScroll = y;
+  clearTimeout(chatDesviaT); chatDesviaT = setTimeout(chatDesvia, 150); // parou de rolar: confere de novo
 }, {passive:true});
+// O botão do assistente não fica por cima de um botão da tela (ex.: o "Pago" das contas a vencer): com a tela parada e
+// um botão embaixo dele, encolhe numa aba na beirada direita, fora do conteúdo; um toque na aba abre o assistente.
+// Volta ao tamanho normal quando a área fica livre. Só no celular: na tela larga há espaço dos lados.
+let chatDesviaT = 0;
+function chatDesvia(){
+  const fc = document.getElementById('fabChat');
+  if (fc.hidden || fc.classList.contains('away')) return;
+  fc.classList.remove('aba');
+  if (innerWidth >= 700) return;
+  const r = fc.getBoundingClientRect(), m = 6;
+  const pontos = [[r.left + m, r.top + m], [r.right - m, r.top + m], [r.left + m, r.bottom - m], [r.right - m, r.bottom - m],
+    [(r.left + r.right) / 2, (r.top + r.bottom) / 2]];
+  const cobre = pontos.some(([x, y]) => document.elementsFromPoint(x, y)
+    .some(el => !el.closest('.fab, .tabs') && el.matches('button, a, input, select, textarea')));
+  fc.classList.toggle('aba', cobre);
+}
+addEventListener('resize', () => { clearTimeout(chatDesviaT); chatDesviaT = setTimeout(chatDesvia, 150); });
 const telaErro = () => `<h1>${esc(TABS[state.tab] ? TABS[state.tab][1] : 'Cofrim')}</h1><div class="card"><b>${I('alert')} Não foi possível abrir esta tela</b>
   <div class="hint">O erro ficou registrado. Abra o Diagnóstico e envie o relatório para quem dá suporte; seus dados continuam salvos.</div>
   <div class="btns"><button class="btn primary" data-onclick="diagOpen()">Abrir Diagnóstico</button>${state.tab !== 'resumo' ? '<button class="btn" data-onclick="go(\'resumo\')">Ir para o Resumo</button>' : ''}</div></div>`;
@@ -313,7 +332,7 @@ function render(){
   const noFab = ['resumo', 'noticias', 'chat'].includes(state.tab);
   document.getElementById('fab').hidden = noFab;
   document.getElementById('fab').classList.remove('away');
-  // Assistente: botão flutuante em todas as telas, acima do "+" quando ele existe; some dentro do próprio assistente.
+  // Assistente: botão flutuante em todas as telas, ao lado do "+" quando ele existe; some dentro do próprio assistente.
   const fc = document.getElementById('fabChat');
   fc.hidden = state.tab === 'chat'; fc.classList.remove('away'); fc.classList.toggle('alto', !noFab);
   document.getElementById('app').classList.toggle('hasFab', !noFab);
@@ -321,6 +340,7 @@ function render(){
   drawTopbar();
   nuvemAlinhar(document.getElementById('app'));
   a11y(document.getElementById('app'));
+  chatDesvia();
   if (db.prefs.fun && !window.TESTE) setTimeout(funCheck, 0); // conquista nova: aviso com confete
 }
 // As regras avisam quando os dados mudam sozinhos (telaAtualizar, em util.js): redesenha, salvo com uma folha aberta.
@@ -413,10 +433,12 @@ document.addEventListener('touchend', e => {
 }, {passive:true});
 
 // Deslizar um gasto da lista: para a esquerda exclui (com "Desfazer"); para a direita marca a conta como paga.
+// Uma sugestão de gasto no Resumo (data-sug): para a esquerda ignora (com "Desfazer"); para a direita lança.
+// Uma notificação da central (data-cent): para qualquer lado, apaga (com "Desfazer").
 let sw = null, swipedAt = 0;
 document.addEventListener('touchstart', e => {
-  const it = e.target.closest ? e.target.closest('.item[data-sw]') : null;
-  sw = it && it.dataset.sw ? {it, x:e.touches[0].clientX, y:e.touches[0].clientY, dx:0, on:false} : null;
+  const it = e.target.closest ? e.target.closest('.item[data-sw], .item[data-sug], .item[data-cent]') : null;
+  sw = it && (it.dataset.sw || it.dataset.sug || it.dataset.cent) ? {it, x:e.touches[0].clientX, y:e.touches[0].clientY, dx:0, on:false} : null;
 }, {passive:true});
 document.addEventListener('touchmove', e => {
   if (!sw) return;
@@ -424,8 +446,8 @@ document.addEventListener('touchmove', e => {
   if (!sw.on){ if (Math.abs(dy) > 12) return void (sw = null); if (Math.abs(dx) < 14) return; sw.on = true; }
   sw.dx = dx;
   sw.it.style.transition = 'none'; sw.it.style.transform = `translateX(${dx}px)`;
-  sw.it.classList.toggle('swDel', dx < -90);
-  sw.it.classList.toggle('swPay', dx > 90 && sw.it.dataset.bill === '1');
+  sw.it.classList.toggle('swDel', dx < -90 || (dx > 90 && !!sw.it.dataset.cent));
+  sw.it.classList.toggle('swPay', dx > 90 && (sw.it.dataset.bill === '1' || !!sw.it.dataset.sug));
 }, {passive:true});
 document.addEventListener('touchend', () => {
   if (!sw) return;
@@ -433,6 +455,8 @@ document.addEventListener('touchend', () => {
   s.it.style.transition = ''; s.it.style.transform = ''; s.it.classList.remove('swDel', 'swPay');
   if (!s.on) return;
   swipedAt = Date.now();
+  if (s.it.dataset.cent){ if (Math.abs(s.dx) > 90) centralApagar(+s.it.dataset.cent); return; }
+  if (s.it.dataset.sug){ if (Math.abs(s.dx) > 90) noteDeslizou(+s.it.dataset.sug, s.dx); return; }
   if (s.dx < -90) removeRec('expenses', s.it.dataset.sw);
   else if (s.dx > 90 && s.it.dataset.bill === '1') togglePaid(s.it.dataset.sw, state.month);
 }, {passive:true});

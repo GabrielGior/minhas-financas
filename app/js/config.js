@@ -89,7 +89,7 @@ function openSettings(sec){
     <label>Cor do ícone do app</label>
     <div class="swatches">${Object.entries(ICONES).filter(([k]) => !SKINS[k] || SKIN_ANTIGOS.includes(k) || (k === p.skin || k === N.icone()) && iconeTem(k)).map(([k,c]) => `<button class="sw ${N.icone() === k ? 'on' : ''}" style="background:linear-gradient(135deg,${c[1]},${c[2]});border-radius:14px" data-onclick="nativeOpts().setIcone('${k}');openSettings()" aria-label="${c[0]}" title="${c[0]}"></button>`).join('')}</div>
     ${temNativo('setIconeApp') ? `<label>Desenho do ícone</label>
-    <div class="icoGrid">${iconeDesenhos(nativo('icone')).map(k => `<button class="${nativo('iconeDesenho') === k ? 'on' : ''}" data-onclick="nativo('setIconeApp', nativo('icone'),'${k}',0);openSettings()">${iconeSvg(nativo('icone'), k)}<small>${iconeNomeDesenho(nativo('icone'), k)}</small></button>`).join('')}</div>
+    <div class="icoGrid">${icoPadrao()}${iconeDesenhos(nativo('icone')).map(k => `<button class="${nativo('iconeDesenho') === k ? 'on' : ''}" data-onclick="nativo('setIconeApp', nativo('icone'),'${k}',0);openSettings()">${iconeSvg(nativo('icone'), k)}<small>${iconeNomeDesenho(nativo('icone'), k)}</small></button>`).join('')}</div>
     ${SKINS[nativo('icone')] ? '<div class="hint">Mais desenhos nas cores comuns.</div>' : temNativo('criarAtalho') ? '' : '<div class="hint">Há mais desenhos (moeda, carteira, cofre…) na versão nova do app: toque em Procurar atualizações.</div>'}` : ''}
     <div class="hint">O app fecha ao trocar; abra pelo ícone novo.</div>
     <label>Pedir senha ou biometria ao abrir</label>
@@ -191,6 +191,10 @@ function openSettings(sec){
   settingsOpen = true;
 }
 // O APK instalado tem ícone para esta cor ou tema? (Os temas por categoria chegaram ao ícone no APK 1.46.)
+// "Padrão": o ícone do Cofrim de fábrica (o C com a moeda, no roxo), sempre à mão na lista de desenhos, qualquer que seja a
+// cor ou o tema do ícone escolhido. Com ele já em uso, aparece marcado no lugar do C da própria cor.
+const icoPadrao = () => nativo('icone') === 'indigo' ? ''
+  : `<button data-onclick="nativo('setIconeApp','indigo','b',0);openSettings()">${iconeSvg('indigo', 'b')}<small>Padrão</small></button>`;
 const iconeTem = k => !SKINS[k] || SKIN_ANTIGOS.includes(k) || !!(temNativo('iconeTem') && nativo('iconeTem', k));
 // Tema especial: aplica e, no APK, oferece trocar também o ícone do app para combinar.
 // ---------- Tema ou cor do dia ----------
@@ -210,10 +214,13 @@ function sorteioDoDia(forcar){
   return true;
 }
 const sorteioNome = () => db.prefs.sorteio === 'tema' ? SKINS[db.prefs.skin][0] : COLORS[db.prefs.color][0];
+// "Tema (ou cor) de hoje": o aviso leva às Configurações do sorteio (Temas especiais ou Aparência).
+function sorteioAviso(){ const tema = db.prefs.sorteio === 'tema';
+  toast(`${tema ? 'Tema' : 'Cor'} de hoje: ${sorteioNome()}`, {dest:{k:'cfg', s:tema ? 'temas' : 'aparencia'}}); }
 function setSorteio(modo){
   const p = db.prefs;
   p.sorteio = p.sorteio === modo ? '' : modo;
-  if (p.sorteio){ p.sorteioVistos = []; sorteioDoDia(true); toast(`${modo === 'tema' ? 'Tema' : 'Cor'} de hoje: ${sorteioNome()}`); }
+  if (p.sorteio){ p.sorteioVistos = []; sorteioDoDia(true); sorteioAviso(); }
   else { db.cfgMod = Date.now(); save(); }
   render(); openSettings();
 }
@@ -396,7 +403,7 @@ async function deleteCat(type, k){
   delete db.cats[type][k];
   db.tomb['cat:' + type + ':' + k] = Date.now(); // a exclusão vale nos outros aparelhos (ver mergeDb)
   db.cfgMod = Date.now(); applyCats(); save(); render(); openCats();
-  toast('Categoria excluída.');
+  toast('Categoria excluída.', {dest:{k:'cfg', s:'dados'}});
 }
 function toggleCat(type, k){
   db.cats[type][k] = Object.assign(db.cats[type][k] || {}, {hidden:!CAT_OF[type][k][3]});

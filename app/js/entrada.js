@@ -327,7 +327,7 @@ function maybeNews(sempre){
   if (!last) last = db.verVista || (db.expenses.length || db.incomes.length ? NOV_SEM_REGISTRO : null);
   if (db.verVista !== APP_VERSION && !demoOn){ db.verVista = APP_VERSION; save(); }
   if (!sempre && !sync.forceNews && (last === APP_VERSION || (!last && !db.expenses.length && !db.incomes.length))) return false;
-  if (!sempre && last && last !== APP_VERSION) centralAdd(`Cofrim atualizado para a versão ${APP_VERSION}.`, 'sucesso');
+  if (!sempre && last && last !== APP_VERSION) centralAdd(`Cofrim atualizado para a versão ${APP_VERSION}.`, 'sucesso', 0, {k:'novidades'});
   if (sync.forceNews){ sync.forceNews = false; saveSync(); }
   settingsOpen = false; F = null;
   // Só o que é novo para esta pessoa: as versões depois da última que ela usou (numa conta nova ou pelas
@@ -426,7 +426,7 @@ async function importarComo(modo){
   // estava no arquivo, e a troca não valia nos outros aparelhos.
   if (modo === 'substituir') applySnapshot(d);
   else { loadDb(mergeDb(db, d)); rollover(); save(); closeForm(); render(); }
-  toast(modo === 'substituir' ? 'Dados substituídos pelos do arquivo.' : 'Arquivo juntado aos seus dados.');
+  toast(modo === 'substituir' ? 'Dados substituídos pelos do arquivo.' : 'Arquivo juntado aos seus dados.', {dest:{k:'cfg', s:'dados'}});
 }
 function importTexto(texto){
   try {

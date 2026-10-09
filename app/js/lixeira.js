@@ -10,7 +10,8 @@ function removeRec(col, id){
   db.tomb[id] = Date.now();
   db.trash.push({col, rec, at:Date.now()});
   save(); render();
-  showUndo('Excluído', () => { db[col].splice(i, 0, touch(rec)); delete db.tomb[id]; db.trash = db.trash.filter(t => t.rec !== rec); save(); render(); });
+  showUndo('Excluído', () => { db[col].splice(i, 0, touch(rec)); delete db.tomb[id]; db.trash = db.trash.filter(t => t.rec !== rec); save(); render(); },
+    {dest:{k:'lixeira'}});
 }
 // Lixeira: lançamentos excluídos nos últimos 30 dias (neste aparelho), com opção de restaurar.
 const COL_NAMES = {incomes:'Ganho', expenses:'Gasto', installments:'Compra parcelada', investments:'Investimento', goals:'Meta', accounts:'Conta',

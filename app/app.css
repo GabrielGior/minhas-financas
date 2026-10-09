@@ -72,8 +72,6 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .chart .col.sel{background:var(--line)}
 .chart .bars{flex:1;display:flex;align-items:flex-end;gap:2px;width:100%;justify-content:center}
 .chart .bars i{width:42%;max-width:11px;border-radius:4px 4px 0 0;min-height:2px}
-.chart .bars .stk{width:42%;max-width:11px;display:flex;flex-direction:column;border-radius:4px 4px 0 0;overflow:hidden;min-height:2px}
-.chart .bars .stk i{width:100%;max-width:none;border-radius:0;min-height:0}
 .chart small{font-size:10px;color:var(--muted)}
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted)}
 .dot{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px}
@@ -355,14 +353,12 @@ h1 span{display:flex;gap:2px}
 .catPick button{display:flex;align-items:center;gap:6px;padding:9px 12px;border-radius:99px;background:var(--bg);border:1.5px solid var(--line);font-size:13.5px;font-weight:600;transition:background-color .15s,border-color .15s}
 .catPick button .ic{color:var(--brand)}
 .catPick button.more{border-style:dashed;color:var(--brand)}
-.secT+.hint{margin-top:8px!important}
 .catPick button.on{background:color-mix(in srgb,var(--brand) 22%,var(--bg));border-color:var(--brand)}
 .iconGrid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
 .iconGrid button{aspect-ratio:1;border-radius:14px;background:var(--bg);border:1.5px solid var(--line);display:grid;place-items:center;color:var(--muted)}
 .iconGrid button.on{color:#fff;border-color:transparent;background:linear-gradient(135deg,var(--hero1),var(--hero2))}
 /* Configurações em seções */
 .sec{background:var(--bg);border-radius:18px;padding:2px 14px 14px;margin-bottom:12px}
-.secT{display:flex;align-items:center;gap:7px;font-weight:700;font-size:15px;padding:13px 0 0;color:var(--brand)}
 .sec .btn,.sec .chips button{background:var(--card)}
 .sec .btn.primary{background:linear-gradient(135deg,var(--brand),var(--brand2))}
 #snack{max-width:calc(100% - 32px);width:max-content;white-space:normal;line-height:1.3}
@@ -603,6 +599,11 @@ html[data-fun=on] .ico:active,html[data-fun=on] .item:active .ico{animation:pigP
 .fab.chat{border-radius:50%;width:52px;height:52px;display:flex;align-items:center;justify-content:center;background:var(--card);color:var(--brand);border:1.5px solid var(--line);box-shadow:var(--shadow);right:max(21px,calc(50% - 239px))}
 .fab.chat.alto{bottom:calc(89px + env(safe-area-inset-bottom));right:calc(max(18px,calc(50% - 242px)) + 70px)}
 .fab.chat[hidden]{display:none}
+/* Com um botão da tela embaixo dele (chatDesvia, em assistente.js): aba estreita colada na beirada direita, na margem
+   de fora dos cartões; ao lado do "+", fica logo acima dele. */
+.fab.chat.aba{right:0;width:26px;height:46px;border-radius:23px 0 0 23px;border-right:0;justify-content:flex-start;padding:0 0 0 5px}
+.fab.chat.aba svg{width:17px;height:17px}
+.fab.chat.alto.aba{bottom:calc(155px + env(safe-area-inset-bottom))}
 h1 .volta{display:flex;align-items:center;gap:4px}
 html[data-fun=on] .fab.chat{animation:none}
 @media (min-width:700px){.fab.chat{right:max(21px,calc(50% - 479px))}.fab.chat.alto{right:calc(max(18px,calc(50% - 482px)) + 70px)}}
@@ -685,7 +686,6 @@ html[data-troca=gira] #app.enter{animation:trGira .38s ease-out;transform-origin
 @media (prefers-reduced-motion:reduce){html[data-troca] #app.enter{animation:none}#cena *{animation:none!important}}
 /* Entrada (abertura) mais demorada, com dois jeitos novos: zoom e giro. */
 .abreM{animation-duration:1.05s!important}
-.abreBar{animation-duration:.85s!important}
 #abreIn b{animation-delay:.65s;animation-duration:.5s}
 #abre[data-g=zoom] .abreM{animation:abreZoom 1.05s cubic-bezier(.2,1.2,.4,1) both}
 @keyframes abreZoom{from{opacity:0;transform:scale(3.2)}}
@@ -779,7 +779,7 @@ html[data-troca=gira] #app.enter{animation:trGira .38s ease-out;transform-origin
 .escala i{width:14px;height:14px;border-radius:4px;background:var(--bg)}
 .escala .n1{background:color-mix(in srgb,var(--out) 30%,var(--card))}.escala .n2{background:color-mix(in srgb,var(--out) 52%,var(--card))}
 .escala .n3{background:color-mix(in srgb,var(--out) 76%,var(--card))}.escala .n4{background:var(--out)}
-.chart .bars i,.chart .bars .stk{max-width:13px;border-radius:6px 6px 0 0}
+.chart .bars i{max-width:13px;border-radius:6px 6px 0 0}
 .chart .col.sel{background:color-mix(in srgb,var(--brand) 12%,transparent)}
 .chart .col.sel small{color:var(--brand);font-weight:700}
 .card.stat{position:relative;overflow:hidden;padding-top:18px}
@@ -808,15 +808,11 @@ html[data-troca=gira] #app.enter{animation:trGira .38s ease-out;transform-origin
 .cal .n3,.escala .n3{background:color-mix(in srgb,var(--hero1) 76%,var(--card));color:#fff}
 .cal .n4,.escala .n4{background:linear-gradient(135deg,var(--hero1),var(--hero2));color:#fff}
 .cal .hoje{outline-color:var(--brand)}
-.grafTopo{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
-.grafTopo>div{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:9px 7px;min-width:0}
-.grafTopo small{display:flex;align-items:center;font-size:11.5px;color:var(--muted);white-space:nowrap}
-.grafTopo b{display:block;font-size:clamp(11.5px,3.3vw,15px);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .graf .chart{height:176px;gap:2px;margin-top:0}
 .graf .chart .grid i{border-top:1px dashed var(--line)}
 .graf .chart .col{border-radius:12px;padding:6px 0 4px;gap:6px}
 .graf .chart .bars{gap:3px}
-.graf .chart .bars>i,.graf .chart .bars .stk{width:44%;max-width:14px;border-radius:7px 7px 2px 2px;min-height:3px}
+.graf .chart .bars>i{width:44%;max-width:14px;border-radius:7px 7px 2px 2px;min-height:3px}
 .graf .chart .bars .gas{background:linear-gradient(180deg,var(--out),color-mix(in srgb,var(--out) 55%,var(--card)))}
 .graf .chart .bars .gan{background:linear-gradient(180deg,var(--in),color-mix(in srgb,var(--in) 55%,var(--card)))}
 .graf .chart .bars .rend{background:var(--brand)}

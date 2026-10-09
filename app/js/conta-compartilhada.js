@@ -41,8 +41,10 @@ async function sharedWrite(id, json){
   ok(await fam('PUT', `${SHEETS}/${id}/values/${rng('dados!A1:A' + partes.length)}?valueInputOption=RAW`, JSON.stringify({values:partes}), 'application/json'));
   ok(await fam('POST', `${SHEETS}/${id}/values/${rng('dados!A' + (partes.length + 1) + ':A')}:clear`, '{}', 'application/json'));
 }
-// Texto para comparar na conta compartilhada: a aparência (prefs) é de cada um e não conta como diferença.
-const canonS = d => canon(shared() ? {...d, prefs:null} : d);
+// Texto para comparar na conta compartilhada: a aparência (prefs) e as sugestões são de cada um e não contam como diferença.
+const canonS = d => canon(shared() ? {...d, prefs:null, sugs:null} : d);
+// O que vai para a planilha: tudo menos as sugestões de gasto, que vêm das notificações do celular de cada um.
+const paraPlanilha = d => JSON.stringify({...d, sugs:undefined});
 const sharedMsg = e => e.status === 403 && /SERVICE_DISABLED|has not been used|not been enabled/i.test(e.text) ? 'A API do Google Sheets não está ativada no projeto do app no Google Cloud.'
   : e.status === 403 || e.status === 404 ? 'Sem acesso à conta compartilhada: confira se o convite foi feito para esta conta Google.' : '';
 const codeOf = s => (String(s).match(/\/d\/([\w-]{20,})/) || String(s).trim().match(/^([\w-]{20,})$/) || [])[1] || '';

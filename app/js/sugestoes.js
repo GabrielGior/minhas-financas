@@ -53,7 +53,10 @@ function centralBanco(list){
     : `Nova sugestão: ${fmtTexto(x.p.value)}${x.p.desc ? ' em ' + x.p.desc : ''} (${bankName(x.n)})`, 'info', x.n.t, {k:'sug', t:x.n.t});
   try { localStorage.setItem('financas-central-banco', String(Math.max(...novas.map(x => x.n.t)))); } catch(e){}
 }
+// No celular, as novas vêm do lado nativo (BankListener); na versão web, da conta (db.sugs, ver sugEspelhar).
+const sugNoCelular = () => temNativo('avisosBanco');
 function bankNotes(){ if (demoOn) return demoNotas;
+  if (!sugNoCelular()) return db.sugs.lista.filter(n => n.st === 'nova').filter(notaPermitida);
   try { return temNativo('avisosBanco') ? JSON.parse(nativo('avisosBanco')).filter(notaPermitida) : []; } catch(e){ return []; } }
 // {value, desc, income, bank, date} a partir do texto da notificação; null se não houver valor.
 // Notificação que chegou escondida (n.oculto, ver BankListener): {hidden, app, title, income, bank, date}, sem valor.
@@ -82,15 +85,45 @@ function parseBankNote(n){
   return {value:parseNum(m[1]), desc:cap(desc.toLowerCase()), income:/receb|pix recebido|transfer[eê]ncia recebida|dep[oó]sito|creditad/i.test(t),
     bank:BANK_APPS[n.app] || '', date:new Date(n.t).toLocaleDateString('sv'), ...vale};
 }
+// Hora da sugestão, curta: "hoje, 14:32", "ontem, 09:10" ou "03/10, 18:00". O texto inteiro do banco fica na tela
+// Sugestões de gasto; no Resumo, cada uma mostra a loja, o app e a hora, com o valor só uma vez (à direita).
+function sugQuando(t){
+  const d = new Date(t), h = d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}), dia = d.toLocaleDateString('sv');
+  const hoje = new Date().toLocaleDateString('sv'), ontem = new Date(Date.now() - 864e5).toLocaleDateString('sv');
+  return `${dia === hoje ? 'hoje' : dia === ontem ? 'ontem' : d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}, ${h}`;
+}
+// No Resumo, deslizar uma sugestão para a direita lança e para a esquerda ignora (só ela, com "Desfazer"); o gesto é o
+// mesmo dos lançamentos (assistente.js).
+function noteDeslizou(t, lado){
+  const n = bankNotes().find(x => x.t === t);
+  if (!n) return render();
+  if (lado > 0) return noteUse(t);
+  noteDrop(t);
+  showUndo('Sugestão ignorada', () => sugDevolver([n]), {dest:{k:'sugs'}});
+}
+// "Desfazer" de ignorar: as sugestões voltam a ser novas no Resumo, na barra do Android (pelo lado nativo) e na conta
+// (para a sincronização não as tirar de novo).
+function sugDevolver(novas){
+  const ts = new Set(novas.map(n => n.t));
+  if (demoOn) demoNotas = [...novas, ...demoNotas];
+  else if (!sugNoCelular()) novas.forEach(n => sugGuardar(n, 'nova'));
+  else {
+    try { localStorage.setItem(SUG_KEY, JSON.stringify(sugLog().filter(n => !ts.has(n.t)))); } catch(e){}
+    nativo('avisosGuardar', JSON.stringify([...novas.map(({st, u, ...n}) => n), ...bankNotes()]));
+    db.sugs = sugsLimpas({...db.sugs, lista:[...db.sugs.lista.filter(x => !ts.has(x.t)), ...novas.map(n => ({...n, st:'nova', u:Date.now()}))]});
+    save();
+  }
+  render();
+}
 function bankNotesHtml(){
   const list = bankNotes().map((n, i) => ({i, n, p:parseBankNote(n)})).filter(x => x.p).slice(-5).reverse();
   centralBanco(list);
   // Só as novas: lançadas, ignoradas e abertas ficam na tela Sugestões de gasto, no menu de três barras (openSugestoes).
   const todas = bankNotes().length;
   return list.length ? `<div class="card"><div class="sugTopo"><b>${I('sparkle')} Sugestões de gasto</b>${todas > 1 ? `<button class="btn" data-onclick="noteIgnorarTodas()">Ignorar todas</button>` : ''}</div>${list.map(({i, n, p}) => `
-    <div class="semCursor item"><div class="mid">${p.hidden
+    <div class="semCursor item" data-sug="${+n.t}"><div class="mid">${p.hidden
       ? `<b>Novo aviso do ${esc(p.app)}</b><small class="quebra">${p.title ? esc(p.title) + ' · ' : ''}${new Date(n.t).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'})}. Não deu para ler o valor (o Android esconde avisos com números parecidos com código); confira no app do banco.</small>`
-      : `<b>${esc(p.desc)}</b><small class="quebra">${esc(bankName(n))} · ${esc(String(n.texto).slice(0, 90))}</small>`}</div>
+      : `<b class="quebra">${esc(p.desc)}</b><small>${esc(bankName(n))} · ${sugQuando(n.t)}</small>`}</div>
       <div style="flex:none;text-align:right"><div class="val ${p.income ? 'in' : 'out'}">${p.hidden ? 'R$ ?' : fmt(p.value)}</div>
       <button class="btn primary" style="padding:7px 10px;margin-top:4px" data-onclick="noteUse(${+n.t})">Lançar</button> <button class="btn" style="padding:7px 10px;margin-top:4px" data-onclick="noteIgnorar(${+n.t})">Ignorar</button></div></div>`).join('')}</div>` : '';
 }
@@ -100,11 +133,12 @@ function bankNotesHtml(){
 function noteIgnorar(t){
   const n = bankNotes().find(n => n.t === t);
   if (!n) return render();
+  if (!temNativo('avisosConfig')) return noteDrop(t); // versão web: quem lê as notificações é o celular, e ele não fica sabendo
   pickList('Ignorar', [['esta', 'Ignorar esta sugestão'], ['app', `Não sugerir do ${bankName(n)}`]], '', v => {
     noteDrop(t); // antes de bloquear: depois o app some da lista e a sugestão não iria para o histórico
     if (v === 'app'){
       appIgnorar(n.app, bankName(n));
-      toast(`O app não vai mais sugerir lançamentos do ${bankName(n)}.`);
+      toast(`O app não vai mais sugerir lançamentos do ${bankName(n)}.`, {dest:{k:'appsIgn'}});
       render();
     }
   });
@@ -115,16 +149,12 @@ async function noteIgnorarTodas(){
   const novas = bankNotes(), ts = new Set(novas.map(n => n.t));
   if (!novas.length) return render();
   if (!await ask(`Ignorar ${novas.length > 1 ? `as ${novas.length} sugestões novas` : 'a sugestão nova'}? Elas continuam na tela Sugestões de gasto, no menu de três barras.`, 'Ignorar todas')) return;
-  const antes = sugLog();
   novas.forEach(n => avisoCancelar(n.t));
+  // (Na versão web, sugGuardar muda a situação na conta; o "Desfazer" as devolve como novas.)
   if (demoOn) demoNotas = [];
   else { novas.forEach(n => sugGuardar(n, 'ignorada')); nativo('avisosGuardar', JSON.stringify(bankNotes().filter(n => !ts.has(n.t)))); }
   render();
-  showUndo(`${novas.length} ${novas.length > 1 ? 'sugestões ignoradas' : 'sugestão ignorada'}`, () => {
-    if (demoOn) demoNotas = [...novas, ...demoNotas];
-    else { try { localStorage.setItem(SUG_KEY, JSON.stringify(antes)); } catch(e){} nativo('avisosGuardar', JSON.stringify([...novas, ...bankNotes()])); }
-    render();
-  });
+  showUndo(`${novas.length} ${novas.length > 1 ? 'sugestões ignoradas' : 'sugestão ignorada'}`, () => sugDevolver(novas), {dest:{k:'sugs'}});
 }
 function noteDrop(t, st = 'ignorada'){
   const n = bankNotes().find(n => n.t === t);
@@ -153,14 +183,29 @@ function noteUse(t){
     credito(k);
   });
   if (p.income) return openForm('incomes', null, {sug:t, vals:{desc:p.desc, value, fixed:'', bank:p.bank, ...quando}, more:true});
-  // Gasto: antes de abrir, pergunta se saiu do dinheiro normal ou de um vale (os vales ficam separados).
-  pickList('Esse gasto foi pago com…', [['', 'Dinheiro normal (conta, cartão, Pix)'], ...Object.entries(VALES)], null, pay => {
+  // Gasto: saiu do dinheiro normal ou de um vale (os vales ficam separados)? Pergunta na primeira vez de cada app; depois,
+  // abre direto como da última vez, com "Trocar" no aviso.
+  const abrir = pay => {
     if (nova && !bankNotes().some(n => n.t === t)) return; // já lançado ou ignorado
     if (pay) return noVale(pay);
     openForm('expenses', null,
       {sug:t, vals:{desc:p.desc, value, ...(p.desc ? {cat:guessCat(p.desc)} : {}), bank:p.bank, start:p.date.slice(0, 7), day:String(+p.date.slice(8))},
       more:true});
-  });
+  };
+  const perguntar = () => pickList('Esse gasto foi pago com…', [['', 'Dinheiro normal (conta, cartão, Pix)'], ...Object.entries(VALES)], null,
+    pay => { sugPagoGuardar(n.app, pay); abrir(pay); });
+  const antes = sugPagoCom(n.app);
+  if (antes == null) return perguntar();
+  abrir(antes);
+  showAcao(`Pago com ${antes ? VALES[antes].toLowerCase() : 'dinheiro normal'}, como da última vez.`, 'Trocar', () => { closeForm(); perguntar(); },
+    {central:false});
+}
+// Como cada app costuma ser pago (db.prefs.sugPag = {app: '' para dinheiro normal ou a chave do vale}), para todos os
+// aparelhos da conta. null = ainda não sabe (pergunta).
+const sugPagoCom = app => { const m = db.prefs.sugPag || {}; return app && app in m && (m[app] === '' || VALES[m[app]]) ? m[app] : null; };
+function sugPagoGuardar(app, pay){
+  if (!app || sugPagoCom(app) === pay) return;
+  db.prefs.sugPag = {...db.prefs.sugPag, [app]:pay}; db.cfgMod = Date.now(); save();
 }
 // Configurações › Lançamento automático › Apps ignorados: a lista e o "Voltar a sugerir" de cada um.
 function openAppsIgnorados(){
@@ -180,7 +225,7 @@ async function appVoltar(i){
   if (!await ask(`Voltar a receber sugestões do ${nome}?`, 'Voltar a sugerir')) return;
   appsIgnoradosGuardar(appsIgnorados().filter(y => y.app !== x.app));
   avisosConfigEnviar();
-  toast(`O ${nome} volta a gerar sugestões a partir das próximas notificações.`);
+  toast(`O ${nome} volta a gerar sugestões a partir das próximas notificações.`, {dest:{k:'appsIgn'}});
   openAppsIgnorados();
 }
 // Notificação de uma sugestão (BankListener): some da barra quando a sugestão sai da lista por outro caminho.
@@ -220,6 +265,7 @@ window.onAvisoBanco = () => {
   const l = bankNotes(), ult = l.length ? Math.max(...l.map(n => n.t)) : 0;
   if (ult <= avisoBancoVisto) return;
   avisoBancoVisto = ult;
+  sugEspelhar();
   centralBanco(l.map(n => ({n, p:parseBankNote(n)})).filter(x => x.p));
   if (state.tab === 'resumo' && !sheetOpen() && !pickerOpen()) render();
 };
@@ -239,12 +285,64 @@ async function setAvisos(v){
 // as dos últimos 12 meses, até 2.000 (uns 450 mil caracteres, menos de um décimo do armazenamento da página no APK, onde
 // os dados ficam num arquivo à parte), e só as mais antigas saem.
 const SUG_KEY = 'financas-sugestoes', SUG_MESES = 12, SUG_MAX = 2000;
-function sugLog(){ try { return JSON.parse(localStorage.getItem(SUG_KEY)) || []; } catch(e){ return []; } }
+// Na versão web, o histórico é o da conta (db.sugs): as que o celular mandou, já lançadas, ignoradas ou abertas.
+function sugLog(){
+  if (!sugNoCelular()) return db.sugs.lista.filter(n => n.st !== 'nova');
+  try { return JSON.parse(localStorage.getItem(SUG_KEY)) || []; } catch(e){ return []; }
+}
+// u = hora da mudança (na sincronização, vale a mais nova entre o celular e a versão web).
 function sugGuardar(n, st){
   if (!n) return;
+  if (!sugNoCelular()){
+    if (demoOn) return;
+    db.sugs = sugsLimpas({...db.sugs, lista:[...db.sugs.lista.filter(x => x.t !== n.t), {...n, st, u:Date.now()}]});
+    return save();
+  }
   const desde = Date.now() - SUG_MESES * 31 * 864e5, l = sugLog().filter(x => x.t !== n.t && x.t >= desde);
-  l.push({...n, st});
+  l.push({...n, st, u:Date.now()});
   try { localStorage.setItem(SUG_KEY, JSON.stringify(l.slice(-SUG_MAX))); } catch(e){}
+  sugEspelhar();
+}
+// ---------- Sugestões na conta: do celular para a versão web e de volta ----------
+// O celular copia para a conta (db.sugs) as sugestões dos últimos 90 dias e a situação de cada uma; a sincronização leva
+// para a versão web, que lança, ignora e abre como aqui. O que a versão web mudou volta pela sincronização (sugDaConta).
+// Na conta compartilhada, as sugestões não vão para a planilha: são de cada pessoa (ver paraPlanilha).
+function sugEspelhar(){
+  if (!sugNoCelular() || demoOn) return;
+  const desde = Date.now() - SUGS_DIAS * 864e5, daqui = new Map();
+  for (const n of bankNotes()) daqui.set(n.t, {...n, st:'nova', u:n.t});
+  for (const n of sugLog()){ const a = daqui.get(n.t), u = n.u || n.t; if (!a || u >= a.u) daqui.set(n.t, {...n, u}); }
+  const conta = new Map(db.sugs.lista.map(x => [x.t, x]));
+  let mudou = false;
+  for (const n of [...daqui.values()].filter(n => n.t >= desde && n.t > db.sugs.limpas).sort((a, b) => a.t - b.t).slice(-SUGS_MAX)){
+    const c = conta.get(n.t);
+    if (!c || (n.u > c.u && n.st !== c.st)){ conta.set(n.t, n); mudou = true; }
+  }
+  if (mudou){ db.sugs = sugsLimpas({...db.sugs, lista:[...conta.values()]}); save(); }
+}
+// Depois de sincronizar (e ao abrir), no celular: o que a versão web lançou, ignorou ou abriu sai do Resumo e da barra
+// do Android e muda no histórico; o que ela devolveu como nova ("Desfazer") volta; "Limpar todas" feito lá apaga aqui.
+function sugDaConta(){
+  if (!sugNoCelular() || demoOn) return;
+  const {limpas} = db.sugs, conta = new Map(db.sugs.lista.map(x => [x.t, x])), mais = (n, u) => { const c = conta.get(n.t); return c && c.u > u ? c : null; };
+  const notas = bankNotes(), log = sugLog(), novas = [], hist = [];
+  let mudouN = false, mudouL = false;
+  for (const n of notas){
+    const c = mais(n, n.t);
+    if (n.t <= limpas || (c && c.st !== 'nova')){ avisoCancelar(n.t); mudouN = true; if (n.t > limpas) hist.push({...n, st:c.st, u:c.u}); }
+    else novas.push(n);
+  }
+  for (const n of log){
+    const c = mais(n, n.u || n.t);
+    if (n.t <= limpas){ mudouL = true; continue; }
+    if (c && c.st === 'nova'){ const {st, u, ...nota} = n; novas.push(nota); mudouN = mudouL = true; continue; }
+    if (c && c.st !== n.st){ hist.push({...n, st:c.st, u:c.u}); mudouL = true; } else hist.push(n);
+  }
+  const porT = new Map();
+  for (const h of hist){ const a = porT.get(h.t); if (!a || (h.u || h.t) >= (a.u || a.t)) porT.set(h.t, h); }
+  if (porT.size !== log.length) mudouL = true;
+  if (mudouL) try { localStorage.setItem(SUG_KEY, JSON.stringify([...porT.values()].sort((a, b) => a.t - b.t).slice(-SUG_MAX))); } catch(e){}
+  if (mudouN) nativo('avisosGuardar', JSON.stringify(novas.sort((a, b) => a.t - b.t)));
 }
 // Muda a situação de uma sugestão que já está guardada (ex.: de "aberta" para "lançada").
 function sugMarcar(t, st){ const n = sugLog().find(x => x.t === t); if (n) sugGuardar(n, st); }
@@ -252,6 +350,14 @@ function sugMarcar(t, st){ const n = sugLog().find(x => x.t === t); if (n) sugGu
 // do Resumo). filtro: todas, nova, lancada ou ignorada.
 const SUG_ROT = {nova:['Nova', 'in'], aberta:['Aberta, não lançada', 'out'], lancada:['Lançada', 'muted'], ignorada:['Ignorada', 'muted']};
 const SUG_FILTROS = [['todas', 'Todas'], ['nova', 'Novas'], ['lancada', 'Lançadas'], ['ignorada', 'Ignoradas']];
+// Textos da tela que mudam entre o celular e a versão web (onde as sugestões chegam pela sincronização).
+const sugVazio = () => 'Nenhuma sugestão por enquanto.<br>' + (sugNoCelular() ? 'Elas aparecem quando o banco avisa uma compra ou um Pix.'
+  : 'Elas são lidas pelo Cofrim no celular Android (com as Sugestões de gasto ligadas) e chegam aqui pela sincronização.');
+const sugRodape = () => sugNoCelular()
+  ? `Guardamos neste aparelho as sugestões dos últimos ${SUG_MESES} meses (até ${SUG_MAX.toLocaleString('pt-BR')}). `
+    + `As dos últimos ${SUGS_DIAS} dias vão também para a versão web, pela sincronização.`
+  : `As sugestões vêm do Cofrim no seu celular Android, pela sincronização (as dos últimos ${SUGS_DIAS} dias). `
+    + 'O que você lançar ou ignorar aqui vale também lá.';
 function openSugestoes(destaque, filtro = 'todas'){
   settingsOpen = false; F = null;
   const todas = [...bankNotes().map(n => ({...n, st:'nova'})), ...sugLog()].sort((a, b) => b.t - a.t).filter(notaPermitida).map(n => ({n, p:parseBankNote(n)})).filter(x => x.p);
@@ -265,19 +371,21 @@ function openSugestoes(destaque, filtro = 'todas'){
       ${p.hidden ? '' : `<small class="quebra">${esc(String(n.texto).slice(0, 110))}</small>`}</div>
       <div style="flex:none;text-align:right"><div class="val ${p.income ? 'in' : 'out'}">${p.hidden ? 'R$ ?' : fmt(p.value)}</div>
       <button class="btn ${n.st === 'nova' ? 'primary' : ''}" style="padding:7px 10px;margin-top:4px" data-onclick="noteUse(${+n.t})">${p.income ? 'Lançar ganho' : 'Lançar gasto'}</button></div></div>`).join('')
-    : `<div class="card empty" style="box-shadow:none">${guardadas ? 'Nenhuma sugestão nesta situação.' : 'Nenhuma sugestão por enquanto.<br>Elas aparecem quando o banco avisa uma compra ou um Pix.'}</div>`}
-    <div class="hint">Guardamos neste aparelho as sugestões dos últimos ${SUG_MESES} meses (até ${SUG_MAX.toLocaleString('pt-BR')}).</div>
+    : `<div class="card empty" style="box-shadow:none">${guardadas ? 'Nenhuma sugestão nesta situação.' : sugVazio()}</div>`}
+    <div class="hint">${sugRodape()}</div>
     <div class="btns foot">${guardadas ? '<button class="btn" data-onclick="sugLimpar()">Limpar todas</button>' : ''}<button class="btn primary" data-onclick="closeForm()">Fechar</button></div>`);
   const d = document.querySelector('#sheet .sugDestaque');
   if (d) d.scrollIntoView({block:'center'});
 }
 // "Limpar todas": apaga as guardadas e as novas (que saem do Resumo) e tira da barra as notificações de gasto encontrado.
 async function sugLimpar(){
-  if (!await ask('Apagar todas as sugestões guardadas neste aparelho? As novas também saem do Resumo.', 'Apagar')) return openSugestoes();
+  const msg = 'Apagar todas as sugestões guardadas? As novas também saem do Resumo, aqui e nos outros aparelhos da sua conta.';
+  if (!await ask(msg, 'Apagar')) return openSugestoes();
   for (const n of bankNotes()) avisoCancelar(n.t);
   try { localStorage.removeItem(SUG_KEY); } catch(e){}
   if (demoOn) demoNotas = [];
   else if (temNativo('avisosGuardar')) nativo('avisosGuardar', '[]');
+  if (!demoOn){ db.sugs = {limpas:Date.now(), lista:[]}; save(); } // vale para os outros aparelhos da conta
   render(); openSugestoes();
   toast('Sugestões apagadas.');
 }
