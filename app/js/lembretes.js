@@ -70,20 +70,30 @@ function updateWidget(){
   // com os ganhos e gastos realizados fechar.
   const reserva = reservaPrevisoes(curYM), mesNome = m.split(' ')[0];
   const frase = {feliz:'Oinc! Mês no azul', ok:'Tudo sob controle', triste:'Segura o cartão…'}[humor];
-  const curto = v => fmt(v).replace(/^R\$\s?/, '').replace(/,\d\d$/, ''); // sem "R$" nem centavos: cabe no widget de saldo, que é estreito
-  nativo('widget', JSON.stringify({mes:m[0].toUpperCase() + m.slice(1), saldo:fmt(saldoPrev), negativo:saldoPrev < 0,
+  const semSimbolo = s => s.replace(moeda.simbolo, '').replace(/^[\s\u00A0]+|[\s\u00A0]+$/g, '').replace(/^-[\s\u00A0]+/, '-');
+  const curto = v => semSimbolo(fmt(v)).replace(/,\d+$/, ''); // sem o símbolo nem centavos: cabe no widget de saldo, que é estreito
+  nativo('widget', widgetMascara(JSON.stringify({mes:m[0].toUpperCase() + m.slice(1), saldo:fmt(saldoPrev), negativo:saldoPrev < 0,
     saldoRot:(reserva ? 'Saldo previsto de ' : 'Saldo de ') + mesNome, prevTxt:prevInclui(reserva), ganhos:fmt(tin), gastos:fmt(tout),
     ganhosC:curto(tin), gastosC:curto(tout),
     fun:!!db.prefs.fun, frase, linhas:widgetLines(), pig:db.prefs.widgetPig ?? !!db.prefs.fun, humor, skin:db.prefs.skin || '',
     // cor = cor do app (o fundo dos widgets acompanha); fundo = 'tema' (cor ou tema especial) ou 'escuro'; pct = gastos sobre ganhos.
     cor:db.prefs.color, fundo:db.prefs.widgetFundo || 'tema', pct:tin > 0 ? Math.min(100, Math.round(tout / tin * 100)) : tout > 0 ? 100 : 0,
     ...widgetGastos(), ...widgetContas(), sugs:widgetSugs(), ts:Date.now(),
-    // Números curtos do tamanho 1x1 (sem "R$"): saldo, quantas contas vencem e o total da lista de gastos.
-    saldoC:fmtCurto(saldoPrev).replace(/^R\$\s?/, ''), contasN:upcomingBills().length ? String(upcomingBills().length) : '',
+    // Números curtos do tamanho 1x1 (sem o símbolo da moeda): saldo, quantas contas vencem e o total da lista de gastos.
+    saldoC:semSimbolo(fmtCurto(saldoPrev)), contasN:upcomingBills().length ? String(upcomingBills().length) : '',
     contas:upcomingBills().slice(0, 12).map(b => ({t:b.x.desc,
       s:b.diff < 0 ? 'atrasada' : b.diff === 0 ? 'vence hoje' : 'vence dia ' + dueDay(b.x, curYM), v:fmt(b.x.value), c:b.diff <= 0 ? 'out' : '',
       k:(CAT_GASTO[b.x.cat] || CAT_GASTO.outros)[2]})),
-    porco:{humor, frase, gastos:fmt(tout), sub:tin > 0 ? `gastos: ${Math.round(tout / tin * 100)}% dos ganhos` : 'gastos do mês'}}));
+    porco:{humor, frase, gastos:fmt(tout), sub:tin > 0 ? `gastos: ${Math.round(tout / tin * 100)}% dos ganhos` : 'gastos do mês'}})));
+}
+// "Esconder valores nos widgets": o lado nativo esconde os valores em "R$"; com outra moeda, eles já vão escondidos daqui
+// (o símbolo da moeda e os números curtos, que não têm símbolo).
+function widgetMascara(json){
+  if (moeda.cod === 'BRL' || !(temNativo('widgetOculto') && nativo('widgetOculto'))) return json;
+  const sim = moeda.simbolo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const o = JSON.parse(json.replace(new RegExp('-?' + sim + '[\\s\\u00A0]*-?[\\d.,]*\\d', 'g'), MASK));
+  for (const k of ['ganhosC', 'gastosC', 'saldoC']) if (o[k]) o[k] = '••••';
+  return JSON.stringify(o);
 }
 // Widget "Mascote e gastos": as sugestões de gasto novas (as do Resumo), da mais nova para a mais antiga, até 10, com o
 // valor ('' com "Esconder valores nos widgets" ou sem valor), a loja e o app. ts (junto dos dados) = hora do envio: o

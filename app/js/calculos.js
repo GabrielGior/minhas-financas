@@ -33,6 +33,85 @@ function ensureArchive(){
   }
   return false;
 }
+// ---------- Dia útil e o dia em que um ganho cai ----------
+// Dia útil = fora do fim de semana e dos feriados nacionais do país escolhido (db.prefs.pais; Configurações › Aparência).
+// Brasil (o padrão): calculado aqui, sem internet, com os dias sem expediente nos bancos (Carnaval, Sexta-feira Santa e
+// Corpus Christi, que mudam com a Páscoa), porque é quando o salário cai na conta. Outros países: a lista oficial de
+// feriados nacionais vem da Nager.Date (date.nager.at, pública e sem conta) uma vez por ano e por país e fica guardada
+// neste aparelho; enquanto não chega (ou se o país não estiver lá), contam só os fins de semana. O fim de semana também
+// é o do país (sexta e sábado em alguns). Feriados estaduais e municipais ficam de fora (o app não sabe a cidade).
+const FERIADOS_FIXOS = ['01-01', '04-21', '05-01', '09-07', '10-12', '11-02', '11-15', '11-20', '12-25'];
+const FERIADOS_KEY = 'financas-feriados'; // {"<país>-<ano>": ["MM-DD", …]}, só neste aparelho
+const feriadosCache = {}, feriadosPedidos = new Set();
+const paisDia = () => (db.prefs && db.prefs.pais) || 'BR';
+function feriadosBR(ano){
+  // Domingo de Páscoa (algoritmo de Meeus/Jones/Butcher, calendário gregoriano).
+  const a = ano % 19, b = Math.floor(ano / 100), c = ano % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25),
+    g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7,
+    m = Math.floor((a + 11 * h + 22 * l) / 451), mes = Math.floor((h + l - 7 * m + 114) / 31), dia = (h + l - 7 * m + 114) % 31 + 1;
+  const pascoa = new Date(ano, mes - 1, dia);
+  const mais = n => { const x = new Date(pascoa); x.setDate(x.getDate() + n); return x.toLocaleDateString('sv').slice(5); };
+  return new Set([...FERIADOS_FIXOS, mais(-48), mais(-47), mais(-2), mais(60)]); // Carnaval (seg e ter), Sexta Santa, Corpus Christi
+}
+function feriadosGuardados(){ try { return JSON.parse(localStorage.getItem(FERIADOS_KEY)) || {}; } catch(e){ return {}; } }
+function feriados(ano, pais = paisDia()){
+  const k = pais + '-' + ano;
+  if (feriadosCache[k]) return feriadosCache[k];
+  if (pais === 'BR') return (feriadosCache[k] = feriadosBR(ano));
+  const g = feriadosGuardados()[k];
+  if (Array.isArray(g)) return (feriadosCache[k] = new Set(g.filter(d => /^\d\d-\d\d$/.test(d))));
+  feriadosBaixar(pais, ano);
+  return new Set(); // por enquanto, só o fim de semana
+}
+// Baixa os feriados nacionais de um país e ano (uma vez por abertura do app, se falhar); ao chegar, as telas refazem as contas.
+async function feriadosBaixar(pais, ano){
+  const k = pais + '-' + ano;
+  if (feriadosPedidos.has(k) || window.TESTE || !/^[A-Z]{2}$/.test(pais)) return;
+  feriadosPedidos.add(k);
+  try {
+    const r = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${ano}/${pais}`);
+    if (r.status !== 200 && r.status !== 204 && r.status !== 404) return;
+    const l = r.status === 200 ? await r.json() : [];
+    const dias = (Array.isArray(l) ? l : []).filter(x => x && x.global !== false && /^\d{4}-\d\d-\d\d$/.test(x.date)).map(x => x.date.slice(5));
+    const todos = feriadosGuardados(); todos[k] = [...new Set(dias)];
+    const chaves = Object.keys(todos); for (const c of chaves.slice(0, Math.max(0, chaves.length - 30))) delete todos[c]; // até 30 países e anos
+    try { localStorage.setItem(FERIADOS_KEY, JSON.stringify(todos)); } catch(e){}
+    delete feriadosCache[k]; dirty(); telaAtualizar();
+  } catch(e){ /* sem internet: tenta de novo na próxima abertura */ }
+}
+// Dias do fim de semana do país (0 = domingo … 6 = sábado), pelo próprio navegador; sem a informação, sábado e domingo.
+const fimSemanaCache = {};
+function fimDeSemana(pais = paisDia()){
+  if (fimSemanaCache[pais]) return fimSemanaCache[pais];
+  let dias = [6, 0];
+  try { const loc = new Intl.Locale('und-' + pais), w = loc.getWeekInfo ? loc.getWeekInfo() : loc.weekInfo;
+    if (w && Array.isArray(w.weekend) && w.weekend.length) dias = w.weekend.map(d => d % 7); } catch(e){}
+  return (fimSemanaCache[pais] = dias);
+}
+const diaUtil = (ym, d) => { const [a, m] = ym.split('-').map(Number), w = new Date(a, m - 1, d).getDay();
+  return !fimDeSemana().includes(w) && !feriados(a).has(`${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`); };
+// Regras do dia de um ganho fixo ou anual (x.regra): '' = o dia escolhido (x.day); 'ult' = último dia útil do mês;
+// 'prim' = primeiro dia útil; 'nutil' = o x.day-ésimo dia útil (ex.: 5º dia útil). Com o dia escolhido caindo em fim de
+// semana ou feriado, x.ajuste diz o que a empresa faz: 'antes' = paga no dia útil anterior; 'depois' = no próximo dia
+// útil; '' = no próprio dia. O dia fica sempre dentro do mês do ganho (sem dia útil antes, vai para o seguinte, e
+// vice-versa).
+const REGRAS_DIA = {ult:'último dia útil', prim:'primeiro dia útil', nutil:'dia útil'};
+function diaGanho(x, ym){
+  const n = daysIn(ym), util = d => diaUtil(ym, d), antes = d => { while (d > 1 && !util(d)) d--; return d; },
+    depois = d => { while (d < n && !util(d)) d++; return d; };
+  const regra = x.fixed ? x.regra : '', ajuste = x.fixed ? x.ajuste : ''; // as regras valem só para ganho fixo ou anual
+  if (regra === 'ult') return antes(n);
+  if (regra === 'prim') return depois(1);
+  if (regra === 'nutil'){ let k = 0; for (let d = 1; d <= n; d++) if (util(d) && ++k === (+x.day || 5)) return d; return antes(n); }
+  const d = Math.min(+x.day || 0, n);
+  if (!d || util(d) || !ajuste) return d;
+  const r = ajuste === 'antes' ? antes(d) : depois(d);
+  return util(r) ? r : ajuste === 'antes' ? depois(d) : antes(d);
+}
+// Texto curto do dia de um ganho: "último dia útil", "5º dia útil", "dia 31 (ou o dia útil antes)".
+const diaGanhoTexto = x => { const regra = x.fixed ? x.regra : '', ajuste = x.fixed ? x.ajuste : '';
+  return regra === 'nutil' ? `${+x.day || 5}º dia útil` : REGRAS_DIA[regra]
+    || (x.day ? `dia ${x.day}${ajuste === 'antes' ? ' (ou o dia útil antes)' : ajuste === 'depois' ? ' (ou o próximo dia útil)' : ''}` : ''); };
 // Vale-alimentação e vale-refeição ficam separados do resto: não entram nos ganhos, nos gastos nem no saldo do mês.
 // Crédito de vale = ganho com a categoria va ou vr; gasto no vale = gasto (ou parcela) com a forma de pagamento va ou vr.
 // incomesOf/expensesOf devolvem o mês SEM os vales; incomesAll/expensesAll, com eles; valeIn/valeOut, só eles.
@@ -95,7 +174,7 @@ const cardAccount = bank => db.cardAcc[bank] || (db.accounts.some(a => a.name ==
 function accountBalance(a, until = today()){
   let b = a.initial || 0;
   for (let m = a.since; m <= until[0]; m = addMonths(m, 1)){
-    for (const x of incomesOf(m)) if (x.bank === a.name && reached(m, x.day, until)) b += x.value;
+    for (const x of incomesOf(m)) if (x.bank === a.name && reached(m, diaGanho(x, m), until)) b += x.value;
     for (const x of expensesOf(m)){
       if (x.bank !== a.name) continue;
       if (x.share && x.got) b += x.share;

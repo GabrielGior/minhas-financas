@@ -27,7 +27,7 @@ const demoBloqueia = () => { if (!demoOn) return false; tell(DEMO_MSG); return t
 const ERR_KEY = 'financas-erros';
 // O registro de erros vai para o Diagnóstico (que a pessoa pode copiar e mandar para o suporte): nada de dados nele.
 // Resposta do Google (JSON) vira só o código e o motivo; e-mail vira "g***@gmail.com"; token, cabeçalho Authorization,
-// valores em R$ e códigos longos (id de planilha, de arquivo) são escondidos. Vale também para o que já estava guardado.
+// valores em dinheiro (R$ e a moeda escolhida) e códigos longos (id de planilha, de arquivo) são escondidos. Vale também para o que já estava guardado.
 function limpaDiag(texto){
   let s = String(texto == null ? '' : texto);
   s = s.replace(/\{[\s\S]*"error"[\s\S]*\}/, j => { try { const e = JSON.parse(j).error || {}, r = (e.errors && e.errors[0]) || {};
@@ -36,6 +36,7 @@ function limpaDiag(texto){
   return s.replace(/Bearer\s+[^\s"',]+/gi, 'Bearer •••').replace(/(Authorization:?\s+)(?!Bearer)[^\s"',]+/gi, '$1•••').replace(/\bya29\.[\w.-]+/g, '•••')
     .replace(/([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\.[A-Za-z]{2,})/g, '$1***@$2')
     .replace(/R\$[\s ]?-?\d[\d.]*(,\d{1,2})?/g, 'R$ •••')
+    .replace(new RegExp(moeda.simbolo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[\\s\\u00A0]?-?\\d[\\d.]*(,\\d{1,3})?', 'g'), MASK) // valor na moeda escolhida
     .replace(/[A-Za-z0-9_-]{28,}/g, m => m.slice(0, 4) + '…');
 }
 function logErr(onde, e){
@@ -47,7 +48,7 @@ function logErr(onde, e){
 }
 addEventListener('error', e => logErr('erro na tela', (e.error && e.error.stack) || (e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0)));
 addEventListener('unhandledrejection', e => logErr('promessa', e.reason));
-const APP_VERSION = '2.10'; // manter igual ao versionName do build.gradle
+const APP_VERSION = '2.30'; // manter igual ao versionName do build.gradle
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 const I = (name, size = 18) => `<svg class="ic" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
 // Categorias: [ícone, nome, cor]
@@ -159,7 +160,17 @@ function fixDb(d){
     }
   }
   if (typeof d.archUntil !== 'string') d.archUntil = '';
+  // Regra do dia dos ganhos (diaGanho, em calculos.js): só valores conhecidos.
+  for (const r of d.incomes){
+    if (r.regra != null && !['ult', 'prim', 'nutil'].includes(r.regra)) delete r.regra;
+    if (r.ajuste != null && !['antes', 'depois'].includes(r.ajuste)) delete r.ajuste;
+  }
   d.sugs = sugsLimpas(d.sugs);
+  // Moeda e país (Aparência): só códigos das listas de js/paises.js.
+  if (d.prefs && typeof d.prefs === 'object'){
+    if ('moeda' in d.prefs && !MOEDAS.includes(d.prefs.moeda)) delete d.prefs.moeda;
+    if ('pais' in d.prefs && !PAISES.includes(d.prefs.pais)) delete d.prefs.pais;
+  }
   if (d.prefs && typeof d.prefs === 'object' && 'prevPontos' in d.prefs){
     const l = d.prefs.prevPontos, ok = Array.isArray(l) ? Object.keys(PREV_PONTOS).filter(k => l.includes(k)) : [];
     if (!Array.isArray(l) || (l.length && !ok.length)) delete d.prefs.prevPontos; else d.prefs.prevPontos = ok;

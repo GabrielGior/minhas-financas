@@ -5,8 +5,8 @@
 const tile = (icon, color) => `<div class="ico" style="background:linear-gradient(135deg,${color ? color + ',' + color + 'cc' : 'var(--hero1),var(--hero2)'})">${I(icon, 22)}</div>`;
 // Ícone de uma categoria: na cor do tema ou, com a opção "Por categoria" ligada, na cor própria dela (c[2]).
 const ico = (c) => tile(c[0], (db.prefs.catColor || db.prefs.skin) && c[2]); // num tema especial, as categorias ficam com a cor própria
-// Valor curto para as escalas dos gráficos ("R$ 5,2 mil").
-const kfmt = v => hideVals || !isFinite(v) ? '' : 'R$ ' + v.toLocaleString('pt-BR', {notation:'compact', maximumFractionDigits:1});
+// Valor curto para as escalas dos gráficos ("R$ 5,2 mil", com o símbolo da moeda escolhida).
+const kfmt = v => hideVals || !isFinite(v) ? '' : comMoeda(v, {notation:'compact', maximumFractionDigits:1});
 const chartGrid = max => `<div class="grid"><i style="top:0"><em>${kfmt(max)}</em></i><i style="top:50%"><em>${kfmt(max / 2)}</em></i></div>`;
 // Blocos cinza animados no lugar do conteúdo enquanto ele carrega.
 const skel = n => `<div class="sk skHero"></div><div class="card">${'<div class="skRow"><div class="sk skBox"></div><div><div class="sk skLine"></div><div class="sk skLine" style="width:55%"></div></div></div>'.repeat(n)}</div>`;
@@ -84,7 +84,9 @@ function grpMove(i, d){ const o = db.prefs.grpOrder; [o[i], o[i + d]] = [o[i + d
 // guarda o momento da criação, ver uid). Um fixo cadastrado no dia 15 aparece no dia 15 de cada mês.
 const criadoEm = x => { const t = parseInt(String(x.id).slice(0, -5), 36); return t > 1.5e12 && t < 4e12 ? new Date(t) : null; };
 const diaCriado = (x, m) => { const d = criadoEm(x); return d ? Math.min(d.getDate(), daysIn(m)) : 0; };
-const diaDe = (x, m) => (x.kind === 'installment' ? +x.day : x.fixed ? (x.due ? dueDay(x, m) : 0) : +x.day) || diaCriado(x, m);
+// Ganho (sem kind nem vencimento): o dia em que cai, com as regras de dia útil (diaGanho).
+const diaDe = (x, m) => (!x.kind && !x.due ? diaGanho(x, m) : x.kind === 'installment' ? +x.day : x.fixed ? (x.due ? dueDay(x, m) : 0) : +x.day)
+  || diaCriado(x, m);
 // Gastos do mês por dia: posição = dia (a 0 junta os sem dia); cada uma {v: total, itens}.
 function gastosPorDia(m){
   const por = [...Array(daysIn(m) + 1)].map(() => ({v:0, itens:[]}));
@@ -92,7 +94,7 @@ function gastosPorDia(m){
   return por;
 }
 // Valor curto para os cartões de destaque: "R$ 3.975" até dez mil, "R$ 28,8 mil" acima.
-const fmtCurto = v => hideVals ? MASK : Math.abs(v) < 1e4 ? 'R$ ' + Math.round(v).toLocaleString('pt-BR') : 'R$ ' + v.toLocaleString('pt-BR', {notation:'compact', maximumFractionDigits:1});
+const fmtCurto = v => hideVals ? MASK : Math.abs(v) < 1e4 ? comMoeda(Math.round(v)) : comMoeda(v, {notation:'compact', maximumFractionDigits:1});
 function donut(parts, total, rotulo = 'Total'){
   let acc = 0;
   // Cada fatia termina um pouco antes da seguinte (folga), para o anel não parecer um bloco só.
@@ -101,7 +103,7 @@ function donut(parts, total, rotulo = 'Total'){
   return `<svg viewBox="0 0 42 42" style="width:160px;height:160px;display:block;margin:0 auto 4px">${ring('var(--line)', 100, 25)}
     ${parts.map(([color, v]) => { const p = v / total * 100, s = ring(color, Math.max(p - folga, .3), 25 - acc); acc += p; return s; }).join('')}
     <text x="21" y="19.6" text-anchor="middle" font-size="2.8" fill="var(--muted)">${rotulo}</text>
-    <text x="21" y="24.2" text-anchor="middle" font-size="3.6" font-weight="700" fill="var(--text)">${hideVals ? MASK : 'R$ ' + total.toLocaleString('pt-BR', {notation:'compact', maximumFractionDigits:1})}</text></svg>`;
+    <text x="21" y="24.2" text-anchor="middle" font-size="3.6" font-weight="700" fill="var(--text)">${hideVals ? MASK : comMoeda(total, {notation:'compact', maximumFractionDigits:1})}</text></svg>`;
 }
 
 // Cartão com a rosca de gastos por categoria: total no centro e, ao lado, as cinco maiores categorias (o resto vira
@@ -224,7 +226,7 @@ function viewResumo(){
   // Previsão: mês atual e os três seguintes. "Sobra" = ganhos − gastos previstos do mês; com contas cadastradas,
   // mostra também o saldo somado delas no último dia de cada mês.
   previsao: () => { const rows = [...Array(4)].map((_,i) => addMonths(curYM, i)), hasAcc = db.accounts.length > 0;
-    const pendIn = sum(incomesOf(curYM).filter(x => x.day > now.getDate()), x => x.value);
+    const pendIn = sum(incomesOf(curYM).filter(x => diaGanho(x, curYM) > now.getDate()), x => x.value);
     const pendOut = sum(expensesOf(curYM).filter(x => x.kind === 'expense' && (x.fixed ? x.due : x.day) > now.getDate()), x => x.value);
     // Um cartão por mês: selo de sobra/falta, barra de quanto dos ganhos os gastos consomem e os dois valores.
     return `<h2>Previsão dos próximos meses</h2><div class="card prev">${rows.map((m, i) => { const tin = totalIn(m), tout = totalOutPrev(m), net = tin - tout, end = hasAcc ? sum(db.accounts, a => accountBalance(a, monthEnd(m))) - reservaAte(m) : 0, r = reservaPrevisoes(m); return `
@@ -326,7 +328,7 @@ function openVale(k){
   const tin = sum(meses, ([, e]) => sum(e, x => x.value)), tout = sum(meses, ([, , s]) => sum(s, x => x.value)), saldo = valeSaldo(k),
   n = sum(meses, ([, e, s]) => e.length + s.length);
   const linha = (x, entra) => `<div class="item" data-onclick="edit('${entra ? 'incomes' : x.kind === 'installment' ? 'installments' : 'expenses'}','${x.pid || x.id}')"><div class="mid"><b>${esc(x.desc)}</b>
-    <small>${entra ? 'crédito' : 'gasto'}${x.day ? ' · dia ' + x.day : ''}${x.emp ? `<span class="tag">${esc(x.emp)}</span>` : ''}${byTag(x)}</small></div><div class="val ${entra ? 'in' : 'out'}">${entra ? '+' : '−'} ${fmt(x.value)}</div></div>`;
+    <small>${entra ? 'crédito' : 'gasto'}${entra ? (diaGanhoTexto(x) ? ' · ' + diaGanhoTexto(x) : '') : x.day ? ' · dia ' + x.day : ''}${x.emp ? `<span class="tag">${esc(x.emp)}</span>` : ''}${byTag(x)}</small></div><div class="val ${entra ? 'in' : 'out'}">${entra ? '+' : '−'} ${fmt(x.value)}</div></div>`;
   showSheet(`<h3>${VALES[k]}${valeEmp(k) ? ' · ' + esc(valeEmp(k)) : ''}</h3>
     <div class="hero" style="margin-bottom:10px"><small>Saldo do vale</small>${bigNum(saldo)}
       <div class="row"><div><small>Entrou no total</small><b>${fmt(tin)}</b></div><div><small>Saiu no total</small><b>${fmt(tout)}</b></div></div></div>
@@ -340,7 +342,7 @@ function openVale(k){
 // Uma linha da lista de ganhos.
 function incRow(x){ const c = CAT_GANHO[x.cat] || CAT_GANHO.outros; return `
     <div class="item" data-onclick="edit('incomes','${x.id}')">${ico(c)}<div class="mid"><b>${esc(x.desc)}</b>
-    <small>${esc(c[1])}${x.bank ? ' · ' + esc(x.bank) : ''}${x.emp ? `<span class="tag">${esc(x.emp)}</span>` : ''}<span class="tag">${x.fixed === 'y' ? 'anual, em ' + MESES[+x.start.slice(5) - 1] : x.fixed ? 'fixo' : monthName(x.start) + (x.day ? ', dia ' + x.day : '')}</span>${x.fixed ? `<span class="tag">desde ${x.fixed === 'y' ? x.start.slice(0,4) : monthName(x.start)}${x.end ? ' até ' + monthName(x.end) : ''}</span>` : ''}${byTag(x)}</small></div>
+    <small>${esc(c[1])}${x.bank ? ' · ' + esc(x.bank) : ''}${x.emp ? `<span class="tag">${esc(x.emp)}</span>` : ''}<span class="tag">${x.fixed === 'y' ? 'anual, em ' + MESES[+x.start.slice(5) - 1] : x.fixed ? 'fixo' : monthName(x.start)}${diaGanhoTexto(x) ? ', ' + diaGanhoTexto(x) : ''}</span>${x.fixed ? `<span class="tag">desde ${x.fixed === 'y' ? x.start.slice(0,4) : monthName(x.start)}${x.end ? ' até ' + monthName(x.end) : ''}</span>` : ''}${byTag(x)}</small></div>
     <div class="val in">${fmt(x.value)}</div></div>`; }
 // Ordem das listas de Gastos e Ganhos: db.prefs.ordem = 'ant' (mais antigo primeiro) ou qualquer outro valor (mais
 // recente primeiro, o padrão). O botão alterna.

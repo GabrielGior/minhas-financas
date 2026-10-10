@@ -7,22 +7,43 @@ function addMonths(ym, n){ const [y,m] = ym.split('-').map(Number); const t = y*
 function monthDiff(a, b){ const [ya,ma] = a.split('-').map(Number), [yb,mb] = b.split('-').map(Number); return (ya-yb)*12 + (ma-mb); }
 function monthName(ym){ const [y,m] = ym.split('-').map(Number); return MESES[m-1] + ' ' + y; }
 const daysIn = ym => { const [y,m] = ym.split('-').map(Number); return new Date(y, m, 0).getDate(); };
-// Esconder valores (botão do olho): todo valor em dinheiro vira "R$ ••••". Fica só neste aparelho.
-const HIDE_KEY = 'financas-olho', MASK = 'R$ ••••';
+// Moeda dos valores (db.prefs.moeda, ISO 4217; quem escolhe é applyTheme, com definirMoeda): o formatador, o símbolo
+// ("R$", "US$", "€") e as casas decimais (0 no iene, 3 no dinar do Kuwait). O jeito de escrever o número continua o do
+// português (1.234,56), em qualquer moeda.
+let moeda = null;
+// Esconder valores (botão do olho): todo valor em dinheiro vira "R$ ••••" (com o símbolo da moeda). Fica só neste aparelho.
+const HIDE_KEY = 'financas-olho';
+let MASK = 'R$ ••••';
+function definirMoeda(cod){
+  const formato = c => new Intl.NumberFormat('pt-BR', {style:'currency', currency:c});
+  let nf;
+  try { nf = formato(cod); } catch(e){ cod = 'BRL'; nf = formato(cod); } // código que este navegador não conhece: fica o real
+  const simbolo = (nf.formatToParts(1).find(p => p.type === 'currency') || {}).value || cod;
+  moeda = {cod, simbolo, casas:nf.resolvedOptions().maximumFractionDigits, nf};
+  MASK = simbolo + ' ••••';
+}
+definirMoeda('BRL');
+// Valor com o símbolo da moeda e um formato próprio do número (as formas curtas: "R$ 5,2 mil").
+const comMoeda = (v, o) => moeda.simbolo + ' ' + v.toLocaleString('pt-BR', o);
 let hideVals = false;
 try { hideVals = localStorage.getItem(HIDE_KEY) === '1'; } catch(e){}
 const fmt = v => hideVals ? MASK : fmtTexto(v);
 // Sem a máscara de "Esconder valores": para textos guardados (central de notificações) e notificações do Android.
-const fmtTexto = v => (v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const fmtTexto = v => moeda.nf.format(v || 0);
 // Roda fn com os valores à mostra (lembretes, widget e relatório não podem sair mascarados).
 function shown(fn){ const h = hideVals; hideVals = false; try { return fn(); } finally { hideVals = h; } }
 // Etiquetas livres de um lançamento ("viagem SP, trabalho" -> ['viagem SP', 'trabalho']).
 const tagsOf = x => String(x.tags || '').split(',').map(s => s.trim()).filter(Boolean);
 const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
-function parseMoney(s){ s = String(s).trim().replace(/[R$\s]/g,''); if (s.includes(',')) s = s.replace(/\./g,'').replace(',','.'); return parseFloat(s); }
+// Texto em dinheiro → número ("R$ 1.234,56" → 1234.56). Na moeda sem centavos, o ponto só separa os milhares ("1.235").
+function parseMoney(s){
+  s = String(s).replace(/[\s\u00A0]/g,'').replace(moeda.simbolo,'').replace('R$',''); // só o símbolo sai: "120/3" não vira conta
+  if (s.includes(',') || (moeda.casas === 0 && /^-?\d{1,3}(\.\d{3})+$/.test(s))) s = s.replace(/\./g,'').replace(',','.');
+  return parseFloat(s);
+}
 const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
-const moneyStr = v => v == null || v === '' ? '' : Number(v).toFixed(2).replace('.',',');
+const moneyStr = v => v == null || v === '' ? '' : Number(v).toFixed(moeda.casas).replace('.',',');
 const sum = (a, f) => a.reduce((t,x) => t + f(x), 0);
 function round2(v){ return Math.round(v*100)/100; } // função (e não const): o fixDb a usa ao abrir o app, antes desta linha
 const sheetOpen = () => document.getElementById('sheet').classList.contains('open');

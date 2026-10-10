@@ -66,7 +66,7 @@ function challengeHtml(){
 // conquista ("Anotador I", "Anotador II"…). Tudo é calculado dos dados, nada fica guardado (só quais já foram avisadas).
 const ROMANOS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
 const plural = (n, um, varios) => `${n.toLocaleString('pt-BR')} ${n === 1 ? um : varios}`;
-const reais = n => 'R$ ' + n.toLocaleString('pt-BR');
+const reais = n => comMoeda(n);
 function funFamilies(){
   const ultimos = n => [...Array(n)].map((_, i) => addMonths(curYM, -i));
   const azul = m => totalIn(m) > 0 && totalIn(m) >= totalOut(m), ano2 = ultimos(24);
@@ -249,6 +249,14 @@ const MASCOTES = {
 Object.assign(MASCOTES, MASCOTES_NOVOS); // os dos temas por categoria (js/temas.js)
 // Mascote visto de frente; mood: 'feliz', 'ok' ou 'triste'. tema: de qual tema (padrão: o que está em uso).
 function pigSvg(mood, tema = db.prefs.skin){
+  // Personagem do tema em imagem (js/temas-baixar.js), quando já está no aparelho: a imagem inteira (nunca cortada) na
+  // mesma caixa, com o "chão" sobre a sombra, uma respiração no ritmo do tema e, se ele flutua, a sombra que acompanha.
+  const ti = tema && temaImg(tema, mood === 'feliz' || mood === 'triste' ? mood : 'ok');
+  if (ti){ const [resp, flutua, sombra] = TEMAS_IMG[tema][4];
+    const cls = `pig ${mood} img${flutua ? ' flutua' : ''}${sombra ? ' sombra' : ''}`;
+    return `<svg class="${cls}" viewBox="0 0 120 110" width="104" height="95" style="--resp:${resp}s" aria-hidden="true">
+    <ellipse class="chao" cx="60" cy="104" rx="30" ry="4" fill="#000" opacity=".16"/>
+    <g class="corpo"><g class="resp"><image href="${ti}" x="8" y="3" width="104" height="104" preserveAspectRatio="xMidYMid meet"/></g></g></svg>`; }
   // Personagem padrão em imagem (js/mascote-padrao.js), quando existir: mesma caixa de 120 x 110, a mesma sombra e a
   // mesma moeda; a imagem fica dentro de g.corpo para receber as animações de humor do app.css.
   const img = !tema && mascotePadraoImg(mood);

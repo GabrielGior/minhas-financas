@@ -92,14 +92,20 @@ Object.assign(TEMAS_NOVOS, {
   escritorio:['Escritório', false, '#1d4ed8', '#44403c', '#334155', '#1d4ed8', 215, 25],
   perito:['Perito de sangue', false, '#b91c1c', '#0f766e', '#b91c1c', '#0f766e', 0, 40],
   espelho:['Espelho negro', true, '#e5e7eb', '#7dd3fc', '#111827', '#334155', 220, 8],
-  boinas:['Gangue das boinas', true, '#fbbf24', '#e5e7eb', '#1f2937', '#44403c', 30, 15]
+  boinas:['Gangue das boinas', true, '#fbbf24', '#e5e7eb', '#1f2937', '#44403c', 30, 15],
+  // Temas novos da 2.30 (só com o personagem em imagem: sem as imagens, o mascote padrão do app)
+  monstroclassico:['Monstro clássico', true, '#a3e635', '#a78bfa', '#4d7c0f', '#5b21b6', 85, 40],
+  reinodoscanos:['Reino dos canos', false, '#b91c1c', '#15803d', '#dc2626', '#15803d', 0, 70],
+  velocidademaxima:['Velocidade máxima', false, '#1d4ed8', '#a16207', '#1d4ed8', '#a16207', 220, 75],
+  lendadoheroi:['Lenda do herói', false, '#15803d', '#a16207', '#15803d', '#a16207', 120, 50],
+  ilhadascaixas:['Ilha das caixas', false, '#c2410c', '#0369a1', '#c2410c', '#0369a1', 25, 75]
 });
 // Categorias: as novas entram na lista e algumas antigas mudam de lugar (Vikings é série; Espartano é jogo).
 {
   const cat = k => TEMA_CATS.find(c => c[0] === k), tira = k => { for (const c of TEMA_CATS) c[2] = c[2].filter(x => x !== k); };
   tira('vikings'); tira('espartano');
   cat('filmes')[1] = 'Filmes';
-  cat('filmes')[2].push('deserto', 'aneis', 'galaxia', 'codigoverde', 'alemestrelas', 'devolta', 'arqueologo', 'palhaco', 'baloes', 'dinossauros',
+  cat('filmes')[2].push('monstroclassico', 'deserto', 'aneis', 'galaxia', 'codigoverde', 'alemestrelas', 'devolta', 'arqueologo', 'palhaco', 'baloes', 'dinossauros',
     'cacas', 'vinganca', 'viagem', 'luaazul');
   cat('desenhos')[2].push('misterios', 'felinorosa', 'passaro', 'aventura', 'folga', 'choque', 'samuraitempo', 'arcoiris', 'elementos', 'cabana',
     'neve', 'sofa', 'amarelos', 'futuro');
@@ -113,7 +119,7 @@ Object.assign(TEMAS_NOVOS, {
     ['vikings', 'reinos', 'quimica', 'invertido', 'zumbis', 'fuga', 'cafeteria', 'escritorio', 'perito', 'espelho', 'boinas']],
     ['jogos', 'Jogos',
       ['espartano', 'foradalei', 'aneldourado', 'samurai', 'entregador', 'cidadegrande', 'ciber', 'cacavampiros', 'fazenda', 'cemiterio', 'subsolo',
-      'tatico', 'arena']]);
+      'tatico', 'arena', 'reinodoscanos', 'velocidademaxima', 'lendadoheroi', 'ilhadascaixas']]);
 }
 
 // ---------- Mascotes ----------
@@ -622,7 +628,12 @@ Object.assign(FALAS_TEMA, {
   escritorio:['Funcionário do mês: {v}!', 'Planilha em dia.', 'Reunião de crise: faltam {v}.'],
   perito:['Análise limpa: {v} de sobra.', 'Nenhum vestígio de gasto estranho.', 'Achei a mancha: faltam {v}.'],
   espelho:['Nota máxima: {v}!', 'Tela calma hoje.', 'Rachou: faltam {v}.'],
-  boinas:['Negócio bem feito: {v} guardados.', 'Negócios calmos na rua.', 'Alguém pagará: faltam {v}.']
+  boinas:['Negócio bem feito: {v} guardados.', 'Negócios calmos na rua.', 'Alguém pagará: faltam {v}.'],
+  monstroclassico:['Raio certeiro: {v} de energia no cofre!', 'Laboratório em ordem, tudo calmo.', 'Faltou energia: faltam {v}.'],
+  reinodoscanos:['Moeda dourada: {v} no cofre!', 'Fase tranquila, sem tropeços.', 'Caiu no buraco: faltam {v}.'],
+  velocidademaxima:['Anéis dourados: {v} coletados!', 'Ritmo firme, pista livre.', 'Bateu no espinho: faltam {v}.'],
+  lendadoheroi:['Baú aberto: {v} de tesouro!', 'Caminho seguro pela floresta.', 'Corações baixos: faltam {v}.'],
+  ilhadascaixas:['Caixa quebrada: {v} de frutas!', 'Ilha tranquila hoje.', 'Caixa de surpresa ruim: faltam {v}.']
 });
 // ---------- Mais falas próprias de cada tema ----------
 // Antes, cada tema novo tinha uma fala própria por humor e o resto vinha da categoria (FALAS_CAT), que muitas vezes não
@@ -933,6 +944,16 @@ const FALAS_MAIS = {
   detetive:[['Pista certa: {v} guardados.', 'Elementar, {nome}: mês fechado no positivo.'],
     ['Lupa na mão, tudo em ordem.', 'Anote os gastos: toda pista conta.'], ['O culpado é o cartão: {v}.', 'Caso em aberto, {nome}.']],
   // Estilos e corridas já têm seis falas próprias por humor em divertido.js.
+  monstroclassico:[['Experimento deu certo: {v}.', 'Que monstro de economia, {nome}!'], ['Noite calma no castelo.', 'Parafusos apertados, contas em dia.'],
+    ['Tempestade nas contas: {v} a menos.', 'Calma, {nome}: o raio volta.']],
+  reinodoscanos:[['Bloco premiado: {v}.', 'Pulo perfeito, {nome}!'], ['Andando pelo reino com calma.', 'Cano verde à vista: anote o gasto.'],
+    ['Perdeu uma vida: {v} a menos.', 'Volta pelo cano, {nome}.']],
+  velocidademaxima:[['Recorde de velocidade: {v}.', 'Ninguém te alcança, {nome}!'], ['Pista livre por enquanto.', 'Pé no freio, olho nos gastos.'],
+    ['Perdeu os anéis: {v} a menos.', 'Levanta e corre, {nome}.']],
+  lendadoheroi:[['Masmorra vencida: {v}.', 'Coragem lendária, {nome}!'], ['Descansando perto da fogueira.', 'Mapa do reino em dia.'],
+    ['Armadilha na masmorra: {v} a menos.', 'Erga o escudo, {nome}.']],
+  ilhadascaixas:[['Todas as caixas abertas: {v}.', 'Giro perfeito, {nome}!'], ['Passeio pela praia da ilha.', 'Contando as frutas do caminho.'],
+    ['Caiu da ponte: {v} a menos.', 'Recomeça do ponto salvo, {nome}.']]
 };
 // Quarta e quinta falas próprias de cada tema, por humor (mesmo formato de FALAS_MAIS). Com elas, todo tema especial tem
 // pelo menos cinco falas por humor, e nenhuma fala se repete entre temas.
@@ -1229,63 +1250,76 @@ const FALAS_MAIS2 = {
     ['Pênalti perdido: {v}.', 'Rebaixados no saldo, {nome}.']],
   detetive:[['Culpado preso: {v}.', 'Cachimbo aceso de satisfação, {nome}.'], ['Chuva fina na rua.', 'Caderno de pistas e despesas.'],
     ['Testemunha sumiu: {v}.', 'Beco sem saída, {nome}.']],
+  monstroclassico:[['Está vivo! E rendendo {v}.', 'Aplausos no laboratório, {nome}.'], ['Ajustando os fios com cuidado.', 'Caderno de anotações aberto.'],
+    ['Fio solto: faltam {v}.', 'Remendo rápido no orçamento, {nome}.']],
+  reinodoscanos:[['Bandeira no topo: {v} guardados.', 'Cogumelo de bônus, {nome}!'], ['Contando as moedas do caminho.', 'Mapa do reino aberto.'],
+    ['Tartaruga no caminho: faltam {v}.', 'Respira e pula de novo, {nome}.']],
+  velocidademaxima:[['Volta perfeita: {v} guardados.', 'Turbo ligado, {nome}!'], ['Aquecendo para a próxima corrida.', 'Ponto de controle: conferir as contas.'],
+    ['Derrapou na curva: faltam {v}.', 'Ajusta a rota, {nome}.']],
+  lendadoheroi:[['Relíquia encontrada: {v} guardados.', 'A lenda cresce, {nome}.'], ['Cavalgando pelos campos.', 'Mochila arrumada, contas conferidas.'],
+    ['Monstro no caminho: faltam {v}.', 'Respire e tente de novo, {nome}.']],
+  ilhadascaixas:[['Joia da fase: {v} guardados.', 'Pulo de mestre, {nome}!'], ['Descanso na rede da praia.', 'Mapa da ilha conferido.'],
+    ['Caixa explosiva: faltam {v}.', 'Cuidado com o próximo pulo, {nome}.']]
 };
-// Cenas dos temas deste arquivo (juntadas a CENAS em js/cena.js): [horizonte, astro, partículas, entrada, troca].
+// Cenas dos temas deste arquivo (juntadas a CENAS em js/cena.js): [horizonte, astro, partículas, entrada].
 const CENAS_NOVAS = {
-  cerejeira:['serras', 'sol', 'petalas', 'calma', 'desliza'], grecia:['ruinas', 'sol', 'nuvens', 'forca', 'cortina'],
-  mafia:['cidade', 'lua', 'fumaca', 'calma', 'foco'],
-  faroeste:['mesas', 'sol', 'poeira', 'vel', 'lado'], solar:['nenhum', 'eclipse', 'estrelas', 'zoom', 'gira'],
-  guerra:['muralha', 'nenhum', 'fumaca', 'forca', 'cai'],
-  musical:['palco', 'estrela', 'notas', 'gira', 'quica'], magica:['palco', 'nenhum', 'cartas', 'magia', 'vira'],
-  alien:['campo', 'portal', 'raios', 'zoom', 'zoom'],
-  terror:['lapides', 'eclipse', 'cinzas', 'forca', 'foco'], chuva:['ponte', 'nenhum', 'chuva', 'calma', 'cai'],
-  vampiro:['castelo', 'lua', 'passaros', 'magia', 'cortina'],
-  nuclear:['mesas', 'cogumelo', 'cinzas', 'forca', 'zoom'], radiacao:['ruinas', 'nenhum', 'hexagonos', 'tec', 'degraus'],
-  cassino:['palco', 'nenhum', 'moedas', 'gira', 'vira'],
-  basquete:['cidade', 'sol', 'bolas', 'vel', 'quica'], futebol:['estadio', 'sol', 'bolas', 'vel', 'lado'], detetive:['ponte', 'lua', 'fumaca', 'calma', 'foco'],
-  caderno:['cidade', 'eclipse', 'penas', 'magia', 'vira'], cacademonios:['pinheiros', 'lua', 'petalas', 'vel', 'lado'],
-  piratas:['ondas', 'sol', 'nuvens', 'forca', 'desliza'],
-  esferas:['serras', 'sol', 'raios', 'forca', 'zoom'], feiticeiros:['cidade', 'portal', 'hexagonos', 'magia', 'gira'],
-  trevo:['castelo', 'nenhum', 'folhas', 'forca', 'sobe'],
-  vizinho:['pinheiros', 'nenhum', 'folhas', 'calma', 'sobe'], termas:['templo', 'lua', 'vagalumes', 'magia', 'foco'],
-  castelomovel:['serras', 'nenhum', 'nuvens', 'calma', 'desliza'],
-  cometa:['cidade', 'nenhum', 'estrelas', 'magia', 'foco'], muralhas:['muralha', 'sol', 'passaros', 'forca', 'cai'],
-  monstrosdebolso:['campo', 'sol', 'bolas', 'cai', 'quica'],
-  alquimia:['trilho', 'sol', 'hexagonos', 'magia', 'gira'], jazz:['nenhum', 'planeta', 'notas', 'vel', 'desliza'],
-  ceifeiros:['cidade', 'crescente', 'laminas', 'vel', 'lado'],
-  espadachim:['ruinas', 'eclipse', 'brasas', 'forca', 'cortina'], foradalei:['trilho', 'sol', 'poeira', 'calma', 'lado'],
-  aneldourado:['ruinas', 'portal', 'folhas', 'magia', 'foco'],
-  samurai:['templo', 'eclipse', 'folhas', 'forca', 'lado'], entregador:['montanhas', 'nenhum', 'chuva', 'calma', 'sobe'],
-  cidadegrande:['cidade', 'sol', 'passaros', 'vel', 'lado'],
-  ciber:['cidade', 'eclipse', 'chuva', 'tec', 'degraus'], cacavampiros:['castelo', 'lua', 'brasas', 'forca', 'cai'],
-  fazenda:['campo', 'sol', 'folhas', 'calma', 'sobe'],
-  cemiterio:['lapides', 'lua', 'folhas', 'calma', 'foco'], subsolo:['nenhum', 'nenhum', 'quadrados', 'tec', 'degraus'],
-  tatico:['muralha', 'sol', 'poeira', 'vel', 'lado'],
-  arena:['ruinas', 'estrela', 'hexagonos', 'forca', 'zoom'], misterios:['vila', 'lua', 'passaros', 'cai', 'quica'],
-  felinorosa:['cidade', 'crescente', 'notas', 'calma', 'desliza'],
-  passaro:['pinheiros', 'sol', 'penas', 'cai', 'quica'], aventura:['serras', 'estrela', 'nuvens', 'cai', 'quica'],
-  folga:['campo', 'sol', 'passaros', 'calma', 'desliza'],
-  choque:['ponte', 'nenhum', 'raios', 'vel', 'lado'], samuraitempo:['templo', 'sol', 'nuvens', 'forca', 'cortina'],
-  arcoiris:['nenhum', 'estrela', 'coracoes', 'magia', 'quica'],
-  elementos:['montanhas', 'sol', 'nuvens', 'calma', 'sobe'], cabana:['pinheiros', 'olho', 'vagalumes', 'magia', 'vira'],
-  neve:['montanhas', 'sol', 'neve', 'cai', 'quica'],
-  sofa:['vila', 'sol', 'nuvens', 'cai', 'quica'], amarelos:['vila', 'nenhum', 'nuvens', 'cai', 'quica'], futuro:['cidade', 'planeta', 'poeira', 'zoom', 'zoom'],
-  deserto:['dunas', 'duasluas', 'poeira', 'calma', 'desliza'], aneis:['vulcao', 'olho', 'brasas', 'forca', 'foco'],
-  galaxia:['nenhum', 'duasluas', 'laminas', 'zoom', 'zoom'],
-  codigoverde:['nenhum', 'nenhum', 'codigo', 'tec', 'degraus'], alemestrelas:['campo', 'eclipse', 'poeira', 'zoom', 'foco'],
-  devolta:['trilho', 'nenhum', 'raios', 'vel', 'lado'],
-  arqueologo:['ruinas', 'sol', 'poeira', 'forca', 'cortina'], palhaco:['cidade', 'nenhum', 'cartas', 'gira', 'vira'],
-  baloes:['serras', 'sol', 'baloes', 'calma', 'sobe'],
-  dinossauros:['vulcao', 'sol', 'folhas', 'forca', 'cai'], cacas:['ondas', 'sol', 'laminas', 'vel', 'lado'],
-  vinganca:['templo', 'nenhum', 'laminas', 'vel', 'cortina'],
-  viagem:['nenhum', 'sol', 'poeira', 'zoom', 'foco'], luaazul:['pinheiros', 'planeta', 'vagalumes', 'magia', 'sobe'],
-  reinos:['muralha', 'lua', 'neve', 'forca', 'cortina'],
-  quimica:['mesas', 'sol', 'fumaca', 'tec', 'foco'], invertido:['pinheiros', 'nenhum', 'cinzas', 'tec', 'vira'],
-  zumbis:['cidade', 'sol', 'cinzas', 'forca', 'cai'],
-  fuga:['muralha', 'lua', 'penas', 'calma', 'desliza'], cafeteria:['cidade', 'crescente', 'coracoes', 'calma', 'quica'],
-  escritorio:['cidade', 'nenhum', 'baloes', 'cai', 'sobe'],
-  perito:['ilha', 'sol', 'gotas', 'calma', 'desliza'], espelho:['cidade', 'eclipse', 'quadrados', 'tec', 'foco'],
-  boinas:['trilho', 'lua', 'fumaca', 'calma', 'foco']
+  cerejeira:['serras', 'sol', 'petalas', 'calma'], grecia:['ruinas', 'sol', 'nuvens', 'forca'],
+  mafia:['cidade', 'lua', 'fumaca', 'calma'],
+  faroeste:['mesas', 'sol', 'poeira', 'vel'], solar:['nenhum', 'eclipse', 'estrelas', 'zoom'],
+  guerra:['muralha', 'nenhum', 'fumaca', 'forca'],
+  musical:['palco', 'estrela', 'notas', 'gira'], magica:['palco', 'nenhum', 'cartas', 'magia'],
+  alien:['campo', 'portal', 'raios', 'zoom'],
+  terror:['lapides', 'eclipse', 'cinzas', 'forca'], chuva:['ponte', 'nenhum', 'chuva', 'calma'],
+  vampiro:['castelo', 'lua', 'passaros', 'magia'],
+  nuclear:['mesas', 'cogumelo', 'cinzas', 'forca'], radiacao:['ruinas', 'nenhum', 'hexagonos', 'tec'],
+  cassino:['palco', 'nenhum', 'moedas', 'gira'],
+  basquete:['cidade', 'sol', 'bolas', 'vel'], futebol:['estadio', 'sol', 'bolas', 'vel'], detetive:['ponte', 'lua', 'fumaca', 'calma'],
+  caderno:['cidade', 'eclipse', 'penas', 'magia'], cacademonios:['pinheiros', 'lua', 'petalas', 'vel'],
+  piratas:['ondas', 'sol', 'nuvens', 'forca'],
+  esferas:['serras', 'sol', 'raios', 'forca'], feiticeiros:['cidade', 'portal', 'hexagonos', 'magia'],
+  trevo:['castelo', 'nenhum', 'folhas', 'forca'],
+  vizinho:['pinheiros', 'nenhum', 'folhas', 'calma'], termas:['templo', 'lua', 'vagalumes', 'magia'],
+  castelomovel:['serras', 'nenhum', 'nuvens', 'calma'],
+  cometa:['cidade', 'nenhum', 'estrelas', 'magia'], muralhas:['muralha', 'sol', 'passaros', 'forca'],
+  monstrosdebolso:['campo', 'sol', 'bolas', 'cai'],
+  alquimia:['trilho', 'sol', 'hexagonos', 'magia'], jazz:['nenhum', 'planeta', 'notas', 'vel'],
+  ceifeiros:['cidade', 'crescente', 'laminas', 'vel'],
+  espadachim:['ruinas', 'eclipse', 'brasas', 'forca'], foradalei:['trilho', 'sol', 'poeira', 'calma'],
+  aneldourado:['ruinas', 'portal', 'folhas', 'magia'],
+  samurai:['templo', 'eclipse', 'folhas', 'forca'], entregador:['montanhas', 'nenhum', 'chuva', 'calma'],
+  cidadegrande:['cidade', 'sol', 'passaros', 'vel'],
+  ciber:['cidade', 'eclipse', 'chuva', 'tec'], cacavampiros:['castelo', 'lua', 'brasas', 'forca'],
+  fazenda:['campo', 'sol', 'folhas', 'calma'],
+  cemiterio:['lapides', 'lua', 'folhas', 'calma'], subsolo:['nenhum', 'nenhum', 'quadrados', 'tec'],
+  tatico:['muralha', 'sol', 'poeira', 'vel'],
+  arena:['ruinas', 'estrela', 'hexagonos', 'forca'], misterios:['vila', 'lua', 'passaros', 'cai'],
+  felinorosa:['cidade', 'crescente', 'notas', 'calma'],
+  passaro:['pinheiros', 'sol', 'penas', 'cai'], aventura:['serras', 'estrela', 'nuvens', 'cai'],
+  folga:['campo', 'sol', 'passaros', 'calma'],
+  choque:['ponte', 'nenhum', 'raios', 'vel'], samuraitempo:['templo', 'sol', 'nuvens', 'forca'],
+  arcoiris:['nenhum', 'estrela', 'coracoes', 'magia'],
+  elementos:['montanhas', 'sol', 'nuvens', 'calma'], cabana:['pinheiros', 'olho', 'vagalumes', 'magia'],
+  neve:['montanhas', 'sol', 'neve', 'cai'],
+  sofa:['vila', 'sol', 'nuvens', 'cai'], amarelos:['vila', 'nenhum', 'nuvens', 'cai'], futuro:['cidade', 'planeta', 'poeira', 'zoom'],
+  deserto:['dunas', 'duasluas', 'poeira', 'calma'], aneis:['vulcao', 'olho', 'brasas', 'forca'],
+  galaxia:['nenhum', 'duasluas', 'laminas', 'zoom'],
+  codigoverde:['nenhum', 'nenhum', 'codigo', 'tec'], alemestrelas:['campo', 'eclipse', 'poeira', 'zoom'],
+  devolta:['trilho', 'nenhum', 'raios', 'vel'],
+  arqueologo:['ruinas', 'sol', 'poeira', 'forca'], palhaco:['cidade', 'nenhum', 'cartas', 'gira'],
+  baloes:['serras', 'sol', 'baloes', 'calma'],
+  dinossauros:['vulcao', 'sol', 'folhas', 'forca'], cacas:['ondas', 'sol', 'laminas', 'vel'],
+  vinganca:['templo', 'nenhum', 'laminas', 'vel'],
+  viagem:['nenhum', 'sol', 'poeira', 'zoom'], luaazul:['pinheiros', 'planeta', 'vagalumes', 'magia'],
+  reinos:['muralha', 'lua', 'neve', 'forca'],
+  quimica:['mesas', 'sol', 'fumaca', 'tec'], invertido:['pinheiros', 'nenhum', 'cinzas', 'tec'],
+  zumbis:['cidade', 'sol', 'cinzas', 'forca'],
+  fuga:['muralha', 'lua', 'penas', 'calma'], cafeteria:['cidade', 'crescente', 'coracoes', 'calma'],
+  escritorio:['cidade', 'nenhum', 'baloes', 'cai'],
+  perito:['ilha', 'sol', 'gotas', 'calma'], espelho:['cidade', 'eclipse', 'quadrados', 'tec'],
+  boinas:['trilho', 'lua', 'fumaca', 'calma'],
+  monstroclassico:['castelo', 'lua', 'raios', 'forca'], reinodoscanos:['campo', 'sol', 'moedas', 'cai'],
+  velocidademaxima:['serras', 'sol', 'poeira', 'vel'], lendadoheroi:['pinheiros', 'sol', 'vagalumes', 'magia'],
+  ilhadascaixas:['ilha', 'sol', 'folhas', 'cai']
 };
 
 // ---------- Falas do assistente por tema ----------
@@ -1662,5 +1696,16 @@ const FALAS_ASSIST = {
   tatico:[['Briefing concluído:', 'Reconhecimento feito:', 'Da base de operações:', 'Situação no terreno:'],
     ['Área segura.', 'Objetivo cumprido, cofre protegido.', 'Equipe em posição, gastos contidos.', 'Missão encerrada, munição economizada.']],
   arena:[['Da rota do meio:', 'Da base aliada:', 'Pelo mapa da partida:', 'Da torre inimiga derrubada:'],
-    ['Vitória!', 'Ouro acumulado, cofre cheio.', 'Torre protegida contra os gastos.', 'Bom jogo, saldo melhor ainda.']]
+    ['Vitória!', 'Ouro acumulado, cofre cheio.', 'Torre protegida contra os gastos.', 'Bom jogo, saldo melhor ainda.']],
+  // Temas novos da 2.30
+  monstroclassico:[['Da bancada de experimentos:', 'Sob a tempestade:', 'Da torre de pedra:', 'Com os fios ligados:'],
+    ['Experimento concluído.', 'Energia guardada no cofre.', 'O castelo agradece a economia.', 'Raios e contas sob controle.']],
+  reinodoscanos:[['Do reino dos canos:', 'Saindo do cano:', 'Do castelo no fim da fase:', 'Pulando de bloco em bloco:'],
+    ['Fase concluída!', 'Moedas contadas, cofre cheio.', 'Próxima fase liberada.', 'Pulo certo, saldo melhor.']],
+  velocidademaxima:[['Direto da pista:', 'A toda velocidade:', 'Do ponto de controle:', 'Entre um anel e outro:'],
+    ['Chegada cruzada!', 'Anéis guardados no cofre.', 'Velocidade e economia juntas.', 'Recorde batido no saldo.']],
+  lendadoheroi:[['Da floresta encantada:', 'Pela lenda antiga:', 'Do templo escondido:', 'Com a espada em mãos:'],
+    ['Missão cumprida.', 'Tesouro guardado no baú.', 'O reino agradece.', 'Mais uma página da lenda.']],
+  ilhadascaixas:[['Direto da ilha:', 'Entre as caixas:', 'Da praia ensolarada:', 'Do ponto salvo:'],
+    ['Fase vencida!', 'Frutas guardadas no cofre.', 'Nenhuma caixa ficou para trás.', 'Giro e economia em dia.']]
 };

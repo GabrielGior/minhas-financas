@@ -41,10 +41,15 @@ function openSettings(sec){
     ${temNativo('atualizar') ? `<label>Atualizações</label>
     <div class="semTopo hint">Versão ${APP_VERSION}. O app confere sozinho a cada abertura.</div>
     <div class="btns"><button class="btn" data-onclick="procurarAtualizacao()">${I('refresh')}Procurar atualização agora</button></div>` : ''}`],
-  ['aparencia', 'sun', 'Aparência', 'Idioma, cores e texto', `
+  ['aparencia', 'sun', 'Aparência', 'Idioma, moeda, país e cores', `
     <label>Idioma</label>
     <div class="semTopo btns">${Object.entries(LANGS).map(([k, v]) => `<button class="btn ${lang() === k ? 'primary' : ''}" style="padding:11px 4px" data-onclick="setLang('${k}')">${v}</button>`).join('')}</div>
     ${lang() !== 'pt' ? '<div class="hint">O assistente entende só português.</div>' : ''}
+    <label>Moeda</label>
+    <div class="semTopo btns"><button class="btn" data-onclick="escolherMoeda()">${esc(moedaNome(p.moeda || 'BRL'))}</button></div>
+    <label>País</label>
+    <div class="semTopo btns"><button class="btn" data-onclick="escolherPais()">${esc(paisNome(p.pais || 'BR'))}</button></div>
+    <div class="hint">O país diz os feriados e o fim de semana no dia útil dos ganhos. Fora do Brasil, os feriados vêm da internet uma vez por ano.</div>
     <label>Tema</label>
     <div class="semTopo btns">${Object.entries(MODES).map(([k,v]) => `<button class="btn ${p.mode === k ? 'primary' : ''}" data-onclick="setPref('mode','${k}')">${v}</button>`).join('')}</div>
     <label>Cor</label>
@@ -125,7 +130,7 @@ function openSettings(sec){
   ['widgets', 'chart', 'Widgets', 'Quadros da tela inicial', !(temNativo('widget')) ? '' : `
     <div class="semTopo hint">Seis quadros: <b>Resumo</b>, <b>Gastos</b>, <b>Saldo</b>, <b>Contas</b>, <b>Mascote</b> e <b>Gastar</b>.</div>
     ${temNativo('setWidgetOculto') ? `<label>Valores nos widgets</label>
-    <div class="semTopo btns">${[[false, 'Mostrar'], [true, 'Esconder']].map(([v, t]) => `<button class="btn ${!!nativo('widgetOculto') === v ? 'primary' : ''}" data-onclick="nativo('setWidgetOculto', ${v});openSettings()">${t}</button>`).join('')}</div>
+    <div class="semTopo btns">${[[false, 'Mostrar'], [true, 'Esconder']].map(([v, t]) => `<button class="btn ${!!nativo('widgetOculto') === v ? 'primary' : ''}" data-onclick="nativo('setWidgetOculto', ${v});updateWidget();openSettings()">${t}</button>`).join('')}</div>
     <div class="hint">Mostra R$ •••• no lugar dos valores.</div>` : ''}
     <div class="hint">Segure o widget para ajustar fundo e cantos.</div>
     <label>Fundo dos widgets</label>
@@ -415,6 +420,13 @@ function toggleTab(t){
   if (p.tabsOff.includes(state.tab)) state.tab = visTabs()[0];
   db.cfgMod = Date.now(); save(); render(); openSettings();
 }
+// Moeda e país (Aparência): listas longas, com busca. Os nomes em português vêm do navegador (Intl.DisplayNames).
+const nomeIntl = (tipo, c) => { try { return new Intl.DisplayNames(['pt-BR'], {type:tipo}).of(c) || c; } catch(e){ return c; } };
+const moedaNome = c => { const n = nomeIntl('currency', c); return `${cap(n === c ? MOEDAS_NOMES[c] || c : n)} (${c})`; };
+const paisNome = c => cap(nomeIntl('region', c));
+const porNome = (a, b) => a[1].localeCompare(b[1], 'pt-BR');
+function escolherMoeda(){ pickList('Moeda', MOEDAS.map(c => [c, moedaNome(c)]).sort(porNome), db.prefs.moeda || 'BRL', c => setPref('moeda', c), true); }
+function escolherPais(){ pickList('País', PAISES.map(c => [c, paisNome(c)]).sort(porNome), db.prefs.pais || 'BR', c => setPref('pais', c), true); }
 function setPref(k, v){ db.prefs[k] = v; db.cfgMod = Date.now(); save(); applyTheme(); render(); openSettings(); }
 function moveTab(i, d){ const t = db.prefs.tabs; [t[i], t[i+d]] = [t[i+d], t[i]]; db.cfgMod = Date.now(); save(); render(); openSettings(); }
 // Um tipo de lembrete (preferência da conta). Ligar um tipo com o interruptor do aparelho desligado liga os dois juntos.

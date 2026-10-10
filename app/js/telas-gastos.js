@@ -250,7 +250,7 @@ function openAbater(id){
   showSheet(`<h3>Abater</h3>
     <div class="semTopo hint">${esc(p.desc)} · saldo devedor hoje ${fmt(saldoDevedor(p))}${p.taxa ? ' (aproximado)' : ''}.</div>
     <label for="abV">Valor do abatimento</label>
-    <div class="bigVal out"><span>R$</span><input id="abV" type="text" inputmode="numeric" placeholder="0,00" autocomplete="off" data-oninput="this.value=centsMask(this.value);drawAbater()"></div>
+    <div class="bigVal out"><span>${esc(moeda.simbolo)}</span><input id="abV" type="text" inputmode="numeric" placeholder="${moneyStr(0)}" autocomplete="off" data-oninput="this.value=centsMask(this.value);drawAbater()"></div>
     <label>O que diminuir</label><div class="optPick" id="abModo"></div>
     <div class="hint" id="abOut"></div>
     <div class="btns foot"><button class="btn" data-onclick="closeForm()">Cancelar</button><button class="btn primary" data-onclick="confirmarAbater()">Abater</button></div>`);

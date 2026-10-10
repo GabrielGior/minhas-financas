@@ -141,6 +141,7 @@ const blocks = (tab, B) => layoutOf(tab).filter(b => b.on && B[b.k]).map(b => {
 }).join('');
 function applyTheme(){
   const p = db.prefs, sk = SKINS[p.skin]; // tema especial: define tudo, inclusive claro ou escuro
+  if (!moeda || moeda.cod !== (p.moeda || 'BRL')) definirMoeda(p.moeda || 'BRL'); // a moeda dos valores (util.js)
   const dark = sk ? sk[1] : p.mode === 'dark' || (p.mode === 'auto' && darkQuery.matches),
   c = sk ? [sk[0], sk[2], sk[3], sk[2], sk[3], sk[11], sk[12]] : COLORS[p.color] || COLORS.indigo;
   const st = document.documentElement.style;
@@ -148,6 +149,7 @@ function applyTheme(){
   document.documentElement.dataset.anim = p.anim ? 'on' : 'off';
   document.documentElement.dataset.fun = p.fun ? 'on' : 'off';
   document.documentElement.dataset.skin = sk ? p.skin : '';
+  document.documentElement.dataset.ui = sk && TEMAS_IMG[p.skin] ? TEMAS_IMG[p.skin][0] : ''; // estilo de interface do tema (app.css)
   document.body.style.zoom = p.font; // tamanho do texto: amplia ou reduz a tela inteira por igual
   st.setProperty('--brand', c[dark ? 3 : 1]); st.setProperty('--brand2', c[dark ? 4 : 2]);
   st.setProperty('--hero1', sk ? sk[4] : c[1]); st.setProperty('--hero2', sk ? sk[5] : c[2]);

@@ -599,9 +599,10 @@ html[data-fun=on] .ico:active,html[data-fun=on] .item:active .ico{animation:pigP
 .fab.chat{border-radius:50%;width:52px;height:52px;display:flex;align-items:center;justify-content:center;background:var(--card);color:var(--brand);border:1.5px solid var(--line);box-shadow:var(--shadow);right:max(21px,calc(50% - 239px))}
 .fab.chat.alto{bottom:calc(89px + env(safe-area-inset-bottom));right:calc(max(18px,calc(50% - 242px)) + 70px)}
 .fab.chat[hidden]{display:none}
-/* Com um botão da tela embaixo dele (chatDesvia, em assistente.js): aba estreita colada na beirada direita, na margem
-   de fora dos cartões; ao lado do "+", fica logo acima dele. */
-.fab.chat.aba{right:0;width:26px;height:46px;border-radius:23px 0 0 23px;border-right:0;justify-content:flex-start;padding:0 0 0 5px}
+/* Com um botão da tela embaixo (fabDesvia, em assistente.js): aba estreita colada na beirada direita, na margem de fora
+   dos cartões. O "+" fica no lugar dele; a do assistente, quando a tela também tem o "+", logo acima. */
+.fab.aba{right:0;width:26px;height:46px;border-radius:23px 0 0 23px;font-size:22px;padding:0 0 0 7px;text-align:left}
+.fab.chat.aba{right:0;border-right:0;justify-content:flex-start;padding:0 0 0 5px}
 .fab.chat.aba svg{width:17px;height:17px}
 .fab.chat.alto.aba{bottom:calc(155px + env(safe-area-inset-bottom))}
 h1 .volta{display:flex;align-items:center;gap:4px}
@@ -661,29 +662,7 @@ html[data-mode=dark] .fundoP{--a:38%}html[data-mode=dark] .fundoP[data-int=suave
 /* Com tema especial, os cartões deixam a cena aparecer um pouco e os textos soltos ganham contorno na cor do fundo. */
 html[data-skin]:not([data-skin=""]) .card,html[data-skin]:not([data-skin=""]) .nav{background:color-mix(in srgb,var(--card) 88%,transparent)}
 html[data-skin]:not([data-skin=""]) h1,html[data-skin]:not([data-skin=""]) h2,html[data-skin]:not([data-skin=""]) .hello,html[data-skin]:not([data-skin=""]) #app>.muted,html[data-skin]:not([data-skin=""]) #app>.hint{text-shadow:0 1px 8px var(--bg)}
-/* Troca de tela de cada tema (os primeiros temas têm a sua mais acima; os demais escolhem uma destas em CENAS). */
-html[data-troca=sobe] #app.enter{animation:trSobe .36s ease-out}
-html[data-troca=lado] #app.enter{animation:trLado .3s cubic-bezier(.2,.9,.3,1)}
-html[data-troca=zoom] #app.enter{animation:trZoom .34s ease-out}
-html[data-troca=vira] #app.enter{animation:trVira .4s ease-out;transform-origin:left center}
-html[data-troca=degraus] #app.enter{animation:trSobe .32s steps(6,end)}
-html[data-troca=cai] #app.enter{animation:trCai .34s cubic-bezier(.2,.9,.3,1)}
-html[data-troca=cortina] #app.enter{animation:trCortina .4s ease-out}
-html[data-troca=foco] #app.enter{animation:trFoco .38s ease-out}
-html[data-troca=quica] #app.enter{animation:trQuica .42s cubic-bezier(.3,1.6,.5,1)}
-html[data-troca=desliza] #app.enter{animation:trDesliza .34s ease-out}
-html[data-troca=gira] #app.enter{animation:trGira .38s ease-out;transform-origin:50% 0}
-@keyframes trSobe{from{opacity:0;transform:translateY(28px)}}
-@keyframes trLado{from{opacity:0;transform:translateX(46px)}}
-@keyframes trZoom{from{opacity:0;transform:scale(.9)}}
-@keyframes trVira{from{opacity:0;transform:perspective(900px) rotateY(-18deg)}}
-@keyframes trCai{from{opacity:0;transform:translateY(-32px)}}
-@keyframes trCortina{from{opacity:.3;clip-path:inset(0 0 100% 0)}to{clip-path:inset(0)}}
-@keyframes trFoco{from{opacity:0;transform:scale(1.05)}}
-@keyframes trQuica{from{opacity:0;transform:translateY(18px) scale(.94)}}
-@keyframes trDesliza{from{opacity:0;transform:translateX(-46px)}}
-@keyframes trGira{from{opacity:0;transform:rotate(-3deg) scale(.95)}}
-@media (prefers-reduced-motion:reduce){html[data-troca] #app.enter{animation:none}#cena *{animation:none!important}}
+@media (prefers-reduced-motion:reduce){#cena *{animation:none!important}}
 /* Entrada (abertura) mais demorada, com dois jeitos novos: zoom e giro. */
 .abreM{animation-duration:1.05s!important}
 #abreIn b{animation-delay:.65s;animation-duration:.5s}
@@ -747,6 +726,33 @@ html[data-troca=gira] #app.enter{animation:trGira .38s ease-out;transform-origin
 .abreAto.at-volta{left:100%;animation-name:atVem}
 .gastoAnim .gastoFig{left:-28px;top:-70px;width:56px;height:56px;opacity:1;animation:gastoFig 1.2s cubic-bezier(.3,1.5,.5,1) forwards}
 @keyframes gastoFig{0%{opacity:0;transform:scale(.2) translateY(30px)}25%{opacity:1;transform:scale(1.15) translateY(0)}70%{opacity:1;transform:scale(1) translateY(-10px)}100%{opacity:0;transform:scale(.9) translateY(-70px)}}
+/* ---------- Temas com imagens (js/temas-baixar.js): cena em imagem (cenaImgHtml) e personagem em imagem (pigSvg) ----------
+   O cenário desliza em loop (cópias alternando normal e espelhada; a tira anda o tamanho de um par e recomeça igual), o
+   objeto do tema anda pelas Web Animations (cenaObjAnimar) e o personagem respira no ritmo do tema (--resp). Só transform
+   e opacity; tudo para com as animações desligadas, com o sistema pedindo menos movimento e com o app em segundo plano. */
+.cenaImg{position:absolute;inset:0;animation:cenaEntra .3s ease-out}
+@keyframes cenaEntra{from{opacity:0}}
+.cenaFundo{position:absolute;left:0;right:0;top:0;overflow:hidden}
+.cfTira{display:flex;height:100%;width:max-content;will-change:transform;animation:cfDesliza var(--d) linear infinite}
+.cfTira.dir{animation-direction:reverse}
+.cfTira img{height:100%;width:var(--w);flex:none;display:block}
+.cfTira img.esp{transform:scaleX(-1)}
+@keyframes cfDesliza{to{transform:translate3d(calc(var(--w) * -2),0,0)}}
+.cenaObj{position:absolute;inset:0 0 auto 0;height:340px;overflow:hidden}
+.cenaObj i{position:absolute;display:block;will-change:transform}
+.cenaObj img{width:100%;height:100%;object-fit:contain;display:block}
+.cenaObj i.luz::before{content:"";position:absolute;inset:-35%;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.5),transparent 65%)}
+.cenaVeu.img{background:linear-gradient(180deg,transparent 150px,color-mix(in srgb,var(--bg) 80%,transparent) 340px,var(--bg) 420px)}
+.confetti.tema img{position:absolute;top:-30px;height:auto;animation:confete linear forwards}
+.gastoAnim img.gastoFig{position:absolute;object-fit:contain}
+.pig.img .corpo{animation:none}
+.pig.img .resp{transform-origin:60px 104px;animation:pigResp var(--resp) ease-in-out infinite}
+.pig.img.flutua .corpo{animation:pigFlutua calc(var(--resp) * 1.5) ease-in-out infinite}
+.pig.img.sombra .chao{transform-origin:60px 104px;animation:pigSombra calc(var(--resp) * 1.5) ease-in-out infinite}
+@keyframes pigResp{50%{transform:scale(1.03)}}
+@keyframes pigFlutua{50%{transform:translateY(-7px)}}
+@keyframes pigSombra{50%{transform:scale(.7);opacity:.07}}
+.pigBox.chegou svg{animation:cenaEntra .3s ease-out}
 
 /* ---------- 1.55: carregando, soma rápida, Resumo mais elaborado, avisos da conta compartilhada ---------- */
 #carga{position:fixed;top:0;left:0;right:0;height:3px;z-index:80;overflow:hidden;pointer-events:none;background:color-mix(in srgb,var(--brand) 18%,transparent)}
@@ -988,3 +994,359 @@ ul.causas{margin:0 0 4px;padding-left:20px;color:var(--muted);font-size:14px}
 /* Utilitários de layout (no lugar de style="…" repetido nas telas). !important: valem como o style que substituem. */
 .semTopo{margin-top:0!important}.semCursor{cursor:default!important}.cresce{flex:1!important}.quebra{white-space:normal!important}
 .quebraLinha{flex-wrap:wrap!important}.plano{box-shadow:none!important;background:var(--bg)!important}
+/* ---------- Estilos de interface dos temas especiais (data-ui, de TEMAS_IMG em js/temas-img.js) ----------
+   Cada tema muda a interface, não só as cores: fonte dos títulos e dos números, cartões, uma textura bem leve, barras,
+   botões, um enfeite e a troca de tela. As cores continuam as do tema e o layout não muda (bordas por box-shadow ou
+   outline, sem mexer nos tamanhos). :where() deixa estas regras fracas: os primeiros temas (SKIN_ANTIGOS), que têm
+   regras próprias mais acima, continuam valendo por cima. Fontes: só as que o Android já tem, sempre com reserva. */
+:where(html[data-ui]:not([data-ui=""])) :is(h1,h2,.sheet h3){font-family:var(--fT,inherit)}
+:where(html[data-ui]:not([data-ui=""])) :is(.big,.val,.hero .row b){font-family:var(--fN,inherit);font-variant-numeric:tabular-nums}
+#cena::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:var(--texO,.06);background:var(--tex,none)}
+:where(html[data-ui]:not([data-ui=""])) h1::before{display:inline-block;margin-right:6px;font-size:.8em}
+@keyframes uiPisca{50%{opacity:0}}
+/* terminal */
+html[data-ui=terminal]{--fT:monospace,"Courier New",ui-monospace;--fN:monospace,"Courier New",ui-monospace;
+  --tex:repeating-linear-gradient(0deg,currentColor 0 1px,transparent 1px 4px);--texO:.07}
+:where([data-ui=terminal]) :is(.card,.hero,.nav,.btn,.ico,.chips button){border-radius:0}
+:where([data-ui=terminal]) :is(.card,.nav){box-shadow:inset 0 0 0 1px var(--line)}
+:where([data-ui=terminal]) .bar,:where([data-ui=terminal]) .bar i{border-radius:0}
+:where([data-ui=terminal]) .bar i{background:repeating-linear-gradient(90deg,var(--brand) 0 9px,transparent 9px 12px)}
+:where([data-ui=terminal]) .btn::before{content:"[ "}
+:where([data-ui=terminal]) .btn::after{content:" ]"}
+:where([data-ui=terminal]) h1::before{content:">_";color:var(--brand);animation:uiPisca 1.1s steps(1) infinite}
+:where([data-ui=terminal]) .hero .big::after{content:"▌";margin-left:2px;font-weight:400;animation:uiPisca 1.1s steps(1) infinite}
+/* pixel */
+html[data-ui=pixel]{--fT:monospace,"Courier New",ui-monospace;--fN:monospace,"Courier New",ui-monospace;
+  --tex:linear-gradient(90deg,currentColor 1px,transparent 1px) 0 0/6px 6px,linear-gradient(currentColor 1px,transparent 1px) 0 0/6px 6px;--texO:.04}
+:where([data-ui=pixel]) :is(h1,h2){font-weight:800}
+:where([data-ui=pixel]) :is(.card,.hero,.nav,.btn,.ico,.chips button,.bar,.bar i){border-radius:0}
+:where([data-ui=pixel]) :is(.card,.nav){box-shadow:inset 0 0 0 3px var(--line),4px 4px 0 color-mix(in srgb,var(--text) 30%,transparent)}
+:where([data-ui=pixel]) .bar i{background:repeating-linear-gradient(90deg,var(--brand) 0 10px,var(--brand2) 10px 12px)}
+:where([data-ui=pixel]) .btn{box-shadow:0 3px 0 color-mix(in srgb,var(--text) 35%,transparent)}
+:where([data-ui=pixel]) .btn:active{transform:translateY(2px);box-shadow:0 1px 0 color-mix(in srgb,var(--text) 35%,transparent)}
+:where([data-ui=pixel]) h2::before{content:"♥";margin-right:6px;color:var(--brand)}
+/* neon */
+html[data-ui=neon]{--fT:"sans-serif-condensed","Roboto Condensed","Arial Narrow",sans-serif;--fN:"sans-serif-condensed","Roboto Condensed","Arial Narrow",sans-serif;
+  --tex:linear-gradient(transparent 70%,color-mix(in srgb,var(--brand) 60%,transparent) 70% calc(70% + 1px),transparent 0) 0 0/100% 100%,
+    repeating-linear-gradient(90deg,var(--brand) 0 1px,transparent 1px 48px) 0 70%/100% 30% no-repeat;--texO:.08}
+:where([data-ui=neon]) :is(.card,.nav){box-shadow:0 0 0 1px color-mix(in srgb,var(--brand) 70%,transparent),0 0 14px color-mix(in srgb,var(--brand) 30%,transparent)}
+:where([data-ui=neon]) :is(h1,h2){text-shadow:0 0 8px color-mix(in srgb,var(--brand) 70%,transparent)}
+:where([data-ui=neon]) .bar i{box-shadow:0 0 10px var(--brand)}
+:where([data-ui=neon]) .btn{box-shadow:inset 0 0 0 1px var(--brand),0 0 10px color-mix(in srgb,var(--brand) 35%,transparent)}
+:where([data-ui=neon]) .item{border-bottom-color:color-mix(in srgb,var(--brand) 45%,transparent)}
+/* pergaminho */
+html[data-ui=pergaminho]{--fT:serif,Georgia,"Times New Roman";--fN:serif,Georgia,"Times New Roman";
+  --tex:radial-gradient(circle at 20% 30%,currentColor .6px,transparent 1px) 0 0/7px 9px,radial-gradient(circle at 70% 60%,currentColor .5px,transparent 1px) 0 0/11px 8px;--texO:.07}
+:where([data-ui=pergaminho]) :is(h1,h2){font-variant:small-caps}
+:where([data-ui=pergaminho]) :is(.card,.nav){border-radius:6px;box-shadow:inset 0 0 0 1px var(--line),inset 0 0 0 3px var(--card),inset 0 0 0 4px var(--line);
+  background-image:linear-gradient(var(--brand),var(--brand)),linear-gradient(var(--brand),var(--brand)),linear-gradient(var(--brand),var(--brand)),linear-gradient(var(--brand),var(--brand));
+  background-size:12px 2px,2px 12px,12px 2px,2px 12px;background-position:7px 7px,7px 7px,calc(100% - 7px) calc(100% - 7px),calc(100% - 7px) calc(100% - 7px);background-repeat:no-repeat}
+:where([data-ui=pergaminho]) .bar{height:6px}
+:where([data-ui=pergaminho]) .bar i{border-radius:0;clip-path:polygon(0 0,calc(100% - 6px) 0,100% 50%,calc(100% - 6px) 100%,0 100%)}
+:where([data-ui=pergaminho]) .btn{text-decoration:underline;text-underline-offset:3px}
+/* magia */
+html[data-ui=magia]{--fT:serif,Georgia,"Times New Roman";--fN:serif,Georgia,"Times New Roman";
+  --tex:radial-gradient(circle,#fff 1px,transparent 1.5px) 0 0/53px 61px,radial-gradient(circle,#fde68a 1px,transparent 1.5px) 21px 33px/71px 67px;--texO:.18}
+:where([data-ui=magia]) :is(h1,h2){font-style:italic}
+:where([data-ui=magia]) :is(.card,.nav){border-radius:16px;box-shadow:0 0 0 1px color-mix(in srgb,#fbbf24 45%,transparent),0 0 16px color-mix(in srgb,#fbbf24 16%,transparent)}
+:where([data-ui=magia]) .bar i{background:radial-gradient(circle at calc(100% - 4px) 50%,#fff 0 2px,transparent 3px),linear-gradient(90deg,var(--brand),var(--brand2))}
+:where([data-ui=magia]) .btn.primary{box-shadow:0 0 12px color-mix(in srgb,var(--brand) 45%,transparent)}
+:where([data-ui=magia]) h2::before{content:"✦";margin-right:6px;color:#fbbf24}
+/* contodefadas */
+html[data-ui=contodefadas]{--fT:cursive,"Brush Script MT",serif;
+  --tex:radial-gradient(circle,#f9a8d4 2px,transparent 2.5px) 0 0/34px 34px,radial-gradient(circle,#a5f3fc 2px,transparent 2.5px) 17px 17px/34px 34px;--texO:.12}
+:where([data-ui=contodefadas]) :is(.card,.nav){border-radius:24px;box-shadow:0 8px 22px -10px color-mix(in srgb,var(--brand) 45%,transparent)}
+:where([data-ui=contodefadas]) :is(.btn,.chips button){border-radius:99px}
+:where([data-ui=contodefadas]) .bar i{background:linear-gradient(180deg,rgba(255,255,255,.45),transparent 60%),linear-gradient(90deg,var(--brand),var(--brand2))}
+:where([data-ui=contodefadas]) h1::before{content:"♛";color:var(--brand)}
+:where([data-ui=contodefadas]) .item{border-bottom-style:dotted;border-bottom-width:2px}
+/* velocidade */
+html[data-ui=velocidade]{--fT:"sans-serif-condensed","Roboto Condensed","Arial Narrow",sans-serif;--fN:"sans-serif-black","Arial Black",sans-serif;
+  --tex:repeating-linear-gradient(-55deg,currentColor 0 2px,transparent 2px 22px);--texO:.05}
+:where([data-ui=velocidade]) :is(h1,h2){font-style:italic;text-transform:uppercase}
+:where([data-ui=velocidade]) :is(.big,.val){font-style:italic;font-weight:900}
+:where([data-ui=velocidade]) :is(.card,.nav){border-radius:4px;clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px);
+  box-shadow:inset 4px 0 0 var(--brand)}
+:where([data-ui=velocidade]) .bar i{background:repeating-conic-gradient(var(--brand) 0 25%,var(--brand2) 0 50%) 0 0/8px 8px}
+:where([data-ui=velocidade]) .btn{transform:skewX(-8deg)}
+:where([data-ui=velocidade]) .hero{background-image:repeating-conic-gradient(rgba(255,255,255,.35) 0 25%,transparent 0 50%),linear-gradient(135deg,var(--hero1),var(--hero2));
+  background-size:8px 8px,auto;background-position:top 10px right 10px,0 0;background-repeat:repeat-x,no-repeat}
+/* aventura */
+html[data-ui=aventura]{--fT:serif,Georgia,"Times New Roman";--fN:serif,Georgia,"Times New Roman";
+  --tex:repeating-radial-gradient(circle at 30% 40%,transparent 0 22px,currentColor 22px 23px,transparent 23px 34px);--texO:.05}
+:where([data-ui=aventura]) :is(h1,h2){font-weight:800}
+:where([data-ui=aventura]) :is(.card,.nav){border-radius:14px;outline:2px dashed color-mix(in srgb,var(--brand) 40%,transparent);outline-offset:-6px}
+:where([data-ui=aventura]) .bar i{background:repeating-linear-gradient(135deg,var(--brand) 0 4px,var(--brand2) 4px 8px)}
+:where([data-ui=aventura]) .btn{border-radius:4px 14px 14px 4px}
+:where([data-ui=aventura]) h1::before{content:"✥";color:var(--brand)}
+/* terror */
+html[data-ui=terror]{--fT:serif,Georgia,"Times New Roman";--fN:serif,Georgia,"Times New Roman";
+  --tex:radial-gradient(ellipse at 30% 110%,currentColor,transparent 60%),radial-gradient(ellipse at 80% -10%,currentColor,transparent 55%);--texO:.1}
+:where([data-ui=terror]) :is(.card,.nav){border-radius:14px 6px 16px 5px;box-shadow:inset 0 0 0 1px color-mix(in srgb,#000 45%,var(--line)),0 14px 30px -12px rgba(0,0,0,.7);
+  background-image:repeating-radial-gradient(circle at 100% 0,transparent 0 5px,color-mix(in srgb,var(--muted) 35%,transparent) 5px 6px,transparent 6px 10px);
+  background-size:30px 30px;background-repeat:no-repeat;background-position:top right}
+:where([data-ui=terror]) .bar i{background:linear-gradient(90deg,var(--brand),#7f1d1d)}
+:where([data-ui=terror]) .btn{box-shadow:0 0 10px color-mix(in srgb,#dc2626 35%,transparent)}
+/* espacial */
+html[data-ui=espacial]{--fT:"sans-serif-smallcaps",sans-serif;--fN:"sans-serif-condensed","Roboto Condensed","Arial Narrow",sans-serif;
+  --tex:radial-gradient(circle,#fff .7px,transparent 1.2px) 0 0/37px 41px,radial-gradient(circle,#fff .6px,transparent 1px) 13px 19px/59px 53px;--texO:.35}
+:where([data-ui=espacial]) :is(h1,h2){font-variant:small-caps;letter-spacing:.06em}
+:where([data-ui=espacial]) :is(.card,.nav){border-radius:6px;box-shadow:none;background-repeat:no-repeat;
+  background-image:linear-gradient(var(--brand),var(--brand)),linear-gradient(var(--brand),var(--brand)),linear-gradient(var(--brand),var(--brand)),linear-gradient(var(--brand),var(--brand)),
+    linear-gradient(var(--brand),var(--brand)),linear-gradient(var(--brand),var(--brand)),linear-gradient(var(--brand),var(--brand)),linear-gradient(var(--brand),var(--brand));
+  background-size:14px 2px,2px 14px,14px 2px,2px 14px,14px 2px,2px 14px,14px 2px,2px 14px;
+  background-position:0 0,0 0,100% 0,100% 0,0 100%,0 100%,100% 100%,100% 100%}
+:where([data-ui=espacial]) .bar{height:5px;background:repeating-linear-gradient(90deg,var(--line) 0 calc(10% - 1px),var(--muted) calc(10% - 1px) 10%)}
+:where([data-ui=espacial]) .btn{background:transparent;box-shadow:inset 0 0 0 1px var(--brand)}
+/* quadrinhos */
+html[data-ui=quadrinhos]{--fT:"sans-serif-black","Arial Black",sans-serif;--fN:"sans-serif-black","Arial Black",sans-serif;
+  --tex:radial-gradient(circle,currentColor 1.2px,transparent 1.6px) 0 0/7px 7px;--texO:.07}
+:where([data-ui=quadrinhos]) :is(h1,h2){text-transform:uppercase;font-weight:900}
+:where([data-ui=quadrinhos]) :is(.card,.nav){border-radius:10px;box-shadow:inset 0 0 0 3px #111,5px 5px 0 #111}
+:where([data-ui=quadrinhos]) .bar{box-shadow:inset 0 0 0 2px #111}
+:where([data-ui=quadrinhos]) .btn{box-shadow:inset 0 0 0 2px #111}
+:where([data-ui=quadrinhos]) .btn:active{transform:scale(1.07)}
+:where([data-ui=quadrinhos]) h1::before{content:"✸";color:#facc15;text-shadow:0 0 1px #111}
+/* oriental */
+html[data-ui=oriental]{--fT:serif,Georgia,"Times New Roman";--fN:serif,Georgia,"Times New Roman";
+  --tex:radial-gradient(circle at 50% 100%,transparent 9px,currentColor 9px 10px,transparent 10px 14px,currentColor 14px 15px,transparent 15px) 0 0/32px 16px;--texO:.05}
+:where([data-ui=oriental]) :is(.card,.nav,.btn,.hero,.chips button){border-radius:2px}
+:where([data-ui=oriental]) :is(.card,.nav){box-shadow:inset 0 -1px 0 var(--brand)}
+:where([data-ui=oriental]) .bar{height:6px}
+:where([data-ui=oriental]) .bar i{border-radius:0 99px 99px 0}
+:where([data-ui=oriental]) h1::before{content:"";width:13px;height:13px;border-radius:2px;background:#c0392b}
+/* natureza */
+html[data-ui=natureza]{--tex:radial-gradient(ellipse 40px 18px at 50% 50%,currentColor,transparent 70%) 0 0/120px 80px,
+  radial-gradient(ellipse 30px 14px at 50% 50%,currentColor,transparent 70%) 60px 40px/120px 80px;--texO:.05}
+:where([data-ui=natureza]) :is(.card,.nav){border-radius:24px 10px 26px 12px}
+:where([data-ui=natureza]) :is(.btn,.chips button){border-radius:99px}
+:where([data-ui=natureza]) .bar i{border-radius:0 99px 99px 0/0 99px 99px 0;
+  background:radial-gradient(ellipse 5px 3px at calc(100% - 6px) 50%,#bbf7d0 90%,transparent),linear-gradient(90deg,var(--brand),var(--brand2))}
+:where([data-ui=natureza]) h2::before{content:"❦";margin-right:6px;color:var(--brand)}
+/* guerreiro */
+html[data-ui=guerreiro]{--fT:serif,Georgia,"Times New Roman";--fN:serif,Georgia,"Times New Roman";
+  --tex:repeating-linear-gradient(90deg,currentColor 0 1px,transparent 1px 3px,currentColor 3px 3.5px,transparent 3.5px 7px);--texO:.04}
+:where([data-ui=guerreiro]) :is(h1,h2){font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+:where([data-ui=guerreiro]) :is(.card,.nav){border-radius:0;clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px),0 10px);
+  box-shadow:inset 0 0 0 2px color-mix(in srgb,#9ca3af 60%,var(--line));background-repeat:no-repeat;
+  background-image:radial-gradient(circle,#9ca3af 2px,transparent 2.5px),radial-gradient(circle,#9ca3af 2px,transparent 2.5px),radial-gradient(circle,#9ca3af 2px,transparent 2.5px),radial-gradient(circle,#9ca3af 2px,transparent 2.5px);
+  background-size:8px 8px;background-position:12px 12px,calc(100% - 12px) 12px,12px calc(100% - 12px),calc(100% - 12px) calc(100% - 12px)}
+:where([data-ui=guerreiro]) .bar i{border-radius:0;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 50%,calc(100% - 8px) 100%,0 100%)}
+:where([data-ui=guerreiro]) .btn{border-radius:6px 6px 16px 16px}
+:where([data-ui=guerreiro]) h2::before{content:"⚔";margin-right:6px;color:var(--brand)}
+/* desenho */
+html[data-ui=desenho]{--fT:casual,"Comic Sans MS","Comic Neue",cursive;--fN:casual,"Comic Sans MS","Comic Neue",cursive;
+  --tex:radial-gradient(circle,currentColor 2px,transparent 2.5px) 0 0/26px 26px;--texO:.06}
+:where([data-ui=desenho]) :is(.card,.nav){border-radius:18px;box-shadow:inset 0 0 0 2.5px color-mix(in srgb,var(--text) 80%,transparent),3px 3px 0 color-mix(in srgb,var(--text) 80%,transparent)}
+:where([data-ui=desenho]) .bar{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--text) 80%,transparent)}
+:where([data-ui=desenho]) .btn:active{transform:scale(1.06,.94)}
+:where([data-ui=desenho]) h2::before{content:"★";margin-right:6px;color:var(--brand)}
+/* seriado */
+html[data-ui=seriado]{--fT:"sans-serif-smallcaps",sans-serif;--fN:"sans-serif-condensed","Roboto Condensed","Arial Narrow",sans-serif;
+  --tex:repeating-radial-gradient(circle at 17% 32%,currentColor 0 .5px,transparent .5px 2px),repeating-radial-gradient(circle at 73% 61%,currentColor 0 .5px,transparent .5px 3px);--texO:.05}
+:where([data-ui=seriado]) :is(h1,h2){font-variant:small-caps;letter-spacing:.05em}
+:where([data-ui=seriado]) h2{background:linear-gradient(var(--line),var(--line)) left bottom/100% 1px no-repeat;padding-bottom:4px}
+:where([data-ui=seriado]) :is(.card,.nav,.btn,.hero){border-radius:4px}
+:where([data-ui=seriado]) :is(.card,.nav){box-shadow:none}
+:where([data-ui=seriado]) .bar{height:4px}
+/* Troca de tela de cada estilo (data-troca, posto por cenaAplicar; os primeiros temas têm a sua mais acima). Curta, só
+   transform e opacity. */
+html[data-troca=terminal] #app.enter{animation:trTerminal .26s steps(6,end)}
+html[data-troca=pixel] #app.enter{animation:trPixel .28s steps(5,end)}
+html[data-troca=neon] #app.enter{animation:trNeon .3s linear}
+html[data-troca=pergaminho] #app.enter{animation:trPergaminho .3s ease-out;transform-origin:left center}
+html[data-troca=magia] #app.enter{animation:trMagia .28s ease-out}
+html[data-troca=contodefadas] #app.enter{animation:trConto .3s cubic-bezier(.3,1.5,.5,1)}
+html[data-troca=velocidade] #app.enter{animation:trVelocidade .22s cubic-bezier(.2,.9,.3,1)}
+html[data-troca=aventura] #app.enter{animation:trAventura .28s ease-out;transform-origin:50% 0}
+html[data-troca=terror] #app.enter{animation:trTerror .3s ease-out}
+html[data-troca=espacial] #app.enter{animation:trEspacial .26s ease-out}
+html[data-troca=quadrinhos] #app.enter{animation:trQuadrinhos .24s cubic-bezier(.2,.9,.3,1)}
+html[data-troca=oriental] #app.enter{animation:trOriental .3s ease-out}
+html[data-troca=natureza] #app.enter{animation:trNatureza .3s ease-out}
+html[data-troca=guerreiro] #app.enter{animation:trGuerreiro .3s cubic-bezier(.3,0,.2,1)}
+html[data-troca=desenho] #app.enter{animation:trDesenho .3s ease-out}
+html[data-troca=seriado] #app.enter{animation:trSeriado .3s ease-out}
+html[data-anim=off] #app.enter::before,html[data-anim=off] #app.enter::after{display:none}
+html[data-anim=off] h1::before,html[data-anim=off] .hero .big::after{animation:none}
+html[data-troca=seriado] #app.enter::before,html[data-troca=seriado] #app.enter::after{content:"";position:fixed;left:0;right:0;height:50vh;background:#000;z-index:30;
+  pointer-events:none;transform:scaleY(0);animation:trFaixa .3s ease-in-out}
+html[data-troca=seriado] #app.enter::before{top:0;transform-origin:top}
+html[data-troca=seriado] #app.enter::after{bottom:0;transform-origin:bottom}
+@keyframes trTerminal{from{opacity:0;transform:translateY(-14px)}}
+@keyframes trPixel{0%{opacity:0;transform:translateY(10px)}60%{opacity:1;transform:translateY(-4px)}}
+@keyframes trNeon{0%{opacity:0}20%{opacity:1}35%{opacity:.2}55%{opacity:1}70%{opacity:.4}}
+@keyframes trPergaminho{from{opacity:0;transform:perspective(900px) rotateY(-16deg)}}
+@keyframes trMagia{from{opacity:0;transform:scale(.95)}}
+@keyframes trConto{from{opacity:0;transform:scale(.92)}}
+@keyframes trVelocidade{from{opacity:0;transform:translateX(70px) skewX(-8deg)}}
+@keyframes trAventura{from{opacity:0;transform:scaleY(.9)}}
+@keyframes trTerror{0%{opacity:0}40%{opacity:.6;transform:translateX(-3px)}60%{transform:translateX(3px)}80%{transform:translateX(-1px)}}
+@keyframes trEspacial{from{opacity:0;transform:scaleY(.04)}}
+@keyframes trQuadrinhos{from{opacity:0;transform:scale(1.06)}}
+@keyframes trOriental{from{opacity:0;transform:translateX(-44px)}}
+@keyframes trNatureza{from{opacity:0;transform:translateY(20px)}}
+@keyframes trGuerreiro{0%{opacity:0;transform:translateY(-30px)}70%{opacity:1;transform:translateY(4px)}}
+@keyframes trDesenho{0%{opacity:0;transform:scale(1.08,.9)}60%{opacity:1;transform:scale(.97,1.03)}}
+@keyframes trSeriado{0%,50%{opacity:0}}
+@keyframes trFaixa{0%{transform:scaleY(0)}45%,55%{transform:scaleY(1)}100%{transform:scaleY(0)}}
+@media (prefers-reduced-motion:reduce){html[data-troca] #app.enter{animation:none}html[data-troca=seriado] #app.enter::before,html[data-troca=seriado] #app.enter::after{display:none}
+  [data-ui] h1::before,[data-ui] .hero .big::after{animation:none}}
+/* ---------- Abertura com as imagens do tema (aberturaImg, em js/arte.js) ----------
+   Camadas: cenário, objeto, personagem e o nome do app. O roteiro é o mesmo (cenário 0-0,4 s, objeto 0,3-1 s,
+   personagem 0,5-1,2 s, nome 0,9-1,5 s, saída) e cada estilo (data-e) dá o jeito de cada parte. Só transform e opacity;
+   o personagem cabe inteiro (contain). Com as animações desligadas ou o sistema pedindo menos movimento, não há abertura. */
+#abre[data-e] #abreIn{position:absolute;inset:0}
+#abre .aiFundo{position:absolute;inset:0;overflow:hidden;animation:aiF .4s ease-out both}
+#abre .aiFundo img{position:absolute;top:0;left:50%;height:100%;width:auto;min-width:100%;transform:translateX(-50%);max-width:none}
+#abre .aiFundo::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05) 40%,rgba(0,0,0,.5))}
+#abre .aiObj{position:absolute;top:18%;left:68%;width:86px;height:86px;opacity:0}
+#abre .aiObj.passa{left:0}
+#abre .aiObj img,#abre .aiM img{width:100%;height:100%;object-fit:contain;display:block}
+#abre .aiM{position:absolute;left:0;right:0;bottom:24%;margin:0 auto;width:min(64vw,42vh,320px);height:min(64vw,42vh,320px);transform-origin:50% 100%;
+  animation:aiM .7s .5s cubic-bezier(.2,1.3,.4,1) both;filter:drop-shadow(0 12px 18px rgba(0,0,0,.35))}
+#abre .aiM .sepia{position:absolute;inset:0;filter:sepia(1) saturate(.6);opacity:0}
+#abre .aiNome{position:absolute;left:0;right:0;bottom:12%;margin:0;text-align:center;font-size:34px;font-family:var(--fT,inherit);letter-spacing:.02em;
+  text-shadow:0 2px 14px rgba(0,0,0,.55);animation:none}
+#abre .aiNome span{display:inline-block;animation:aiN .35s calc(.9s + var(--i) * 45ms) ease-out both}
+@keyframes aiF{from{opacity:0}}
+@keyframes aiM{from{opacity:0;transform:translateY(40px) scale(.8)}}
+@keyframes aiN{from{opacity:0;transform:translateY(12px)}}
+@keyframes aiX{to{opacity:0;transform:scale(1.12)}}
+#abre[data-e].fim{animation:aiX .4s ease-in forwards}
+/* terminal: tela ligando em linhas, personagem em degraus, nome digitado, tela desliga numa linha */
+#abre[data-e=terminal] .aiFundo{animation:aiLiga .4s steps(6,end) both}
+#abre[data-e=terminal] .aiM{animation:aiDegrau .7s .5s steps(7,end) both}
+#abre[data-e=terminal] .aiNome span{animation:aiTecla .01s calc(.9s + var(--i) * 70ms) both}
+#abre[data-e=terminal].fim{animation:aiDesliga .4s ease-in forwards}
+@keyframes aiLiga{from{transform:scaleY(.02)}}
+@keyframes aiDegrau{from{opacity:0;transform:scale(.6)}}
+@keyframes aiTecla{from{opacity:0}}
+@keyframes aiDesliga{60%{transform:scaleY(.01);opacity:1}to{transform:scaleY(.01) scaleX(0);opacity:0}}
+/* pixel: entra em blocos, cai e quica em degraus, nome com brilho de moeda, sai em mosaico */
+#abre[data-e=pixel] .aiFundo{animation:aiBlocos .4s steps(4,end) both}
+#abre[data-e=pixel] .aiM{animation:aiQuica2 .7s .5s steps(10,end) both}
+#abre[data-e=pixel] .aiNome span{animation:aiMoeda .4s calc(.9s + var(--i) * 40ms) steps(4,end) both}
+#abre[data-e=pixel].fim{animation:aiMosaico .4s steps(5,end) forwards}
+@keyframes aiBlocos{from{opacity:0;transform:scale(1.1)}}
+@keyframes aiQuica2{0%{opacity:0;transform:translateY(-70vh)}40%{opacity:1;transform:none}55%{transform:translateY(-14%)}70%{transform:none}82%{transform:translateY(-6%)}100%{transform:none}}
+@keyframes aiMoeda{0%{opacity:0;transform:scale(1.6)}60%{opacity:1;transform:scale(.9)}}
+@keyframes aiMosaico{to{opacity:0;transform:scale(.9)}}
+/* neon: acende piscando, contorno brilhando, letreiro letra a letra, apaga devagar */
+#abre[data-e=neon] .aiFundo{animation:aiPiscaNeon .4s linear both}
+#abre[data-e=neon] .aiM{animation:aiPiscaNeon .6s .5s linear both;filter:drop-shadow(0 0 10px var(--brand)) drop-shadow(0 0 2px #fff)}
+#abre[data-e=neon] .aiNome{text-shadow:0 0 8px var(--brand),0 0 18px var(--brand)}
+#abre[data-e=neon] .aiNome span{animation:aiPiscaNeon .3s calc(.9s + var(--i) * 60ms) linear both}
+#abre[data-e=neon].fim{animation:aiApaga .4s linear forwards}
+@keyframes aiPiscaNeon{0%{opacity:0}25%{opacity:1}40%{opacity:.15}60%{opacity:1}75%{opacity:.4}}
+@keyframes aiApaga{30%{opacity:.6}45%{opacity:.85}to{opacity:0}}
+/* pergaminho: desenrola de cima, personagem em sépia que ganha cor, nome escrito da esquerda para a direita, página vira */
+#abre[data-e=pergaminho] .aiFundo{transform-origin:50% 0;animation:aiDesenrola .4s ease-out both}
+#abre[data-e=pergaminho] .aiM{animation:aiF .4s .5s ease-out both}
+#abre[data-e=pergaminho] .aiM .sepia{animation:aiCor .7s .7s ease-in both}
+#abre[data-e=pergaminho] .aiNome span{animation:aiF .12s calc(.9s + var(--i) * 70ms) linear both}
+#abre[data-e=pergaminho].fim{transform-origin:0 50%;animation:aiVira .4s ease-in forwards}
+@keyframes aiDesenrola{from{transform:scaleY(0)}}
+@keyframes aiCor{from{opacity:1}to{opacity:0}}
+@keyframes aiVira{to{opacity:0;transform:perspective(1000px) rotateY(-80deg)}}
+/* magia: surge de um brilho central, personagem numa nuvem de faíscas, letras com brilho, círculo se fecha */
+#abre[data-e=magia] .aiFundo{animation:aiBrilho .4s ease-out both}
+#abre[data-e=magia] .aiM{animation:aiFaisca .7s .5s cubic-bezier(.2,1.2,.4,1) both}
+#abre[data-e=magia] .aiNome span{animation:aiBrilhoL .4s calc(.9s + var(--i) * 50ms) ease-out both}
+#abre[data-e=magia].fim{animation:aiFecha .4s ease-in forwards}
+@keyframes aiBrilho{from{opacity:0;transform:scale(.3)}}
+@keyframes aiFaisca{from{opacity:0;transform:scale(.2) rotate(-25deg)}}
+@keyframes aiBrilhoL{0%{opacity:0;transform:scale(.4)}60%{opacity:1;transform:scale(1.25)}}
+@keyframes aiFecha{to{opacity:0;transform:scale(.4)}}
+/* conto de fadas: cortina abre, reverência, estrelinhas, cortina se abre para o app */
+#abre[data-e=contodefadas] .aiFundo{animation:aiCortina .4s ease-out both}
+#abre[data-e=contodefadas] .aiM{animation:aiReverencia .7s .5s ease-out both}
+#abre[data-e=contodefadas] .aiNome span{animation:aiPop .4s calc(.9s + var(--i) * 50ms) cubic-bezier(.3,1.6,.5,1) both}
+#abre[data-e=contodefadas].fim{animation:aiSobeTela .4s ease-in forwards}
+@keyframes aiCortina{from{transform:scaleX(0)}}
+@keyframes aiReverencia{0%{opacity:0;transform:scale(.7)}50%{opacity:1;transform:none}70%{transform:rotate(-7deg) translateY(4px)}}
+@keyframes aiPop{from{opacity:0;transform:scale(0)}}
+@keyframes aiSobeTela{to{transform:translateY(-100%)}}
+/* velocidade: passa rápido e freia, chega derrapando, nome com rastro, tudo sai para o lado */
+#abre[data-e=velocidade] .aiFundo{animation:aiFreia .4s cubic-bezier(.1,.9,.3,1) both}
+#abre[data-e=velocidade] .aiM{animation:aiDerrapa .7s .5s cubic-bezier(.1,.9,.3,1) both}
+#abre[data-e=velocidade] .aiNome span{font-style:italic;animation:aiRastro .3s calc(.9s + var(--i) * 30ms) cubic-bezier(.1,.9,.3,1) both}
+#abre[data-e=velocidade].fim{animation:aiSaiLado .35s ease-in forwards}
+@keyframes aiFreia{from{transform:translateX(-40%)}}
+@keyframes aiDerrapa{0%{opacity:0;transform:translateX(-110vw) skewX(-14deg)}60%{opacity:1;transform:translateX(6%) skewX(8deg)}}
+@keyframes aiRastro{from{opacity:0;transform:translateX(-50px) skewX(-20deg)}}
+@keyframes aiSaiLado{to{transform:translateX(110%) skewX(-8deg)}}
+/* aventura: mapa desenrola, pula para dentro, nome carimbado, câmera voa para frente */
+#abre[data-e=aventura] .aiFundo{transform-origin:0 50%;animation:aiCortina .4s ease-out both}
+#abre[data-e=aventura] .aiM{animation:aiPulo .7s .5s ease-out both}
+#abre[data-e=aventura] .aiNome span{animation:aiCarimbo .25s 1s ease-out both}
+#abre[data-e=aventura].fim{animation:aiVoa .4s ease-in forwards}
+@keyframes aiPulo{0%{opacity:0;transform:translateY(45vh)}55%{opacity:1;transform:translateY(-14%)}}
+@keyframes aiCarimbo{from{opacity:0;transform:scale(1.3)}}
+@keyframes aiVoa{to{opacity:0;transform:scale(2.4)}}
+/* terror: relâmpago revela a cena, olhos no escuro primeiro, nome treme, o escuro se dissolve */
+#abre[data-e=terror] .aiFundo{animation:aiRelampago .4s linear both}
+#abre[data-e=terror] .aiM{animation:aiEscuro .7s .5s ease-in both}
+#abre[data-e=terror] .aiNome span{animation:aiTreme .4s 1s linear both}
+#abre[data-e=terror].fim{animation:aiF .5s ease-in reverse forwards}
+@keyframes aiRelampago{0%{opacity:0}15%{opacity:1}30%{opacity:.05}45%{opacity:1}}
+@keyframes aiEscuro{0%{opacity:0}40%{opacity:.18}100%{opacity:1}}
+@keyframes aiTreme{0%{opacity:0}20%{opacity:1;transform:translate(-3px,1px)}40%{transform:translate(3px,-1px)}60%{transform:translate(-2px,0)}80%{transform:translate(1px,0)}}
+/* espacial: estrelas passando (hiperespaço), desce flutuando, nome como HUD, abre do centro como scanner */
+#abre[data-e=espacial] .aiFundo{animation:aiHiper .4s ease-out both}
+#abre[data-e=espacial] .aiM{animation:aiDesce .7s .5s ease-out both}
+#abre[data-e=espacial] .aiNome span{font-variant:small-caps;animation:aiTecla .01s calc(.9s + var(--i) * 50ms) both}
+#abre[data-e=espacial].fim{animation:aiScanner .4s ease-in forwards}
+@keyframes aiHiper{from{opacity:0;transform:scale(1.8)}}
+@keyframes aiDesce{from{opacity:0;transform:translateY(-55vh)}}
+@keyframes aiScanner{to{transform:scaleY(0)}}
+/* quadrinhos: quadro se monta, entra com impacto, nome em balão, página vira como HQ */
+#abre[data-e=quadrinhos] .aiFundo{animation:aiQuadro .4s cubic-bezier(.2,1.3,.4,1) both}
+#abre[data-e=quadrinhos] .aiM{animation:aiImpacto .5s .5s cubic-bezier(.2,1.4,.4,1) both}
+#abre[data-e=quadrinhos] .aiNome{left:50%;right:auto;transform:translateX(-50%);padding:6px 18px;border-radius:18px;background:#fff;color:#111;
+  box-shadow:0 0 0 3px #111;text-shadow:none;text-transform:uppercase;animation:aiPop .3s .9s cubic-bezier(.3,1.6,.5,1) both}
+#abre[data-e=quadrinhos] .aiNome span{animation:none}
+#abre[data-e=quadrinhos].fim{transform-origin:100% 100%;animation:aiViraHQ .4s ease-in forwards}
+@keyframes aiQuadro{from{opacity:0;transform:scale(.6) rotate(-4deg)}}
+@keyframes aiImpacto{0%{opacity:0;transform:scale(2)}60%{opacity:1;transform:scale(.92)}}
+@keyframes aiViraHQ{to{transform:rotate(12deg) translateX(110%)}}
+/* oriental: portas de correr se abrem, reverência, traço de pincel revela o nome, portas fecham e abrem no app */
+#abre[data-e=oriental] .aiFundo{animation:aiCortina .45s ease-out both}
+#abre[data-e=oriental] .aiM{animation:aiReverencia .8s .5s ease-out both}
+#abre[data-e=oriental] .aiNome span{animation:aiF .15s calc(.9s + var(--i) * 60ms) linear both}
+#abre[data-e=oriental].fim{animation:aiPorta .4s ease-in forwards}
+@keyframes aiPorta{to{transform:scaleX(0)}}
+/* natureza: amanhecer, chega saltitando, nome flutua para o lugar, folhas levam a tela embora */
+#abre[data-e=natureza] .aiFundo{animation:aiF .5s ease-in both}
+#abre[data-e=natureza] .aiM{animation:aiSalta .7s .5s ease-out both}
+#abre[data-e=natureza] .aiNome span{animation:aiFlutuaN .6s calc(.9s + var(--i) * 40ms) ease-out both}
+#abre[data-e=natureza].fim{animation:aiFolhas .4s ease-in forwards}
+@keyframes aiSalta{0%{opacity:0;transform:translateX(-40vw)}25%{opacity:1;transform:translate(-26vw,-12%)}50%{transform:translateX(-13vw)}75%{transform:translateY(-10%)}}
+@keyframes aiFlutuaN{from{opacity:0;transform:translateY(24px)}}
+@keyframes aiFolhas{to{opacity:0;transform:translate(60%,-30%) rotate(12deg)}}
+/* guerreiro: portão desce, marcha e para, nome martelado, portão sobe */
+#abre[data-e=guerreiro] .aiFundo{animation:aiPortao .4s cubic-bezier(.3,0,.2,1) both}
+#abre[data-e=guerreiro] .aiM{animation:aiMarcha .7s .5s linear both}
+#abre[data-e=guerreiro] .aiNome span{animation:aiMartelo .3s 1s ease-out both}
+#abre[data-e=guerreiro].fim{animation:aiSobeTela .4s ease-in forwards}
+@keyframes aiPortao{0%{transform:translateY(-100%)}80%{transform:translateY(2%)}}
+@keyframes aiMarcha{0%{opacity:0;transform:translateX(-50vw)}20%{opacity:1;transform:translate(-38vw,-3%)}40%{transform:translateX(-26vw)}60%{transform:translate(-14vw,-3%)}80%{transform:none}}
+@keyframes aiMartelo{0%{opacity:0;transform:scale(1.7)}60%{opacity:1;transform:scale(.95) translateX(-2px)}80%{transform:translateX(2px)}}
+/* desenho: íris abrindo, entra esticando, nome quica, íris fecha */
+#abre[data-e=desenho] .aiFundo{inset:auto;left:50%;top:50%;width:160vmax;height:160vmax;margin:-80vmax 0 0 -80vmax;border-radius:50%;animation:aiIris .45s ease-out both}
+#abre[data-e=desenho] .aiFundo img{top:calc(80vmax - 50vh);height:100vh}
+#abre[data-e=desenho] .aiM{animation:aiEstica .7s .5s ease-out both}
+#abre[data-e=desenho] .aiNome span{animation:aiQuicaN .5s calc(.9s + var(--i) * 40ms) ease-out both}
+#abre[data-e=desenho].fim{border-radius:50%;animation:aiFecha .4s ease-in forwards}
+@keyframes aiIris{from{transform:scale(0)}}
+@keyframes aiEstica{0%{opacity:0;transform:scale(.3,1.6)}45%{opacity:1;transform:scale(1.2,.8)}70%{transform:scale(.95,1.05)}}
+@keyframes aiQuicaN{0%{opacity:0;transform:translateY(-40px)}50%{opacity:1;transform:none}70%{transform:translateY(-8px)}}
+/* seriado: faixas de cinema abrem, corte seco, letras espaçadas, corte com faixas */
+#abre[data-e=seriado] .aiFundo{animation:aiFaixas .45s ease-out both}
+#abre[data-e=seriado] .aiM{animation:aiCorte .01s .7s both}
+#abre[data-e=seriado] .aiNome{font-variant:small-caps;letter-spacing:.3em}
+#abre[data-e=seriado] .aiNome span{animation:aiEspaco .6s .95s ease-out both}
+#abre[data-e=seriado].fim{animation:aiScanner .35s ease-in forwards}
+@keyframes aiFaixas{from{transform:scaleY(.2)}}
+@keyframes aiCorte{from{opacity:0}}
+@keyframes aiEspaco{from{opacity:0;transform:scaleX(1.6)}}

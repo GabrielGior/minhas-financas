@@ -298,25 +298,25 @@ addEventListener('scroll', () => {
   if (Math.abs(y - lastScroll) < 6) return;
   for (const id of ['fab', 'fabChat']) document.getElementById(id).classList.toggle('away', y > lastScroll && y > 80);
   lastScroll = y;
-  clearTimeout(chatDesviaT); chatDesviaT = setTimeout(chatDesvia, 150); // parou de rolar: confere de novo
+  clearTimeout(fabDesviaT); fabDesviaT = setTimeout(fabDesvia, 150); // parou de rolar: confere de novo
 }, {passive:true});
-// O botão do assistente não fica por cima de um botão da tela (ex.: o "Pago" das contas a vencer): com a tela parada e
-// um botão embaixo dele, encolhe numa aba na beirada direita, fora do conteúdo; um toque na aba abre o assistente.
-// Volta ao tamanho normal quando a área fica livre. Só no celular: na tela larga há espaço dos lados.
-let chatDesviaT = 0;
-function chatDesvia(){
-  const fc = document.getElementById('fabChat');
-  if (fc.hidden || fc.classList.contains('away')) return;
-  fc.classList.remove('aba');
+// Os botões flutuantes (o "+" e o do assistente) não ficam por cima de um botão da tela (ex.: o "Pago" das contas a
+// vencer): com a tela parada e um botão embaixo, cada um encolhe numa aba na beirada direita, fora do conteúdo (os
+// dois juntos, um acima do outro); um toque na aba faz o mesmo que o botão. Volta ao tamanho normal quando a área fica
+// livre. Só no celular: na tela larga há espaço dos lados.
+let fabDesviaT = 0;
+function fabDesvia(){
+  const fabs = ['fab', 'fabChat'].map(id => document.getElementById(id)).filter(b => !b.hidden && !b.classList.contains('away'));
+  for (const b of fabs) b.classList.remove('aba'); // mede cada um no lugar normal
   if (innerWidth >= 700) return;
-  const r = fc.getBoundingClientRect(), m = 6;
-  const pontos = [[r.left + m, r.top + m], [r.right - m, r.top + m], [r.left + m, r.bottom - m], [r.right - m, r.bottom - m],
-    [(r.left + r.right) / 2, (r.top + r.bottom) / 2]];
-  const cobre = pontos.some(([x, y]) => document.elementsFromPoint(x, y)
-    .some(el => !el.closest('.fab, .tabs') && el.matches('button, a, input, select, textarea')));
-  fc.classList.toggle('aba', cobre);
+  const cobre = fabs.filter(b => { const r = b.getBoundingClientRect(), m = 6;
+    const pontos = [[r.left + m, r.top + m], [r.right - m, r.top + m], [r.left + m, r.bottom - m], [r.right - m, r.bottom - m],
+      [(r.left + r.right) / 2, (r.top + r.bottom) / 2]];
+    return pontos.some(([x, y]) => document.elementsFromPoint(x, y)
+      .some(el => !el.closest('.fab, .tabs') && el.matches('button, a, input, select, textarea'))); });
+  for (const b of cobre) b.classList.add('aba');
 }
-addEventListener('resize', () => { clearTimeout(chatDesviaT); chatDesviaT = setTimeout(chatDesvia, 150); });
+addEventListener('resize', () => { clearTimeout(fabDesviaT); fabDesviaT = setTimeout(fabDesvia, 150); });
 const telaErro = () => `<h1>${esc(TABS[state.tab] ? TABS[state.tab][1] : 'Cofrim')}</h1><div class="card"><b>${I('alert')} Não foi possível abrir esta tela</b>
   <div class="hint">O erro ficou registrado. Abra o Diagnóstico e envie o relatório para quem dá suporte; seus dados continuam salvos.</div>
   <div class="btns"><button class="btn primary" data-onclick="diagOpen()">Abrir Diagnóstico</button>${state.tab !== 'resumo' ? '<button class="btn" data-onclick="go(\'resumo\')">Ir para o Resumo</button>' : ''}</div></div>`;
@@ -340,7 +340,7 @@ function render(){
   drawTopbar();
   nuvemAlinhar(document.getElementById('app'));
   a11y(document.getElementById('app'));
-  chatDesvia();
+  fabDesvia();
   if (db.prefs.fun && !window.TESTE) setTimeout(funCheck, 0); // conquista nova: aviso com confete
 }
 // As regras avisam quando os dados mudam sozinhos (telaAtualizar, em util.js): redesenha, salvo com uma folha aberta.

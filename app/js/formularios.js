@@ -5,6 +5,24 @@
 // valores ao abrir), onChange, hint, check (valida; devolve mensagem de erro) e commit (grava; sem ele,
 // o registro é criado/alterado em db[col]).
 const opts = cats => Object.entries(cats).filter(([,c]) => !c[3]).map(([k,c]) => [k, c[1]]); // sem as escondidas
+// Dia em que um ganho cai: num ganho fixo ou anual, também o último ou o primeiro dia útil, o N-ésimo dia útil, ou um dia
+// escolhido que, em fim de semana ou feriado, passa para o dia útil antes ou depois (diaGanho, em calculos.js).
+const DIA_GANHO_FIELDS = [
+  {k:'regra', label:'Dia em que cai', type:'select', optional:true, showIf:v => v.fixed, more:true,
+    options:[['', 'Um dia do mês que eu escolho'], ['ult', 'Último dia útil do mês'], ['prim', 'Primeiro dia útil do mês'],
+      ['nutil', 'Um dia útil contado (ex.: 5º dia útil)']]},
+  {k:'day', label:v => v.fixed && v.regra === 'nutil' ? 'Qual dia útil (ex.: 5 para o 5º)' : 'Dia em que cai (opcional)', type:'int', optional:true,
+    showIf:v => !v.fixed || !v.regra || v.regra === 'nutil', more:true},
+  {k:'ajuste', label:'Se esse dia cair em fim de semana ou feriado', type:'select', optional:true, showIf:v => v.fixed && !v.regra && +v.day > 0,
+    more:true, options:[['', 'Recebo nesse dia mesmo'], ['antes', 'A empresa paga antes (dia útil anterior)'], ['depois', 'Recebo no próximo dia útil']]}];
+// Ao salvar: só o que vale para o tipo escolhido (avulso não tem regra; último/primeiro dia útil não têm dia).
+function diaGanhoCheck(v){
+  if (!v.fixed) v.regra = '';
+  if (v.regra && v.regra !== 'nutil') v.day = '';
+  if (v.regra || !v.day) v.ajuste = '';
+  if (v.regra === 'nutil' && v.day !== '' && (v.day < 1 || v.day > 23)) return 'O dia útil deve ser de 1 a 23.';
+  return dayOk(v, 'day', 'O dia');
+}
 const dayOk = (v, k, name) => v[k] !== '' && (v[k] < 1 || v[k] > 31) ? name + ' deve ser de 1 a 31.' : '';
 // Ganhos e gastos fixos: ao editar, a alteração pode valer só a partir de um mês. Nesse caso o registro antigo
 // é encerrado no mês anterior e nasce um novo a partir dali, de modo que os meses passados ficam como estavam.
@@ -55,7 +73,7 @@ const FORMS = {
     {k:'cat', label:'Qual vale', type:'select', options:() => Object.entries(VALES)},
     EMP_FIELD,
     {k:'fixed', label:'Repete', type:'select', options:[['1','Todo mês'],['','Só neste mês']]},
-    {k:'day', label:'Dia em que cai (opcional)', type:'int', optional:true, more:true},
+    ...DIA_GANHO_FIELDS,
     {k:'start', label:v => v.fixed ? 'A partir de' : 'Mês', type:'month', more:true},
     {k:'end', label:'Até (opcional)', type:'month', optional:true, showIf:v => v.fixed, more:true},
     ...SCOPE_FIELDS] : [
@@ -65,14 +83,14 @@ const FORMS = {
     {k:'fixed', label:'Tipo', type:'select',
       options:[['1','Fixo — repete todo mês'],['y','Anual — uma vez por ano (13º, bônus…)'],['','Avulso — só em um mês']]},
     {k:'bank', label:'Conta onde cai (opcional)', type:'text', ph:'Ex.: Nubank', optional:true, sug:bankSuggestions, more:true},
-    {k:'day', label:'Dia em que cai (opcional)', type:'int', optional:true, more:true},
+    ...DIA_GANHO_FIELDS,
     {k:'start', label:v => v.fixed === 'y' ? 'Mês em que recebe (repete todo ano)' : v.fixed ? 'A partir de' : 'Mês', type:'month', more:true},
     {k:'end', label:'Até (opcional)', type:'month', optional:true, showIf:v => v.fixed, more:true},
     ...SCOPE_FIELDS],
     load(v){ v.scope = 'from'; v.from = curYM; },
-    summary:v => [v.bank, v.day && 'dia ' + v.day, v.start && v.start !== curYM && cap(monthName(v.start))].filter(Boolean).join(' · '),
+    summary:v => [v.bank, diaGanhoTexto(v), v.start && v.start !== curYM && cap(monthName(v.start))].filter(Boolean).join(' · '),
     onChange(k, v, isNew, touched){ if (formVale && isNew && k === 'cat' && !touched.emp) v.emp = valeEmp(v.cat); },
-    check(v){ if (!v.desc || formVale) v.desc = (CAT_GANHO[v.cat] || [0, 'Ganho'])[1]; return dayOk(v, 'day', 'O dia'); },
+    check(v){ if (!v.desc || formVale) v.desc = (CAT_GANHO[v.cat] || [0, 'Ganho'])[1]; return diaGanhoCheck(v); },
     commit:commitRecurring('incomes')},
   expenses: { title:'gasto', defaults:() => catDefaults({cat:'alimentacao', fixed:'', start:state.month}), fields:() => formVale ? [
     {k:'value', label:'Valor', type:'money', big:true},
@@ -252,7 +270,7 @@ const FORMS = {
         end:'', bank:v.account, day}));
       else if (v.account) db.transfers.push(touch({id:uid(), from:'Investimentos', to:v.account, value:v.value, month:ym, day}));
     }},
-  accounts: { fullTitle:'Conta bancária', defaults:() => ({initial:'0,00', since:curYM}), fields:[
+  accounts: { fullTitle:'Conta bancária', defaults:() => ({initial:moneyStr(0), since:curYM}), fields:[
     {k:'name', label:'Nome do banco ou da conta', type:'text', ph:'Ex.: Nubank', sug:bankSuggestions},
     {k:'initial', label:'Saldo no início do mês abaixo', type:'money', zero:true},
     {k:'since', label:'Acompanhar o saldo a partir de', type:'month'}],
@@ -266,7 +284,7 @@ const FORMS = {
       {k:'month', label:'Mês', type:'month'},
       {k:'day', label:'Dia (opcional)', type:'int', optional:true}]; },
     check:v => v.from === v.to ? 'Escolha duas contas diferentes.' : dayOk(v, 'day', 'O dia')},
-  goals: { title:'meta', fem:true, defaults:() => ({saved:'0,00'}), fields:[
+  goals: { title:'meta', fem:true, defaults:() => ({saved:moneyStr(0)}), fields:[
     {k:'name', label:'Nome da meta', type:'text', ph:'Ex.: Viagem, reserva de emergência'},
     {k:'target', label:'Valor da meta', type:'money'},
     {k:'saved', label:'Quanto já tem guardado', type:'money', zero:true},
@@ -421,7 +439,7 @@ function fieldHtml(f){
   if (f.type === 'month' || f.type === 'date') return `<input id="${id}" type="hidden"><button type="button" class="pickBtn" id="p_${f.k}" data-onclick="pickField('${f.k}')"></button>`;
   // Valor de um gasto em vermelho e de um ganho em verde, para confirmar o que está sendo lançado.
   const cor = !['value', 'total'].includes(f.k) || !F ? '' : F.col === 'incomes' ? 'in' : ['expenses', 'installments'].includes(F.col) ? 'out' : '';
-  if (f.big) return `<div class="bigVal ${cor}"><span>R$</span><input id="${id}" type="text" inputmode="numeric" placeholder="0,00" autocomplete="off"></div>${somaHtml(f.k)}`;
+  if (f.big) return `<div class="bigVal ${cor}"><span>${esc(moeda.simbolo)}</span><input id="${id}" type="text" inputmode="numeric" placeholder="${moneyStr(0)}" autocomplete="off"></div>${somaHtml(f.k)}`;
   return `<input id="${id}" type="text" ${f.type === 'money' ? `inputmode="numeric" class="${cor}"` : f.type === 'num' ? 'inputmode="decimal"' : f.type === 'int' ? 'inputmode="numeric"' : ''} placeholder="${f.type === 'money' ? '0,00' : f.ph || ''}"${f.max ? ` maxlength="${f.max}"` : ''} autocomplete="off">` +
     (f.type === 'money' ? somaHtml(f.k) : '') +
     (f.type === 'asset' ? '<div id="assetList"></div>' : '') +
@@ -438,10 +456,11 @@ function somaRapida(k, n){
 // Cores oferecidas para uma categoria (as mesmas famílias das categorias de fábrica).
 const CAT_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#ef4444', '#f97316', '#f59e0b', '#eab308', '#65a30d', '#16a34a', '#14b8a6', '#0ea5e9',
   '#2563eb', '#b45309', '#64748b'];
-// Texto digitado num campo de dinheiro → valor com os centavos: só os números contam, os dois últimos são os centavos.
+// Texto digitado num campo de dinheiro → valor com os centavos: só os números contam, os últimos são os centavos (dois
+// na maioria das moedas; nenhum no iene, três no dinar do Kuwait: moeda.casas).
 function centsMask(s){
-  const d = String(s).replace(/\D/g, '').replace(/^0+/, '').slice(0, 13);
-  return d ? (+d / 100).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '';
+  const d = String(s).replace(/\D/g, '').replace(/^0+/, '').slice(0, 13), c = moeda.casas;
+  return d ? (+d / 10 ** c).toLocaleString('pt-BR', {minimumFractionDigits:c, maximumFractionDigits:c}) : '';
 }
 // Toques num formulário que já está fechando (F = null) não fazem nada.
 function setField(k, v){ if (!F) return; const el = document.getElementById('f_' + k); el.value = v; el.oninput(); }

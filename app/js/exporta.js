@@ -5,9 +5,11 @@
 // O app monta o arquivo do Excel sozinho, sem biblioteca: um .xlsx é um zip com alguns arquivos XML dentro.
 // Estilos (índices de cellXfs em ESTILOS_XLSX): 0 texto, 1 cabeçalho, 2 texto em linha colorida, 3 valor, 4 valor em
 // linha colorida, 5 rótulo do total, 6 valor do total, 7 título, 8 subtítulo.
-const ESTILOS_XLSX = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+const xlsxMoeda = () => `&quot;${esc(moeda.simbolo)}&quot;\\ #,##0${moeda.casas ? '.' + '0'.repeat(moeda.casas) : ''}`;
+// O formato dos valores leva o símbolo e as casas decimais da moeda escolhida (moeda, em util.js).
+const ESTILOS_XLSX = () => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-<numFmts count="1"><numFmt numFmtId="164" formatCode="&quot;R$&quot;\\ #,##0.00;[Red]\\-&quot;R$&quot;\\ #,##0.00"/></numFmts>
+<numFmts count="1"><numFmt numFmtId="164" formatCode="${xlsxMoeda()};[Red]\\-${xlsxMoeda()}"/></numFmts>
 <fonts count="5"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="16"/><color rgb="FF312E81"/><name val="Calibri"/></font><font><sz val="10"/><color rgb="FF6B7280"/><name val="Calibri"/></font></fonts>
 <fills count="5"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF4F46E5"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF1F2FB"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE0E7FF"/></patternFill></fill></fills>
 <borders count="3"><border><left/><right/><top/><bottom/><diagonal/></border><border><left/><right/><top/><bottom style="thin"><color rgb="FFE5E7EB"/></bottom><diagonal/></border><border><left/><right/><top style="medium"><color rgb="FF4F46E5"/></top><bottom/><diagonal/></border></borders>
@@ -26,7 +28,7 @@ const ESTILOS_XLSX = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 const xmlEsc = s => String(s).replace(/[<>&"]/g,
   c => ({'<':'&lt;', '>':'&gt;', '&':'&amp;', '"':'&quot;'}[c])).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '');
 const colLetra = i => (i >= 26 ? String.fromCharCode(64 + Math.floor(i / 26)) : '') + String.fromCharCode(65 + i % 26);
-// Uma aba: {nome, larguras, titulo, sub, cabecalho, linhas:[[célula…]], total:[célula…]}; número = valor em R$, texto = texto.
+// Uma aba: {nome, larguras, titulo, sub, cabecalho, linhas:[[célula…]], total:[célula…]}; número = valor na moeda escolhida, texto = texto.
 function abaXlsx(a){
   const cel = (v, r, c, txt, num) => typeof v === 'number'
     ? `<c r="${colLetra(c)}${r}" s="${num}"><v>${round2(v)}</v></c>` : `<c r="${colLetra(c)}${r}" s="${txt}" t="inlineStr"><is><t xml:space="preserve">${xmlEsc(v ?? '')}</t></is></c>`;
@@ -68,7 +70,7 @@ function xlsx(abas){
     ['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
     ['xl/workbook.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${abas.map((a, i) => `<sheet name="${xmlEsc(a.nome)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets></workbook>`],
     ['xl/_rels/workbook.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${abas.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}<Relationship Id="rId${abas.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
-    ['xl/styles.xml', ESTILOS_XLSX],
+    ['xl/styles.xml', ESTILOS_XLSX()],
     ...abas.map((a, i) => [`xl/worksheets/sheet${i + 1}.xml`, abaXlsx(a)])]);
 }
 // As abas da planilha do ano y: resumo por mês, gastos e ganhos (com os vales, como no CSV) e os investimentos de hoje
@@ -78,7 +80,7 @@ function abasDoAno(y){
   const tipo = x => x.kind === 'installment' ? parcTag(x) : x.fixed === 'y' ? 'anual' : x.fixed ? 'fixo' : 'avulso';
   const gastos = meses.flatMap(m => expensesAll(m).map(x => [cap(monthName(m).split(' ')[0]), x.day ? String(x.day) : '', x.desc,
     (CAT_GASTO[x.cat] || CAT_GASTO.outros)[1], x.bank || '', PAY[x.pay] || '', tipo(x), x.value]));
-  const ganhos = meses.flatMap(m => incomesAll(m).map(x => [cap(monthName(m).split(' ')[0]), x.day ? String(x.day) : '', x.desc,
+  const ganhos = meses.flatMap(m => incomesAll(m).map(x => [cap(monthName(m).split(' ')[0]), diaGanho(x, m) ? String(diaGanho(x, m)) : '', x.desc,
     (CAT_GANHO[x.cat] || CAT_GANHO.outros)[1], x.bank || '', tipo(x), x.value]));
   const invest = db.investments.map(v => [v.ticker ? v.ticker + (v.assetName ? ' · ' + v.assetName : '') : v.name || '',
     (CAT_INV[v.cat] || CAT_INV.outros)[1], v.broker || '', v.value || 0]);

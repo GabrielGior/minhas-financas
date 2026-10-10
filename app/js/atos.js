@@ -246,5 +246,11 @@ const ATOS = {
   basquete:[fBola('#f97316', ln('M3 20h34M20 3v34M8 8q10 12 0 24M32 8q-10 12 0 24', '#7c2d12', 1.500)), 'quica', 44, 190, 6, 1],
   futebol:[fBola('#fff', pa('M20 12l7 5-3 8h-8l-3-8z', '#111827') + ln('M20 12V4M27 17l8-3M24 25l5 8M16 25l-5 8M13 17l-8-3', '#111827', 1.500)),
     'rola', 42, 198, 6, 1],
-  detetive:[`<circle cx="16" cy="16" r="11" fill="#bae6fd" fill-opacity=".5" stroke="#44403c" stroke-width="3"/>` + ln('M24 24l12 12', '#44403c', 5) + ln('M10 14q4-6 10-4', '#fff', 1.500), 'navega', 60, 130, 9, 1]
+  detetive:[`<circle cx="16" cy="16" r="11" fill="#bae6fd" fill-opacity=".5" stroke="#44403c" stroke-width="3"/>` + ln('M24 24l12 12', '#44403c', 5) + ln('M10 14q4-6 10-4', '#fff', 1.500), 'navega', 60, 130, 9, 1],
+  // Temas novos da 2.30 (reserva sem as imagens: o objeto de cada um em imagem substitui estes)
+  monstroclassico:[pa('M23 2 8 22h10l-4 16 18-24H21z', '#facc15') + pa('M23 2 8 22h4l9-16z', '#fef08a', .7), 'pisca', 44, 60, 4, 2],
+  reinodoscanos:[ci(20, 20, 15, '#ca8a04') + ci(20, 20, 12, '#facc15') + re(18, 11, 4, 18, '#a16207', 2), 'gira', 36, 70, 3, 3],
+  velocidademaxima:[`<circle cx="20" cy="20" r="13" fill="none" stroke="#facc15" stroke-width="5"/>` + ln('M12 14a10 10 0 0 1 6-5', '#fef9c3', 2), 'gira', 34, 90, 2, 4],
+  lendadoheroi:[fEspada('#e5e7eb', '#1d4ed8'), 'flutua', 56, 80, 4, 1],
+  ilhadascaixas:[re(4, 6, 32, 30, '#b45309', 3) + ln('M7 9l26 24M33 9 7 33', '#78350f', 3) + ln('M4 6h32v30H4z', '#78350f', 2.500), 'quica', 44, 160, 3, 1]
 };

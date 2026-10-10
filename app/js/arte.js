@@ -101,15 +101,47 @@ function abertura(){
   const el = document.getElementById('abre');
   if (!el) return;
   if (window.TESTE || !db.prefs.anim || matchMedia('(prefers-reduced-motion: reduce)').matches) return el.remove();
-  const sk = db.prefs.skin || '', comMascote = sk || db.prefs.fun;
-  el.dataset.g = sk ? cenaDe(sk)[3] : ''; // o jeito de entrar de cada tema vem da cena dele (js/cena.js)
-  document.getElementById('abreIn').innerHTML = (comMascote
-    ? `${sk && ATOS[sk] ? `<svg class="abreAto at-${ATOS[sk][1]}" viewBox="0 0 40 40">${ATOS[sk][0]}</svg>` : ''}<div class="abreM">${mascoteEm(sk, 'feliz', 0, 0, 150, true)}</div>`
-    : `<div class="abreIco">${iconeSvg(COLORS[db.prefs.color] ? db.prefs.color : 'indigo', 'b', 132)}</div>`)
-    + `<b>${esc(temNativo('iconeNome') && APP_NOMES[nativo('iconeNome')] || 'Cofrim')}</b>`;
+  const sk = db.prefs.skin || '';
+  // Tema com imagens: as guardadas no aparelho chegam em instantes (a tela já está na cor do tema); se não chegarem a
+  // tempo (primeiro uso, sem internet), vai a abertura de sempre, desenhada.
+  if (sk && TEMAS_IMG[sk] && !temaImgsProntas(sk)){
+    const seguir = () => { try { aberturaMostrar(el); } catch(e){ logErr('abertura', e); el.remove(); } };
+    Promise.race([temaImgsCarregar(sk), new Promise(ok => setTimeout(ok, 350))]).then(seguir, seguir);
+    return;
+  }
+  aberturaMostrar(el);
+}
+function aberturaMostrar(el){
+  const sk = db.prefs.skin || '', comMascote = sk || db.prefs.fun, nome = temNativo('iconeNome') && APP_NOMES[nativo('iconeNome')] || 'Cofrim';
+  let dura = 1750; // entrada mais demorada, para dar tempo de ver
+  if (sk && temaImgsProntas(sk)) { aberturaImg(el, sk, nome); dura = 1500; }
+  else {
+    el.dataset.g = sk ? cenaDe(sk)[3] : ''; // o jeito de entrar de cada tema vem da cena dele (js/cena.js)
+    document.getElementById('abreIn').innerHTML = (comMascote
+      ? `${sk && ATOS[sk] ? `<svg class="abreAto at-${ATOS[sk][1]}" viewBox="0 0 40 40">${ATOS[sk][0]}</svg>` : ''}<div class="abreM">${mascoteEm(sk, 'feliz', 0, 0, 150, true)}</div>`
+      : `<div class="abreIco">${iconeSvg(COLORS[db.prefs.color] ? db.prefs.color : 'indigo', 'b', 132)}</div>`)
+      + `<b>${esc(nome)}</b>`;
+  }
   let acabou = false;
   const fim = () => { if (acabou) return; acabou = true; el.classList.add('fim');
     setTimeout(() => { el.remove(); abreFila.splice(0).forEach(f => f()); }, 400); };
-  setTimeout(fim, 1750); // entrada mais demorada, para dar tempo de ver
+  setTimeout(fim, dura);
   el.onclick = fim; // um toque pula
+}
+// Abertura com as imagens do tema: o cenário entra (0 a 0,4 s), o objeto do tema passa com o movimento dele (0,3 a 1 s),
+// o personagem feliz chega e reage (0,5 a 1,2 s), o nome do app aparece letra a letra (0,9 a 1,5 s) e a tela sai com a
+// transição do estilo. A coreografia de cada parte é do estilo do tema (data-e, no app.css); o personagem fica inteiro.
+function aberturaImg(el, k, nome){
+  const [estilo, , [mov, , , , , amp, curva, sentido]] = TEMAS_IMG[k];
+  el.dataset.e = estilo;
+  document.getElementById('abreIn').innerHTML = `<div class="aiFundo"><img src="${temaImg(k, 'fundo')}" alt=""></div>
+    <i class="aiObj"><img src="${temaImg(k, 'objeto')}" alt=""></i>
+    <div class="aiM"><img src="${temaImg(k, 'feliz')}" alt=""><img class="sepia" src="${temaImg(k, 'feliz')}" alt=""></div>
+    <b class="aiNome">${[...nome].map((c, i) => `<span style="--i:${i}">${c === ' ' ? '&nbsp;' : esc(c)}</span>`).join('')}</b>`;
+  const q = cenaQuadros(mov, amp, sentido), passa = CENA_ANDA.includes(mov) || mov === 'cai' || mov === 'sobe', obj = el.querySelector('.aiObj');
+  // Os que atravessam fazem a passagem inteira; os que ficam no lugar entram e saem esmaecendo, à direita do personagem.
+  const meio = q.map((f, i) => ({...f, offset:.2 + .6 * (f.offset ?? i / (q.length - 1))}));
+  const quadros = passa ? q : [{...q[0], opacity:0, offset:0}, ...meio, {...q[q.length - 1], opacity:0, offset:1}];
+  obj.classList.toggle('passa', passa);
+  obj.animate(quadros, {duration:700, delay:300, fill:'both', easing:CENA_CURVA[curva]});
 }

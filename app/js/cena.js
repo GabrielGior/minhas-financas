@@ -83,60 +83,60 @@ const CENA_PART = {
   penas:['<path d="M3 19C3 8 8 2 18 1c-1 10-6 15-12 16zM3 19l8-9" stroke="currentColor" stroke-width=".8"/>', 'cai', 10, 11, 18],
   baloes:['<path d="M10 1a7 8 0 0 1 0 16 7 8 0 0 1 0-16zM10 17v3" stroke="currentColor" stroke-width="1"/>', 'sobe', 9, 14, 24]
 };
-// Cena de cada tema: [horizonte, astro, partículas, entrada, troca de tela]. Entradas: cai, vel, magia, tec, forca,
-// calma, zoom, gira. Trocas: sobe, lado, zoom, vira, degraus, cai, cortina, foco, quica, desliza.
+// Cena de cada tema: [horizonte, astro, partículas, entrada]. Entradas (abertura em SVG): cai, vel, magia, tec, forca,
+// calma, zoom, gira. A troca de tela vem do estilo de interface do tema (TEMAS_IMG, js/temas-img.js).
 const CENAS = {
-  hacker:['cidade', 'nenhum', 'codigo', 'tec', 'degraus'], boneca:['castelo', 'estrela', 'coracoes', 'magia', 'quica'],
-  corrida:['estadio', 'sol', 'poeira', 'vel', 'lado'],
-  neon:['cidade', 'sol', 'quadrados', 'tec', 'zoom'], papel:['vila', 'sol', 'penas', 'calma', 'vira'], praia:['ilha', 'sol', 'passaros', 'calma', 'desliza'],
-  noite:['nenhum', 'nenhum', 'estrelas', 'magia', 'foco'], bruxo:['castelo', 'crescente', 'vagalumes', 'magia', 'foco'],
-  espaco:['nenhum', 'planeta', 'estrelas', 'zoom', 'zoom'],
-  floresta:['pinheiros', 'sol', 'folhas', 'calma', 'sobe'], retro:['montanhas', 'sol', 'quadrados', 'tec', 'degraus'],
-  dragao:['montanhas', 'lua', 'brasas', 'forca', 'cai'],
-  grandprix:['estadio', 'nenhum', 'bolas', 'vel', 'lado'], rua:['cidade', 'lua', 'poeira', 'vel', 'desliza'], drift:['templo', 'sol', 'petalas', 'vel', 'lado'],
-  fusca:['serras', 'sol', 'nuvens', 'vel', 'quica'], vikings:['montanhas', 'lua', 'neve', 'forca', 'cai'],
-  espartano:['ruinas', 'sol', 'brasas', 'forca', 'cortina'],
-  colegio:['cidade', 'estrela', 'coracoes', 'cai', 'quica'], fadas:['pinheiros', 'crescente', 'vagalumes', 'magia', 'foco'],
-  supermeninas:['cidade', 'sol', 'coracoes', 'vel', 'quica'],
-  portal:['nenhum', 'portal', 'bolhas', 'gira', 'zoom'], botoes:['vila', 'lua', 'vagalumes', 'calma', 'vira'],
-  pantano:['pinheiros', 'lua', 'vagalumes', 'calma', 'sobe'],
-  jovens:['cidade', 'lua', 'estrelas', 'forca', 'lado'], morcego:['cidade', 'lua', 'passaros', 'forca', 'cai'],
-  superheroi:['cidade', 'sol', 'nuvens', 'vel', 'sobe'],
-  lanterna:['nenhum', 'portal', 'vagalumes', 'zoom', 'foco'], amazona:['ruinas', 'sol', 'estrelas', 'forca', 'cortina'],
-  armadura:['cidade', 'eclipse', 'brasas', 'tec', 'zoom'],
-  mercenario:['cidade', 'nenhum', 'laminas', 'vel', 'lado'], gigante:['cidade', 'nenhum', 'poeira', 'forca', 'quica'],
-  capitao:['montanhas', 'estrela', 'estrelas', 'forca', 'sobe'],
-  trovao:['montanhas', 'nenhum', 'raios', 'forca', 'cai'], aranha:['ponte', 'lua', 'poeira', 'vel', 'desliza'],
-  relampago:['cidade', 'nenhum', 'raios', 'vel', 'lado'],
-  guardioes:['nenhum', 'duasluas', 'estrelas', 'zoom', 'gira'], simbionte:['cidade', 'eclipse', 'gotas', 'forca', 'foco'],
-  chamas:['vulcao', 'nenhum', 'brasas', 'forca', 'cai'],
-  mutantes:['muralha', 'nenhum', 'laminas', 'forca', 'cortina'], quarteto:['cidade', 'planeta', 'estrelas', 'zoom', 'sobe'],
-  magosupremo:['templo', 'olho', 'hexagonos', 'magia', 'gira'],
-  superfamilia:['ponte', 'sol', 'nuvens', 'vel', 'quica'], peixe:['ondas', 'nenhum', 'bolhas', 'calma', 'desliza'],
-  trancas:['castelo', 'lua', 'vagalumes', 'magia', 'sobe'],
-  maca:['pinheiros', 'crescente', 'folhas', 'magia', 'foco'], cristal:['castelo', 'estrela', 'estrelas', 'magia', 'quica'],
-  maravilhas:['campo', 'crescente', 'cartas', 'gira', 'vira'],
-  adormecida:['castelo', 'crescente', 'petalas', 'calma', 'foco'], sereia:['ondas', 'lua', 'bolhas', 'calma', 'desliza'],
-  fera:['castelo', 'lua', 'petalas', 'magia', 'cortina'],
-  savana:['mesas', 'sol', 'passaros', 'calma', 'sobe'], guerreira:['muralha', 'sol', 'petalas', 'forca', 'lado'],
-  arqueira:['serras', 'lua', 'vagalumes', 'forca', 'sobe'],
-  ilha:['ondas', 'sol', 'passaros', 'calma', 'desliza'], gelo:['montanhas', 'lua', 'flocos', 'calma', 'cai'],
-  mel:['campo', 'sol', 'hexagonos', 'calma', 'quica'],
-  brinquedos:['campo', 'sol', 'baloes', 'cai', 'quica'], lampada:['dunas', 'crescente', 'estrelas', 'magia', 'gira'],
-  monstrinhos:['cidade', 'lua', 'bolhas', 'cai', 'quica'],
-  jantar:['vila', 'lua', 'coracoes', 'calma', 'foco'], nunca:['ilha', 'estrela', 'vagalumes', 'magia', 'sobe'],
-  planeta:['ruinas', 'sol', 'folhas', 'calma', 'sobe'],
-  selva:['pinheiros', 'sol', 'passaros', 'forca', 'desliza'], ferias:['ilha', 'sol', 'nuvens', 'calma', 'quica'],
-  chef:['vila', 'lua', 'fumaca', 'calma', 'vira'],
-  aloha:['ilha', 'sol', 'petalas', 'calma', 'desliza'], halloween:['lapides', 'lua', 'passaros', 'magia', 'foco'],
-  noiva:['lapides', 'crescente', 'vagalumes', 'calma', 'foco'],
-  sombria:['castelo', 'eclipse', 'penas', 'magia', 'cortina'], dalmatas:['vila', 'sol', 'cinzas', 'cai', 'quica'],
-  pomagico:['pinheiros', 'estrela', 'estrelas', 'magia', 'sobe'],
-  supercao:['cidade', 'sol', 'raios', 'vel', 'lado'], cacadores:['serras', 'sol', 'folhas', 'vel', 'sobe'], ninja:['templo', 'sol', 'folhas', 'vel', 'lado'],
-  espada:['castelo', 'duasluas', 'quadrados', 'tec', 'zoom']
+  hacker:['cidade', 'nenhum', 'codigo', 'tec'], boneca:['castelo', 'estrela', 'coracoes', 'magia'],
+  corrida:['estadio', 'sol', 'poeira', 'vel'],
+  neon:['cidade', 'sol', 'quadrados', 'tec'], papel:['vila', 'sol', 'penas', 'calma'], praia:['ilha', 'sol', 'passaros', 'calma'],
+  noite:['nenhum', 'nenhum', 'estrelas', 'magia'], bruxo:['castelo', 'crescente', 'vagalumes', 'magia'],
+  espaco:['nenhum', 'planeta', 'estrelas', 'zoom'],
+  floresta:['pinheiros', 'sol', 'folhas', 'calma'], retro:['montanhas', 'sol', 'quadrados', 'tec'],
+  dragao:['montanhas', 'lua', 'brasas', 'forca'],
+  grandprix:['estadio', 'nenhum', 'bolas', 'vel'], rua:['cidade', 'lua', 'poeira', 'vel'], drift:['templo', 'sol', 'petalas', 'vel'],
+  fusca:['serras', 'sol', 'nuvens', 'vel'], vikings:['montanhas', 'lua', 'neve', 'forca'],
+  espartano:['ruinas', 'sol', 'brasas', 'forca'],
+  colegio:['cidade', 'estrela', 'coracoes', 'cai'], fadas:['pinheiros', 'crescente', 'vagalumes', 'magia'],
+  supermeninas:['cidade', 'sol', 'coracoes', 'vel'],
+  portal:['nenhum', 'portal', 'bolhas', 'gira'], botoes:['vila', 'lua', 'vagalumes', 'calma'],
+  pantano:['pinheiros', 'lua', 'vagalumes', 'calma'],
+  jovens:['cidade', 'lua', 'estrelas', 'forca'], morcego:['cidade', 'lua', 'passaros', 'forca'],
+  superheroi:['cidade', 'sol', 'nuvens', 'vel'],
+  lanterna:['nenhum', 'portal', 'vagalumes', 'zoom'], amazona:['ruinas', 'sol', 'estrelas', 'forca'],
+  armadura:['cidade', 'eclipse', 'brasas', 'tec'],
+  mercenario:['cidade', 'nenhum', 'laminas', 'vel'], gigante:['cidade', 'nenhum', 'poeira', 'forca'],
+  capitao:['montanhas', 'estrela', 'estrelas', 'forca'],
+  trovao:['montanhas', 'nenhum', 'raios', 'forca'], aranha:['ponte', 'lua', 'poeira', 'vel'],
+  relampago:['cidade', 'nenhum', 'raios', 'vel'],
+  guardioes:['nenhum', 'duasluas', 'estrelas', 'zoom'], simbionte:['cidade', 'eclipse', 'gotas', 'forca'],
+  chamas:['vulcao', 'nenhum', 'brasas', 'forca'],
+  mutantes:['muralha', 'nenhum', 'laminas', 'forca'], quarteto:['cidade', 'planeta', 'estrelas', 'zoom'],
+  magosupremo:['templo', 'olho', 'hexagonos', 'magia'],
+  superfamilia:['ponte', 'sol', 'nuvens', 'vel'], peixe:['ondas', 'nenhum', 'bolhas', 'calma'],
+  trancas:['castelo', 'lua', 'vagalumes', 'magia'],
+  maca:['pinheiros', 'crescente', 'folhas', 'magia'], cristal:['castelo', 'estrela', 'estrelas', 'magia'],
+  maravilhas:['campo', 'crescente', 'cartas', 'gira'],
+  adormecida:['castelo', 'crescente', 'petalas', 'calma'], sereia:['ondas', 'lua', 'bolhas', 'calma'],
+  fera:['castelo', 'lua', 'petalas', 'magia'],
+  savana:['mesas', 'sol', 'passaros', 'calma'], guerreira:['muralha', 'sol', 'petalas', 'forca'],
+  arqueira:['serras', 'lua', 'vagalumes', 'forca'],
+  ilha:['ondas', 'sol', 'passaros', 'calma'], gelo:['montanhas', 'lua', 'flocos', 'calma'],
+  mel:['campo', 'sol', 'hexagonos', 'calma'],
+  brinquedos:['campo', 'sol', 'baloes', 'cai'], lampada:['dunas', 'crescente', 'estrelas', 'magia'],
+  monstrinhos:['cidade', 'lua', 'bolhas', 'cai'],
+  jantar:['vila', 'lua', 'coracoes', 'calma'], nunca:['ilha', 'estrela', 'vagalumes', 'magia'],
+  planeta:['ruinas', 'sol', 'folhas', 'calma'],
+  selva:['pinheiros', 'sol', 'passaros', 'forca'], ferias:['ilha', 'sol', 'nuvens', 'calma'],
+  chef:['vila', 'lua', 'fumaca', 'calma'],
+  aloha:['ilha', 'sol', 'petalas', 'calma'], halloween:['lapides', 'lua', 'passaros', 'magia'],
+  noiva:['lapides', 'crescente', 'vagalumes', 'calma'],
+  sombria:['castelo', 'eclipse', 'penas', 'magia'], dalmatas:['vila', 'sol', 'cinzas', 'cai'],
+  pomagico:['pinheiros', 'estrela', 'estrelas', 'magia'],
+  supercao:['cidade', 'sol', 'raios', 'vel'], cacadores:['serras', 'sol', 'folhas', 'vel'], ninja:['templo', 'sol', 'folhas', 'vel'],
+  espada:['castelo', 'duasluas', 'quadrados', 'tec']
 };
 Object.assign(CENAS, typeof CENAS_NOVAS === 'undefined' ? {} : CENAS_NOVAS); // as dos temas de js/temas2.js
-const cenaDe = k => CENAS[k] || ['serras', 'sol', 'estrelas', 'cai', 'sobe'];
+const cenaDe = k => CENAS[k] || ['serras', 'sol', 'estrelas', 'cai'];
 // Números "sorteados" sempre iguais para o mesmo tema e a mesma partícula: a cena não muda a cada redesenho.
 const cenaRnd = (k, i, j) => { let h = 2166136261; for (const ch of k + '|' + i + '|' + j) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
   return ((h >>> 0) % 10000) / 10000; };
@@ -153,9 +153,18 @@ function atoHtml(k){
   return `<div class="cenaAto at-${mov}">${[...Array(n)].map((_, i) => { const atraso = `animation-delay:-${(i * dur / n + cenaRnd(k, 'at', i) * 2).toFixed(1)}s`, dy = n > 1 && alt < 150 ? Math.round((cenaRnd(k, 'ay', i) - .5) * 30) : 0;
     return `<i style="top:${y + dy}px;${anda ? `animation-duration:${dur}s;${atraso}` : `left:${Math.round(n > 1 ? 6 + (i + cenaRnd(k, 'ax', i) * .6) * 80 / n : 12 + cenaRnd(k, 'ax', 0) * 52)}%`}"><svg viewBox="0 0 40 40" style="width:${tam}px;height:${tam}px${anda ? '' : `;animation-duration:${dur}s;${atraso}`}">${fig}</svg></i>`; }).join('')}</div>`;
 }
+// Partículas do tema, que ficam se movendo por cima do cenário (nas duas cenas, a desenhada e a em imagem).
+function cenaPartHtml(k){
+  const s = SKINS[k], P = CENA_PART[cenaDe(k)[2]] || CENA_PART.estrelas, cor = i => [s[2], s[3], s[1] ? '#fff' : s[4]][i % 3];
+  const dur = r => (P[1] === 'chove' ? 1.1 + r * 1.4 : P[1] === 'pisca' ? 1.8 + r * 3.2 : 9 + r * 14).toFixed(1);
+  return `<div class="cenaPart mov-${P[1]}">${[...Array(P[2])].map((_, i) => { const r = j => cenaRnd(k, i, j), t = Math.round(P[3] + r(0) * (P[4] - P[3]));
+    return `<svg viewBox="0 0 20 20" fill="currentColor" style="left:${(r(1) * 100).toFixed(1)}%;top:${(r(2) * 100).toFixed(1)}%;width:${t}px;height:${t}px;`
+      + `color:${cor(i)};opacity:${(.35 + r(3) * .5).toFixed(2)};animation-duration:${dur(r(4))}s;animation-delay:-${(r(5) * 20).toFixed(1)}s;`
+      + `--dx:${Math.round(r(6) * 80 - 40)}px">${P[0]}</svg>`; }).join('')}</div>`;
+}
 // HTML da cena de um tema: céu, astro, dois planos de horizonte, o ato do tema e as partículas.
 function cenaHtml(k){
-  const s = SKINS[k], [hz, astro, part] = cenaDe(k), P = CENA_PART[part] || CENA_PART.estrelas, [longe, perto] = CENA_HORIZ[hz] || CENA_HORIZ.nenhum;
+  const s = SKINS[k], [hz, astro] = cenaDe(k), [longe, perto] = CENA_HORIZ[hz] || CENA_HORIZ.nenhum;
   const escuro = s[1], c = s[2], c2 = s[3], fundo = s[6];
   const mix = (a, p, b) => `color-mix(in srgb,${a} ${p}%,${b})`;
   const ax = 40 + cenaRnd(k, "a", 0) * 5; // o astro fica no vão entre o título e os botões do topo
@@ -165,8 +174,81 @@ function cenaHtml(k){
     ${(ATOS[k] || [])[1] === 'sobe' ? atoHtml(k) : ''}
     ${perto ? `<svg class="cenaHz perto" viewBox="0 0 390 120" preserveAspectRatio="none"><path d="${perto}" fill="${mix(s[4], escuro ? 66 : 54, escuro ? "#000" : fundo)}"/></svg>` : ''}
     ${(ATOS[k] || [])[1] === 'sobe' ? '' : atoHtml(k)}
-    <div class="cenaPart mov-${P[1]}">${[...Array(P[2])].map((_, i) => { const r = j => cenaRnd(k, i, j), t = Math.round(P[3] + r(0) * (P[4] - P[3]));
-      return `<svg viewBox="0 0 20 20" fill="currentColor" style="left:${(r(1) * 100).toFixed(1)}%;top:${(r(2) * 100).toFixed(1)}%;width:${t}px;height:${t}px;color:${[c, c2, escuro ? '#fff' : s[4]][i % 3]};opacity:${(.35 + r(3) * .5).toFixed(2)};animation-duration:${(P[1] === 'chove' ? 1.1 + r(4) * 1.4 : P[1] === 'pisca' ? 1.8 + r(4) * 3.2 : 9 + r(4) * 14).toFixed(1)}s;animation-delay:-${(r(5) * 20).toFixed(1)}s;--dx:${Math.round(r(6) * 80 - 40)}px">${P[0]}</svg>`; }).join('')}</div><div class="cenaVeu"></div>`;
+    ${cenaPartHtml(k)}<div class="cenaVeu"></div>`;
+}
+// ---------- Cena em imagem (js/temas-baixar.js) ----------
+// Com as imagens do tema no aparelho, a cena troca o desenho pelas camadas em imagem: o cenário deslizando devagar em
+// loop (cópias lado a lado, a normal e a espelhada alternadas, para a borda de uma sempre encostar na igual da outra),
+// as mesmas partículas e o objeto do tema com o movimento dele (TEMAS_IMG: movimento, duração, pausa, escala, altura,
+// amplitude, curva, sentido, quantidade). Horizonte, astro e o ato em SVG saem (já estão no cenário).
+// Só se movem transform e opacity; com as animações desligadas ou o sistema pedindo menos movimento, tudo fica parado
+// e sem objeto.
+const CENA_ALT = 340; // altura do cenário em px (a imagem é 1800 x 750: cada cópia tem 2,4 vezes isso de largura)
+const cenaQuieta = () => !db.prefs.anim || matchMedia('(prefers-reduced-motion: reduce)').matches;
+function cenaImgHtml(k){
+  const [, , obj, [deslize, sentido]] = TEMAS_IMG[k];
+  const fundo = temaImg(k, 'fundo'), tiras = [0, 1, 2, 3, 4, 5].map(i => `<img src="${fundo}" alt=""${i % 2 ? ' class="esp"' : ''}>`).join('');
+  const n = cenaQuieta() ? 0 : obj[8];
+  return `<div class="cenaImg"><div class="cenaFundo" style="height:${CENA_ALT}px">`
+    + `<div class="cfTira${sentido > 0 ? ' dir' : ''}" style="--d:${deslize}s;--w:${CENA_ALT * 2.4}px">${tiras}</div></div>
+    ${cenaPartHtml(k)}
+    <div class="cenaObj">${[...Array(n)].map(() => `<i><img src="${temaImg(k, 'objeto')}" alt=""></i>`).join('')}</div>
+    <div class="cenaVeu img"></div></div>`;
+}
+// Quadros de cada movimento do objeto (só transform e opacity), de 0 a 1 dentro da parte ativa do ciclo. a = amplitude,
+// s = sentido (1 ou -1). Os que atravessam usam vw (a largura da tela) e começam e terminam fora dela.
+const CENA_CURVA = {suave:'ease-in-out', elastica:'cubic-bezier(.34,1.56,.64,1)', constante:'linear'};
+function cenaQuadros(mov, a, s){
+  const t = (x, y, r = 0, e = 1, o = 1) => ({transform:`translate3d(${x},${y}px,0) rotate(${r}deg) scale(${e})`, opacity:o});
+  const vai = (de, ate, f) => [0, .25, .5, .75, 1].map(p => ({...f(p), offset:p, x:`${(de + (ate - de) * p).toFixed(1)}vw`}));
+  const cruza = (de, ate, f) => vai(de, ate, f).map(q => ({...t(q.x, q.y || 0, q.r || 0, q.e || 1), offset:q.offset}));
+  switch (mov){
+    case 'atravessa': return cruza(-25, 110, p => ({y:Math.sin(p * Math.PI * 4) * 8 * a}));
+    case 'atravessa-inv': return cruza(110, -25, p => ({y:Math.sin(p * Math.PI * 4) * 8 * a}));
+    case 'arco': return cruza(s > 0 ? -25 : 110, s > 0 ? 110 : -25, p => ({y:-4 * p * (1 - p) * 90 * a, r:(p - .5) * 30 * s}));
+    case 'rola': return cruza(s > 0 ? -25 : 110, s > 0 ? 110 : -25, p => ({r:p * 720 * s}));
+    case 'navega': return cruza(s > 0 ? -25 : 110, s > 0 ? 110 : -25, p => ({y:Math.sin(p * Math.PI * 6) * 6 * a, r:Math.sin(p * Math.PI * 6 + 1) * 7}));
+    case 'flutua': return [t(0, 0, -3 * s), {...t(0, -16 * a, 3 * s), offset:.5}, t(0, 0, -3 * s)];
+    case 'quica': return [t(0, -60 * a), {...t(0, 0, 0, 1), offset:.4}, {transform:'translate3d(0,4px,0) scale(1.12,.84)', opacity:1, offset:.47},
+      {...t(0, -32 * a), offset:.7}, {...t(0, 0), offset:.88}, t(0, -60 * a)];
+    case 'gira': return [t(0, 0, 0), t(0, 0, 360 * s)];
+    case 'pendulo': return [t(0, 0, -22 * a * s), {...t(0, 0, 22 * a * s), offset:.5}, t(0, 0, -22 * a * s)];
+    case 'pisca': return [t(0, 0, 0, 1, 0), {...t(0, 0, 0, 1, 1), offset:.15}, {...t(0, 0, 0, 1, .25), offset:.3}, {...t(0, 0, 0, 1, 1), offset:.45},
+      {...t(0, 0, 0, 1, 1), offset:.8}, t(0, 0, 0, 1, 0)];
+    case 'pulsa': return [t(0, 0, 0, 1), {...t(0, 0, 0, 1 + .12 * a), offset:.5}, t(0, 0, 0, 1)];
+    case 'treme': return [0, .1, .2, .3, .4, .5, .6].map((p, i) => ({...t(`${i % 2 ? 4 * a : -4 * a}px`, 0, i % 2 ? 2 : -2), offset:p}))
+      .concat([{...t(0, 0), offset:.62}, {...t(0, 0), offset:1}]);
+    case 'cai': return [{...t(0, -180, 0, 1, 0), offset:0}, {...t(0, -140, 20 * s, 1, 1), offset:.1}, {...t(`${8 * a * s}vw`, 260, 160 * s, 1, 1), offset:.9},
+      {...t(`${8 * a * s}vw`, 300, 180 * s, 1, 0), offset:1}];
+    case 'nasce': return [t(0, 70, 0, 1, 0), {...t(0, -50 * a, 0, 1, 1), offset:.45}, {...t(0, -50 * a, 0, 1, 1), offset:.6}, t(0, 70, 0, 1, 0)];
+    case 'sobe': return [t(0, 160, 0, 1, 0), {...t(0, 120, 0, 1, 1), offset:.15}, {...t(`${6 * a * s}vw`, -60, 0, 1, 1), offset:.8},
+      t(`${8 * a * s}vw`, -120, 0, 1, 0)];
+    case 'orbita': return [...Array(9)].map((_, i) => { const g = i / 8 * Math.PI * 2 * s;
+      return {...t(`${(Math.cos(g) * 70 * a).toFixed(1)}px`, Math.sin(g) * 26 * a, 0, 1 + Math.sin(g) * .12), offset:i / 8}; });
+    case 'cresce': return [t(0, 0, 0, .2, 0), {...t(0, 0, 0, 1, 1), offset:.6}, {...t(0, 0, 0, 1.06, 1), offset:.85}, t(0, 0, 0, 1.1, 0)];
+  }
+  return [t(0, 0), t(0, 0)];
+}
+// Os que atravessam a tela (ou caem e sobem) somem na pausa; os que ficam no lugar só param.
+const CENA_SOME = ['atravessa', 'atravessa-inv', 'arco', 'rola', 'navega', 'cai', 'sobe', 'nasce', 'cresce', 'pisca'];
+const CENA_ANDA = ['atravessa', 'atravessa-inv', 'arco', 'rola', 'navega'];
+// Põe o objeto do tema para andar (Web Animations): cada cópia com tamanho e altura um pouco diferentes e começando
+// defasada, para não andarem em fila nem juntas. Os parados se espalham no lado direito, longe do título.
+function cenaObjAnimar(el, k){
+  const [mov, dur, pausa, esc, alt, amp, curva, sentido, n, vEsc, vAlt] = TEMAS_IMG[k][2];
+  const ciclo = (dur + pausa) * 1000, ativo = dur / (dur + pausa), anda = CENA_ANDA.includes(mov) || mov === 'cai' || mov === 'sobe';
+  [...el.querySelectorAll('.cenaObj i')].forEach((i, j) => {
+    const r = q => cenaRnd(k, 'ob' + j, q), e = esc * (1 + (r(0) - .5) * 2 * vEsc), y = Math.min(.9, Math.max(.05, alt + (r(1) - .5) * 2 * vAlt));
+    const x = CENA_ANDA.includes(mov) ? 0 : n > 1 ? 8 + (j + r(2) * .5) * 80 / n : 56 + r(2) * 26;
+    i.style.cssText = `left:${x}%;top:${Math.round(y * CENA_ALT - 36 * e)}px;width:${Math.round(72 * e)}px;height:${Math.round(72 * e)}px`
+      + (mov === 'pendulo' ? ';transform-origin:50% -40%' : '');
+    if (mov === 'pisca' || mov === 'pulsa') i.classList.add('luz');
+    const q = cenaQuadros(mov, amp, sentido), fim = CENA_SOME.includes(mov) ? {...q[q.length - 1], opacity:0} : q[q.length - 1];
+    const quadros = q.map(f => ({...f, offset:(f.offset ?? q.indexOf(f) / (q.length - 1)) * ativo, easing:CENA_CURVA[curva]})).concat([{...fim, offset:1}]);
+    const atraso = -((j * dur / n + r(3) * (anda ? dur * .2 : 1)) % (dur + pausa)) * 1000;
+    const ritmo = anda ? 1 + (r(4) - .5) * .12 : 1; // num bando, cada um num passo um pouco diferente
+    try { i.animate(quadros, {duration:ciclo * ritmo, iterations:Infinity, delay:atraso * ritmo}); } catch(e){ logErr('objeto do tema', e); }
+  });
 }
 // ---------- Fundo do tema nos widgets (só no app instalado) ----------
 // O widget não consegue desenhar a cena; então o app desenha uma versão parada dela (astro, horizonte e a figura do tema,
@@ -213,16 +295,23 @@ function fundoPadraoHtml(cor, int = 'media'){
 function cenaAplicar(){
   const el = document.getElementById('cena'), p = db.prefs, k = p.skin || '';
   if (!el) return;
-  const chave = k || (p.fundo !== false ? 'padrao:' + fundoCorDe(p) + ':' + fundoIntDe(p) : '');
-  if (el.dataset.k !== chave){ el.dataset.k = chave; el.innerHTML = k && SKINS[k] ? cenaHtml(k) : chave ? fundoPadraoHtml(fundoCorDe(p), fundoIntDe(p)) : ''; }
-  // Os primeiros temas (SKIN_ANTIGOS) já têm a sua troca de tela no app.css; os demais usam a escolhida em CENAS.
-  document.documentElement.dataset.troca = k && !SKIN_ANTIGOS.includes(k) ? cenaDe(k)[4] : '';
+  // Tema com imagens: a cena desenhada fica de reserva até elas estarem no aparelho (pedidas aqui, na primeira vez).
+  const img = k && temaImgsProntas(k);
+  if (k && TEMAS_IMG[k] && !img && !window.TESTE) temaImgsCarregar(k);
+  const chave = k ? k + (img ? ':img:' + (cenaQuieta() ? 'q' : 'a') : '') : p.fundo !== false ? 'padrao:' + fundoCorDe(p) + ':' + fundoIntDe(p) : '';
+  if (el.dataset.k !== chave){ el.dataset.k = chave;
+    el.innerHTML = img ? cenaImgHtml(k) : k && SKINS[k] ? cenaHtml(k) : chave ? fundoPadraoHtml(fundoCorDe(p), fundoIntDe(p)) : '';
+    if (img) cenaObjAnimar(el, k); }
+  // Os primeiros temas (SKIN_ANTIGOS) já têm a sua troca de tela no app.css; os demais usam a do estilo deles.
+  document.documentElement.dataset.troca = k && !SKIN_ANTIGOS.includes(k) && TEMAS_IMG[k] ? TEMAS_IMG[k][0] : '';
   if (typeof logErr === 'function') widgetFundoEnviar();
   // na primeira chamada (carga deste arquivo) divertido.js e config.js ainda não existem; inicio.js chama de novo
 }
 cenaAplicar(); // o tema já foi aplicado antes de este arquivo carregar
 // A cena para quando o app sai da tela (não gasta bateria à toa) e volta a andar quando ele reaparece.
-document.addEventListener('visibilitychange', () => { const el = document.getElementById('cena'); if (el) el.classList.toggle('parada', document.hidden); });
+document.addEventListener('visibilitychange', () => { const el = document.getElementById('cena'); if (!el) return;
+  el.classList.toggle('parada', document.hidden);
+  el.querySelectorAll('.cenaObj i').forEach(i => i.getAnimations().forEach(a => document.hidden ? a.pause() : a.play())); });
 
 // ---------- Comemoração e novo gasto ----------
 // Chuva de comemoração com as formas e as cores do tema (sem tema especial, o confete de sempre).
@@ -231,11 +320,12 @@ function festaTema(){
   if (!db.prefs.anim || !k || !SKINS[k]) return false;
   const s = SKINS[k], P = CENA_PART[cenaDe(k)[2]] || CENA_PART.estrelas, cores = [s[2], s[3], s[4], s[5], '#fbbf24', '#ffffff'],
   box = document.createElement('div');
-  const fig = (ATOS[k] || [])[0]; // a figura do tema cai junto com as partículas dele
+  const fig = (ATOS[k] || [])[0], oi = temaImg(k, 'objeto'); // o objeto do tema (ou a figura, sem as imagens) cai junto
   box.className = 'confetti tema';
   box.innerHTML = [...Array(36)].map((_, i) => { const t = 12 + Math.round(Math.random() * 14);
     const fx = `left:${Math.random() * 100}%;animation-delay:${Math.random() * .35}s;animation-duration:${1.5 + Math.random() * 1.1}s;--r:${Math.round(Math.random() * 720 - 360)}deg;--x:${Math.round(Math.random() * 140 - 70)}px`;
-    return fig && i % 3 === 0 ? `<svg viewBox="0 0 40 40" style="${fx};width:${t + 16}px;height:${t + 16}px">${fig}</svg>`
+    return oi && i % 3 === 0 ? `<img src="${oi}" alt="" style="${fx};width:${t + 22}px">`
+      : fig && i % 3 === 0 ? `<svg viewBox="0 0 40 40" style="${fx};width:${t + 16}px;height:${t + 16}px">${fig}</svg>`
       : `<svg viewBox="0 0 20 20" fill="currentColor" style="${fx};width:${t}px;height:${t}px;color:${cores[i % cores.length]}">${P[0]}</svg>`; }).join('');
   document.body.appendChild(box);
   setTimeout(() => box.remove(), 3200);
@@ -248,8 +338,9 @@ function gastoAnim(valor){
   const k = db.prefs.skin, s = SKINS[k], P = (s && CENA_PART[cenaDe(k)[2]]) || CENA_PART.moedas, jeito = s ? cenaDe(k)[3] : 'cai';
   const cores = s ? [s[2], s[3], '#fff'] : ['#fbbf24', '#f59e0b', '#fde68a'], n = 12, box = document.createElement('div');
   box.className = 'gastoAnim j-' + jeito;
-  const fig = s && (ATOS[k] || [])[0]; // no meio, a figura do tema dá um pulo e some
-  box.innerHTML = `<b>− ${fmt(valor)}</b>` + (fig ? `<svg class="gastoFig" viewBox="0 0 40 40">${fig}</svg>` : '') + [...Array(n)].map((_, i) => { const a = (jeito === 'calma' || jeito === 'magia' ? -150 + i * 120 / (n - 1) : i * 360 / n) * Math.PI / 180, d = 70 + (i % 3) * 34, t = 12 + (i % 4) * 4;
+  const fig = s && (ATOS[k] || [])[0], oi = s && temaImg(k, 'objeto'); // no meio, o objeto do tema (ou a figura) dá um pulo e some
+  const figura = oi ? `<img class="gastoFig" src="${oi}" alt="">` : fig ? `<svg class="gastoFig" viewBox="0 0 40 40">${fig}</svg>` : '';
+  box.innerHTML = `<b>− ${fmt(valor)}</b>` + figura + [...Array(n)].map((_, i) => { const a = (jeito === 'calma' || jeito === 'magia' ? -150 + i * 120 / (n - 1) : i * 360 / n) * Math.PI / 180, d = 70 + (i % 3) * 34, t = 12 + (i % 4) * 4;
     return `<svg viewBox="0 0 20 20" fill="currentColor" style="width:${t}px;height:${t}px;color:${cores[i % 3]};--x:${Math.round(Math.cos(a) * d)}px;--y:${Math.round(Math.sin(a) * d)}px;animation-delay:${(i % 4) * 30}ms">${P[0]}</svg>`; }).join('');
   document.body.appendChild(box);
   setTimeout(() => box.remove(), 1500);
