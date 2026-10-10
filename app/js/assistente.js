@@ -261,6 +261,10 @@ function chatHtml(){
     : ['Olá! Sou o assistente do app.',
       'Pergunte sobre os dados que você cadastrou. As respostas são calculadas aqui no aparelho, sem enviar nada para a internet.'];
   if (lang() === 'pt' && myName()) ola[0] = ola[0].replace(/^(Oinc|Olá)!/, `$1, ${esc(myName()).replace(/\$/g, '$$$$')}!`);
+  // Com um tema especial, quem cumprimenta é o personagem do tema, com a primeira abertura exclusiva dele (falaTema), e
+  // não o porquinho.
+  const falas = db.prefs.skin && lang() === 'pt' && (FALAS_ASSIST[db.prefs.skin] || FALAS_ASSIST_CAT[temaCat(db.prefs.skin)]);
+  if (falas) ola[0] = `${falas[0][0]} Olá${myName() ? ', ' + esc(myName()) : ''}! Estou de plantão para as suas contas.`;
   return [...ola, 'Para lançar um gasto, escreva por exemplo "mercado 45 nubank crédito".'].map(t => `<div class="msg ola">${t}</div>`).join('') +
     // As sugestões vêm logo depois da saudação: aparecem enquanto nada foi enviado e, depois, ficam no começo da
     // conversa (é só rolar para cima). A conversa recomeça cada vez que o app é aberto (ver inicio.js).
@@ -318,8 +322,8 @@ function fabDesvia(){
 }
 addEventListener('resize', () => { clearTimeout(fabDesviaT); fabDesviaT = setTimeout(fabDesvia, 150); });
 const telaErro = () => `<h1>${esc(TABS[state.tab] ? TABS[state.tab][1] : 'Cofrim')}</h1><div class="card"><b>${I('alert')} Não foi possível abrir esta tela</b>
-  <div class="hint">O erro ficou registrado. Abra o Diagnóstico e envie o relatório para quem dá suporte; seus dados continuam salvos.</div>
-  <div class="btns"><button class="btn primary" data-onclick="diagOpen()">Abrir Diagnóstico</button>${state.tab !== 'resumo' ? '<button class="btn" data-onclick="go(\'resumo\')">Ir para o Resumo</button>' : ''}</div></div>`;
+  <div class="hint">O erro ficou registrado e seus dados continuam salvos. Informe o problema para a equipe do Cofrim: o Diagnóstico vai junto.</div>
+  <div class="btns"><button class="btn primary" data-onclick="relatarProblema('Não foi possível abrir esta tela')">Informar o problema</button>${state.tab !== 'resumo' ? '<button class="btn" data-onclick="go(\'resumo\')">Ir para o Resumo</button>' : ''}</div></div>`;
 function render(){
   dirty();
   if (archNeeded()) ensureArchive();

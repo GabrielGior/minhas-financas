@@ -1,6 +1,8 @@
 // Cofrim — Erros explicados para quem não é técnico: o que aconteceu, por que pode ter acontecido e o que fazer. Um
 // catálogo só (ERROS) para o APK e a versão web; avisoErro(tipo, titulo) mostra a explicação na caixa de aviso do app.
 // O lado Android chama window.onErroNativo(tipo) quando a câmera, a escolha de arquivos ou outra tela do celular falha.
+// Erro do próprio app (4º item true), que a pessoa não tem como resolver: o aviso oferece "Informar o problema", que abre
+// Configurações › Sugestões e bugs com a mensagem começada (relatarProblema, em config.js).
 // Erros inesperados de tela continuam indo para o Diagnóstico e, uma vez por abertura, mostram um aviso com o que fazer.
 // Depende de dialogos.js (tell) e lixeira.js (showAcao).
 const ERROS = {
@@ -45,14 +47,18 @@ const ERROS = {
   inesperado: ['Algo deu errado nesta tela.',
     ['Um dado chegou num formato que o app não esperava', 'O app está mais antigo que o de outro aparelho que mexeu nos dados'],
     ['Seus dados continuam guardados. Feche e abra o app de novo', 'Procure atualizações em Configurações',
-      'Se continuar, toque 7 vezes no número da versão nas Configurações, abra o Diagnóstico e use "Copiar" para enviar a quem dá suporte']]
+      'Se continuar, toque em "Informar o problema": a mensagem vai para a equipe do Cofrim, com o Diagnóstico (sem os seus dados)'], true]
 };
 // Texto completo de um erro: título (ou o título próprio de quem chamou), causas e soluções.
 function erroTexto(tipo, titulo){
   const [t, causas, solucoes] = ERROS[tipo] || ERROS.inesperado;
   return `${titulo || t}\n\nPor que pode ter acontecido:\n${causas.map(c => '• ' + c).join('\n')}\n\nO que fazer:\n${solucoes.map(c => '• ' + c).join('\n')}`;
 }
-function avisoErro(tipo, titulo){ return tell(erroTexto(tipo, titulo)); }
+function avisoErro(tipo, titulo){
+  const e = ERROS[tipo] || ERROS.inesperado;
+  if (!e[3]) return tell(erroTexto(tipo, titulo));
+  return ask(erroTexto(tipo, titulo), 'Informar o problema').then(sim => { if (sim) relatarProblema(titulo || e[0]); return sim; });
+}
 // Chamado pelo lado Android (MainActivity/Ponte) quando uma tela do celular falha.
 function onErroNativo(tipo){ avisoErro(ERROS[tipo] ? tipo : 'inesperado'); }
 // Erro inesperado (já registrado no Diagnóstico por logErr): um aviso por abertura, com o que fazer. Só os erros de tela
@@ -65,3 +71,15 @@ function erroInesperado(){
   setTimeout(() => { try { showAcao('Algo deu errado nesta tela.', 'O que fazer', () => avisoErro('inesperado')); } catch(e){} }, 300);
 }
 addEventListener('error', erroInesperado);
+// No Android, a tela do app que travou e foi recarregada (MainActivity guarda "hora|motivo" em ultimoErro): na abertura
+// seguinte, um aviso com "Informar o problema", uma vez por travamento (a hora do último avisado fica neste aparelho).
+// Fechar para liberar memória é do Android, não do app: esse não pede para contar.
+const ERRO_VISTO_KEY = 'financas-erro-visto';
+function avisoTravou(){
+  const e = temNativo('ultimoErro') ? String(nativo('ultimoErro') || '') : '', t = +e.split('|')[0];
+  let visto = 0;
+  try { visto = +localStorage.getItem(ERRO_VISTO_KEY) || 0; } catch(x){}
+  if (!t || t <= visto || Date.now() - t > 7 * 864e5 || !e.includes('travou')) return;
+  try { localStorage.setItem(ERRO_VISTO_KEY, String(t)); } catch(x){}
+  showAcao('O app travou da última vez que foi usado.', 'Informar o problema', () => relatarProblema(e.slice(e.indexOf('|') + 1)));
+}

@@ -85,5 +85,5 @@ function togglePaid(id, ym){
   const pm = x.pm || [];
   x.pm = pm.includes(ym) ? pm.filter(m => m !== ym) : pm.concat(ym);
   touch(x); save(); render();
-  if (db.prefs.fun && !pm.includes(ym)){ confetti(); toast(pick(FUN_PAID), {central:false}); } // brincadeira do modo divertido
+  if (db.prefs.fun && !pm.includes(ym)){ confetti(); toast(pick(semPorquinho(FUN_PAID)), {central:false}); } // brincadeira do modo divertido
 }

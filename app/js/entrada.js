@@ -193,18 +193,23 @@ const TOUR = [
   ['piggy', () => `${greeting() || 'Boas-vindas!'}`,
     'Este é o Cofrim: seus ganhos, gastos, contas e investimentos num lugar só, salvos na sua conta Google. Veja em um minuto como usar.'],
   ['plus', 'Lançar é rápido',
-    'Toque no + (ou nos atalhos do Resumo) e informe só o valor e a categoria; o resto fica em "Mais opções". Os gastos que você mais repete viram botões.'],
+    'Toque no + (ou nos atalhos do Resumo) e informe só o valor e a categoria; o resto fica em "Mais opções". Os gastos que você mais repete viram botões. '
+    + 'Num salário, escolha em Mais opções o dia em que cai, como o 5º dia útil.'],
   ['chart', 'Resumo', 'Gastos do mês e do ano, contas a vencer, gastos por categoria e contas bancárias. Há muito mais (previsão, gráficos, metas, investimentos): toque em "Ver mais informações no resumo", no fim da tela, ou no menu (três barras), no topo › Reorganizar esta tela.'],
   ['receipt', 'Gastos do mês', 'Separados em Assinaturas, Fixos e anuais, Parceladas e Ocasionais, com busca e filtros. Deslize um lançamento para a esquerda para excluir; numa conta com vencimento, para a direita marca como paga. Na mesma aba ficam o orçamento, as previsões de gastos e a saúde financeira do mês.'],
   ['sparkle', 'Lançamento automático e extratos', 'No Android, as compras e os Pix avisados pelo banco viram sugestões de gasto no Resumo: um toque lança. Em Gastos › Importar extrato, escolha um ou vários arquivos OFX ou CSV do banco e confira antes de importar.'],
   ['card', 'Parcelas e financiamentos', 'Em Gastos › Parceladas, cadastre compras parceladas, financiamentos e empréstimos. Toque num item para ver o saldo devedor e todas as parcelas, pagar, abater ou exportar em PDF.'],
   ['trend', 'Investimentos e metas',
     'Cadastre aplicações, ações e metas. O app projeta quanto vão render com CDI, Selic e IPCA e mostra quanto falta para cada meta.'],
-  ['chat', 'Assistente', 'Pergunte "quanto gastei com mercado este mês?" ou escreva "gastei 30 no almoço" para lançar sem abrir formulário.'],
+  ['chat', 'Assistente',
+    'Pergunte "quanto gastei com mercado este mês?" ou escreva (ou fale) "gastei 30 no almoço" para lançar sem abrir formulário. '
+    + 'Com um tema especial, quem responde é o personagem do tema, com as falas dele.'],
   ['calendar', 'Lembretes', 'Começam desligados neste aparelho. Ligue em Configurações › Lembretes (o Android pede a permissão de notificações) e escolha os tipos: contas a vencer, antes e no dia, parcelas de financiamentos e os avisos das previsões de gastos. Desligue a economia de bateria do app para os avisos chegarem na hora.'],
   ['people', 'Sua conta e a conta compartilhada',
     'Tudo sincroniza com a sua conta Google, com uma cópia por dia. Em Configurações > Conta compartilhada, dá para dividir os dados com outra pessoa.'],
-  ['gear', 'Do seu jeito', 'Tema, cores, abas do menu, bloqueio com senha, widgets na tela inicial (com ou sem os valores) e o modo divertido, com mais de 100 conquistas. Tudo em Configurações.']];
+  ['gear', 'Do seu jeito',
+    'Mais de 160 temas especiais, cada um com personagem, cenário animado e estilo de interface próprios, além de cores, moeda e país, '
+    + 'abas do menu, bloqueio com senha, widgets na tela inicial (com ou sem os valores) e o modo divertido, com mais de 100 conquistas. Tudo em Configurações.']];
 function openTour(i, daConfig){
   settingsOpen = false; F = null;
   const [ic, t, s] = TOUR[i], ult = i === TOUR.length - 1;

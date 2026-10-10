@@ -43,7 +43,7 @@ function iniciar(){
     // Quem já usava o app antes do aviso de conta nova: a conta atual vira a "última usada", sem repetir as boas-vindas.
     if (canSync() && !sync.account && temNativo('conta') && nativo('conta')){ sync.account = nativo('conta'); saveSync(); }
     netConferir(); // sem internet ao abrir: aviso (com internet, nada)
-    syncNow(); aposAbertura(() => { startSheets(); onFoto(); onAtalho(); prevAvisos(); webVerificar(); });
+    syncNow(); aposAbertura(() => { startSheets(); onFoto(); onAtalho(); prevAvisos(); webVerificar(); avisoTravou(); });
     // depois da animação de abertura; o convite do bloqueio vem no fim das telas de início
   }
 }

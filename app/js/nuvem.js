@@ -113,7 +113,8 @@ const NUVEM_CAUSAS = {
   compartilhada:['Problema na conta compartilhada', ['A conta compartilhada foi encerrada.', 'O seu acesso a ela foi removido.'],
     'Confira a conta compartilhada nas Configurações (dá para voltar à conta pessoal).', [['Abrir conta compartilhada', "openSettings('compart')"]]],
   outro:['Erro desconhecido', ['A causa não foi identificada.'],
-    'Tente de novo. Se continuar, abra o Diagnóstico e envie o relatório para quem dá suporte.', [DE_NOVO, ['Abrir Diagnóstico', 'diagOpen()']]]
+    'Tente de novo. Se continuar, informe o problema para a equipe do Cofrim (o Diagnóstico vai junto).',
+    [DE_NOVO, ['Informar o problema', "relatarProblema('Erro desconhecido na sincronização')"]]]
 };
 function openNuvemCausas(){
   const [titulo, causas, solucao, botoes] = NUVEM_CAUSAS[sync.errTipo] || NUVEM_CAUSAS.outro;

@@ -41,7 +41,7 @@ function openSettings(sec){
     ${temNativo('atualizar') ? `<label>Atualizações</label>
     <div class="semTopo hint">Versão ${APP_VERSION}. O app confere sozinho a cada abertura.</div>
     <div class="btns"><button class="btn" data-onclick="procurarAtualizacao()">${I('refresh')}Procurar atualização agora</button></div>` : ''}`],
-  ['aparencia', 'sun', 'Aparência', 'Idioma, moeda, país e cores', `
+  ['regiao', 'globe', 'Idioma e região', 'Idioma, moeda e país', `
     <label>Idioma</label>
     <div class="semTopo btns">${Object.entries(LANGS).map(([k, v]) => `<button class="btn ${lang() === k ? 'primary' : ''}" style="padding:11px 4px" data-onclick="setLang('${k}')">${v}</button>`).join('')}</div>
     ${lang() !== 'pt' ? '<div class="hint">O assistente entende só português.</div>' : ''}
@@ -49,7 +49,8 @@ function openSettings(sec){
     <div class="semTopo btns"><button class="btn" data-onclick="escolherMoeda()">${esc(moedaNome(p.moeda || 'BRL'))}</button></div>
     <label>País</label>
     <div class="semTopo btns"><button class="btn" data-onclick="escolherPais()">${esc(paisNome(p.pais || 'BR'))}</button></div>
-    <div class="hint">O país diz os feriados e o fim de semana no dia útil dos ganhos. Fora do Brasil, os feriados vêm da internet uma vez por ano.</div>
+    <div class="hint">O país diz os feriados e o fim de semana no dia útil dos ganhos. Fora do Brasil, os feriados vêm da internet uma vez por ano.</div>`],
+  ['aparencia', 'sun', 'Aparência', 'Tema, cores e animações', `
     <label>Tema</label>
     <div class="semTopo btns">${Object.entries(MODES).map(([k,v]) => `<button class="btn ${p.mode === k ? 'primary' : ''}" data-onclick="setPref('mode','${k}')">${v}</button>`).join('')}</div>
     <label>Cor</label>
@@ -164,6 +165,14 @@ function openSettings(sec){
     <label>Apps ignorados</label>
     ${appsIgnorados().length ? `<div class="semTopo btns"><button class="btn" data-onclick="openAppsIgnorados()">Apps ignorados (${appsIgnorados().length})</button></div>` : '<div class="semTopo hint">Nenhum app ignorado.</div>'}`],
   ['guia', 'book', 'Guia do app', 'Todas as funções, onde ficam e como usar', guideHtml()],
+  ['sugestoes', 'send', 'Sugestões e bugs', 'Mande uma ideia ou informe um problema', `
+    <div class="semTopo hint">Escreva aqui e toque em enviar: a mensagem vai direto para a equipe do Cofrim, sem sair do app.</div>
+    <textarea id="sugTexto" maxlength="3000" style="height:130px;font:inherit" placeholder="O que você quer contar?"></textarea>
+    <label>Seu e-mail (opcional, para receber resposta)</label>
+    <input id="sugEmail" type="email" maxlength="120" autocomplete="email" placeholder="voce@exemplo.com">
+    <div class="btns"><button class="btn" data-onclick="enviarSugestao('sugestao', this)">${I('sparkle')}Enviar sugestão</button>
+      <button class="btn" data-onclick="enviarSugestao('problema', this)">${I('alert')}Informar um problema</button></div>
+    <div class="hint">Num problema, vai junto o Diagnóstico do app (versão, aparelho e erros, sem os seus dados), para achar a causa mais rápido.</div>`],
   ['dados', 'box', 'Dados e ajustes', 'Categorias, backup e lixeira', `
     <label>Investimentos</label>
     <div class="semTopo btns"><button class="btn" data-onclick="openRates()">${I('trend')}Taxas de referência (CDI, Selic, IPCA)</button></div>
@@ -287,6 +296,33 @@ function diagTap(){
 function diagErrors(){ try { return JSON.parse(localStorage.getItem(ERR_KEY) || '[]'); } catch(e){ return []; } }
 // Texto do relatório: nada de valores nem descrições dos lançamentos, só contagens e o estado do app. O texto inteiro
 // passa por limpaDiag (e-mails, tokens, respostas do Google, valores e códigos longos), também o que veio do lado nativo.
+// Sugestões e bugs: enviadas de dentro do app pelo Web3Forms (api.web3forms.com, na CSP), que entrega no e-mail da
+// equipe (diaslab.apps@gmail.com, cadastrado no Web3Forms: a chave abaixo é pública e só serve para esse envio).
+let SUGESTAO_CHAVE = '57040c27-ab59-4c06-81f8-cb1f511c356c'; // let: os testes trocam pela de teste
+// Erro do próprio app (avisoErro, tela que não abre, sincronização, travamento): abre Sugestões e bugs com a mensagem
+// começada; a pessoa completa e toca em "Informar um problema", que manda junto o Diagnóstico.
+function relatarProblema(oQue){
+  openSettings('sugestoes');
+  const t = document.getElementById('sugTexto');
+  t.value = `O app mostrou: "${oQue}"\nO que eu estava fazendo: `;
+  t.focus(); t.setSelectionRange(t.value.length, t.value.length);
+}
+async function enviarSugestao(tipo, btn){
+  const txt = document.getElementById('sugTexto').value.trim(), email = document.getElementById('sugEmail').value.trim();
+  if (!txt) return toast('Escreva a mensagem antes de enviar.');
+  if (!SUGESTAO_CHAVE){ tell('O envio de sugestões ainda não está ligado nesta versão.'); return; }
+  const assunto = `Cofrim ${APP_VERSION} · ${tipo === 'problema' ? 'Problema' : 'Sugestão'}`;
+  const info = tipo === 'problema' ? diagText() : `Cofrim ${APP_VERSION}\nAparelho: ${navigator.userAgent}`;
+  btn.disabled = true;
+  try {
+    const r = await fetch('https://api.web3forms.com/submit', {method:'POST', headers:{'Content-Type':'application/json', Accept:'application/json'},
+      body:JSON.stringify({access_key:SUGESTAO_CHAVE, subject:assunto, from_name:'Cofrim', ...(email ? {email} : {}), message:`${txt}\n\n---\n${info}`})});
+    if (!r.ok || !(await r.json()).success) throw new Error('Web3Forms: HTTP ' + r.status);
+    document.getElementById('sugTexto').value = '';
+    toast('Mensagem enviada. Obrigado!');
+  } catch(e){ logErr('sugestão', e); avisoErro('internet'); }
+  finally { btn.disabled = false; }
+}
 function diagText(){ return limpaDiag(diagTextoBruto()); }
 function diagTextoBruto(){
   const kb = k => { try { return Math.round((localStorage.getItem(k) || '').length / 1024); } catch(e){ return -1; } };
@@ -420,7 +456,7 @@ function toggleTab(t){
   if (p.tabsOff.includes(state.tab)) state.tab = visTabs()[0];
   db.cfgMod = Date.now(); save(); render(); openSettings();
 }
-// Moeda e país (Aparência): listas longas, com busca. Os nomes em português vêm do navegador (Intl.DisplayNames).
+// Moeda e país (Idioma e região): listas longas, com busca. Os nomes em português vêm do navegador (Intl.DisplayNames).
 const nomeIntl = (tipo, c) => { try { return new Intl.DisplayNames(['pt-BR'], {type:tipo}).of(c) || c; } catch(e){ return c; } };
 const moedaNome = c => { const n = nomeIntl('currency', c); return `${cap(n === c ? MOEDAS_NOMES[c] || c : n)} (${c})`; };
 const paisNome = c => cap(nomeIntl('region', c));

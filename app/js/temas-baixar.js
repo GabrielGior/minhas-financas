@@ -1,19 +1,22 @@
-// Cofrim — Imagens dos temas especiais: baixa só as do tema em uso, confere o SHA-256 e guarda no aparelho.
-// Carregado pelo index.html antes de arte.js e cena.js. As imagens (personagem nos três humores, cenário e objeto) não
-// vão no app nem no pacote web (o Updater recusa web.zip acima de 8 MB): ficam em temas/ do cofrim-updater, o mesmo
-// lugar das atualizações. Cada uma só é usada depois de conferida com o SHA-256 de js/temas-img.js; a que não bate é
-// descartada. As conferidas ficam no IndexedDB (TEMAS_DB) e funcionam sem internet depois do primeiro uso, no APK
-// (file:///android_asset/) e na web. Enquanto não chegam, o tema usa os desenhos de sempre (cena e mascote em SVG) e,
-// quando ficam prontas, a tela troca com um esmaecer curto (temaImgsChegaram).
+// Cofrim — Imagens dos temas especiais (personagem nos três humores, cenário e objeto). Carregado pelo index.html antes
+// de arte.js e cena.js.
+// - No APK (desde a 2.31) todas vêm dentro do app (assets/temas, copiadas pelo build.gradle): o tema usa direto
+//   temas/<tema>-<parte>.webp, sem baixar nem esperar (temasNoApp).
+// - Na web e nas telas novas (web.zip) num APK mais antigo, baixa só as do tema em uso de temas/ do cofrim-updater (o
+//   Updater recusa web.zip acima de 8 MB). Cada uma só é usada depois de conferida com o SHA-256 de js/temas-img.js; a
+//   que não bate é descartada. As conferidas ficam no IndexedDB (TEMAS_DB) e funcionam sem internet depois do primeiro
+//   uso. Enquanto não chegam, o tema usa os desenhos de sempre (cena e mascote em SVG) e, quando ficam prontas, a tela
+//   troca com um esmaecer curto (temaImgsChegaram).
 const TEMAS_BASE = 'https://raw.githubusercontent.com/cofrim/cofrim-updater/main/temas/';
 const TEMAS_DB = 'financas-temas'; // IndexedDB: {k:"<tema>-<parte>", b:Blob, h:sha256, u:hora do último uso}
 const TEMAS_GUARDA = 6; // temas guardados no aparelho (os de uso mais recente); o resto é apagado
 const temaImgUrls = {}; // "<tema>-<parte>" -> endereço blob: da imagem já conferida (só as do tema em uso)
 const temaImgPedidos = {}; // tema -> promessa do carregamento em andamento
 const temaHex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
-// Endereço da imagem conferida ('' = ainda não está pronta: use o desenho de reserva).
-const temaImg = (k, parte) => temaImgUrls[k + '-' + parte] || '';
-const temaImgsProntas = k => !!TEMAS_IMG[k] && TEMA_PARTES.every(p => temaImgUrls[k + '-' + p]);
+const temasNoApp = () => nativo('temasNoApp') === true; // as imagens vêm dentro do APK (Ponte.temasNoApp)
+// Endereço da imagem: a do APK ou a baixada e conferida ('' = ainda não está pronta: use o desenho de reserva).
+const temaImg = (k, parte) => TEMAS_IMG[k] && temasNoApp() ? `temas/${k}-${parte}.webp` : temaImgUrls[k + '-' + parte] || '';
+const temaImgsProntas = k => !!TEMAS_IMG[k] && (temasNoApp() || TEMA_PARTES.every(p => temaImgUrls[k + '-' + p]));
 // Banco das imagens. Se o IndexedDB não responder em 2 s (há navegadores que nunca respondem em algumas origens), segue
 // sem guardar: as imagens são baixadas e usadas do mesmo jeito.
 function temasBanco(){

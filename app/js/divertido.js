@@ -35,8 +35,10 @@ function savedMsg(col, isNew){
   const a = FUN_SAVED[col];
   if (!db.prefs.fun || !a || (!isNew && col !== 'goalAdd' && col !== 'invAdd')) return 'Salvo';
   if (col !== 'expenses' && col !== 'installments') confetti();
-  return comNome(pick(a));
+  return comNome(pick(semPorquinho(a)));
 }
+// Com um tema especial o mascote é o personagem do tema: saem as frases que falam do porquinho.
+const semPorquinho = a => db.prefs.skin ? a.filter(t => !/porquinho|oinc/i.test(t)) : a;
 // Humor do porquinho pelo saldo do mês atual.
 function funMood(){
   const tin = totalIn(curYM), tout = totalOutPrev(curYM), net = tin - tout; // saldo projetado (com as previsões)

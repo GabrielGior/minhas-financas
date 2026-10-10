@@ -36,7 +36,7 @@ function lembMigrar(antes = dadosNoAparelho){
 function scheduleReminders(){
   if (demoOn) return;
   if (!(temNativo('lembretes'))) return;
-  const p = db.prefs, list = [];
+  const p = db.prefs, list = [], oinc = p.fun && !p.skin ? 'Oinc! ' : ''; // com tema especial, o mascote não é o porquinho
   if (!lembLigados()) return void nativo('lembretes', '[]'); // interruptor do aparelho desligado: nada agendado
   if (podeNotificar('contas')) for (const x of db.expenses){
     if (!x.fixed || !x.due || p.notifyCats[x.cat] === false) continue;
@@ -45,8 +45,8 @@ function scheduleReminders(){
       const [y, mo] = m.split('-').map(Number), d = dueDay(x, m), at = new Date(y, mo - 1, d, 9, 0).getTime();
       const dm = String(d).padStart(2,'0') + '/' + String(mo).padStart(2,'0');
       for (const days of p.reminds) list.push({id:hashId(x.id + m + 'a' + days), at:at - days*864e5,
-        title:p.fun ? 'Oinc! Conta a vencer' : 'Conta a vencer', text:`${x.desc} (${fmt(x.value)}) vence em ${days} dia${days > 1 ? 's' : ''}, em ${dm}.`});
-      list.push({id:hashId(x.id + m + 'b'), at, title:p.fun ? 'Oinc! Conta vence hoje' : 'Conta vence hoje',
+        title:oinc + 'Conta a vencer', text:`${x.desc} (${fmt(x.value)}) vence em ${days} dia${days > 1 ? 's' : ''}, em ${dm}.`});
+      list.push({id:hashId(x.id + m + 'b'), at, title:oinc + 'Conta vence hoje',
         text:`${x.desc} (${fmt(x.value)}) vence hoje, ${dm}.`});
     }
   }
@@ -55,7 +55,7 @@ function scheduleReminders(){
     if (!isFin(q) || !q.due) continue;
     for (let j = q.paid; j < Math.min(q.n, q.paid + 3); j++){
       const v = parcVenc(q, j), [y, mo] = v.ym.split('-').map(Number);
-      list.push({id:hashId(q.id + j + 'f'), at:new Date(y, mo - 1, v.dia, 9, 0).getTime(), title:p.fun ? 'Oinc! Parcela vence hoje' : 'Parcela vence hoje',
+      list.push({id:hashId(q.id + j + 'f'), at:new Date(y, mo - 1, v.dia, 9, 0).getTime(), title:oinc + 'Parcela vence hoje',
         text:`${q.desc}: parcela ${j + 1}/${q.n} (${fmt(parcVal(q, j))}) vence hoje, ${fmtDate(vencData(v)).slice(0, 5)}.`});
     }
   }
@@ -69,7 +69,7 @@ function updateWidget(){
   // O saldo dos widgets é o previsto (como no Resumo): com previsões, diz isso e quanto delas está incluído, para a conta
   // com os ganhos e gastos realizados fechar.
   const reserva = reservaPrevisoes(curYM), mesNome = m.split(' ')[0];
-  const frase = {feliz:'Oinc! Mês no azul', ok:'Tudo sob controle', triste:'Segura o cartão…'}[humor];
+  const frase = {feliz:db.prefs.skin ? 'Mês no azul' : 'Oinc! Mês no azul', ok:'Tudo sob controle', triste:'Segura o cartão…'}[humor];
   const semSimbolo = s => s.replace(moeda.simbolo, '').replace(/^[\s\u00A0]+|[\s\u00A0]+$/g, '').replace(/^-[\s\u00A0]+/, '-');
   const curto = v => semSimbolo(fmt(v)).replace(/,\d+$/, ''); // sem o símbolo nem centavos: cabe no widget de saldo, que é estreito
   nativo('widget', widgetMascara(JSON.stringify({mes:m[0].toUpperCase() + m.slice(1), saldo:fmt(saldoPrev), negativo:saldoPrev < 0,

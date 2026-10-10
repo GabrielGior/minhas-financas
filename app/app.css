@@ -1002,7 +1002,7 @@ ul.causas{margin:0 0 4px;padding-left:20px;color:var(--muted);font-size:14px}
 :where(html[data-ui]:not([data-ui=""])) :is(h1,h2,.sheet h3){font-family:var(--fT,inherit)}
 :where(html[data-ui]:not([data-ui=""])) :is(.big,.val,.hero .row b){font-family:var(--fN,inherit);font-variant-numeric:tabular-nums}
 #cena::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:var(--texO,.06);background:var(--tex,none)}
-:where(html[data-ui]:not([data-ui=""])) h1::before{display:inline-block;margin-right:6px;font-size:.8em}
+:where(html[data-ui]:not([data-ui=""])) h1 .tit::before{display:inline-block;align-self:center;margin-right:6px;font-size:.8em}
 @keyframes uiPisca{50%{opacity:0}}
 /* terminal */
 html[data-ui=terminal]{--fT:monospace,"Courier New",ui-monospace;--fN:monospace,"Courier New",ui-monospace;
@@ -1013,7 +1013,7 @@ html[data-ui=terminal]{--fT:monospace,"Courier New",ui-monospace;--fN:monospace,
 :where([data-ui=terminal]) .bar i{background:repeating-linear-gradient(90deg,var(--brand) 0 9px,transparent 9px 12px)}
 :where([data-ui=terminal]) .btn::before{content:"[ "}
 :where([data-ui=terminal]) .btn::after{content:" ]"}
-:where([data-ui=terminal]) h1::before{content:">_";color:var(--brand);animation:uiPisca 1.1s steps(1) infinite}
+:where([data-ui=terminal]) h1 .tit::before{content:">_";color:var(--brand);animation:uiPisca 1.1s steps(1) infinite}
 :where([data-ui=terminal]) .hero .big::after{content:"▌";margin-left:2px;font-weight:400;animation:uiPisca 1.1s steps(1) infinite}
 /* pixel */
 html[data-ui=pixel]{--fT:monospace,"Courier New",ui-monospace;--fN:monospace,"Courier New",ui-monospace;
@@ -1058,7 +1058,7 @@ html[data-ui=contodefadas]{--fT:cursive,"Brush Script MT",serif;
 :where([data-ui=contodefadas]) :is(.card,.nav){border-radius:24px;box-shadow:0 8px 22px -10px color-mix(in srgb,var(--brand) 45%,transparent)}
 :where([data-ui=contodefadas]) :is(.btn,.chips button){border-radius:99px}
 :where([data-ui=contodefadas]) .bar i{background:linear-gradient(180deg,rgba(255,255,255,.45),transparent 60%),linear-gradient(90deg,var(--brand),var(--brand2))}
-:where([data-ui=contodefadas]) h1::before{content:"♛";color:var(--brand)}
+:where([data-ui=contodefadas]) h1 .tit::before{content:"♛";color:var(--brand)}
 :where([data-ui=contodefadas]) .item{border-bottom-style:dotted;border-bottom-width:2px}
 /* velocidade */
 html[data-ui=velocidade]{--fT:"sans-serif-condensed","Roboto Condensed","Arial Narrow",sans-serif;--fN:"sans-serif-black","Arial Black",sans-serif;
@@ -1078,7 +1078,7 @@ html[data-ui=aventura]{--fT:serif,Georgia,"Times New Roman";--fN:serif,Georgia,"
 :where([data-ui=aventura]) :is(.card,.nav){border-radius:14px;outline:2px dashed color-mix(in srgb,var(--brand) 40%,transparent);outline-offset:-6px}
 :where([data-ui=aventura]) .bar i{background:repeating-linear-gradient(135deg,var(--brand) 0 4px,var(--brand2) 4px 8px)}
 :where([data-ui=aventura]) .btn{border-radius:4px 14px 14px 4px}
-:where([data-ui=aventura]) h1::before{content:"✥";color:var(--brand)}
+:where([data-ui=aventura]) h1 .tit::before{content:"✥";color:var(--brand)}
 /* terror */
 html[data-ui=terror]{--fT:serif,Georgia,"Times New Roman";--fN:serif,Georgia,"Times New Roman";
   --tex:radial-gradient(ellipse at 30% 110%,currentColor,transparent 60%),radial-gradient(ellipse at 80% -10%,currentColor,transparent 55%);--texO:.1}
@@ -1106,7 +1106,7 @@ html[data-ui=quadrinhos]{--fT:"sans-serif-black","Arial Black",sans-serif;--fN:"
 :where([data-ui=quadrinhos]) .bar{box-shadow:inset 0 0 0 2px #111}
 :where([data-ui=quadrinhos]) .btn{box-shadow:inset 0 0 0 2px #111}
 :where([data-ui=quadrinhos]) .btn:active{transform:scale(1.07)}
-:where([data-ui=quadrinhos]) h1::before{content:"✸";color:#facc15;text-shadow:0 0 1px #111}
+:where([data-ui=quadrinhos]) h1 .tit::before{content:"✸";color:#facc15;text-shadow:0 0 1px #111}
 /* oriental */
 html[data-ui=oriental]{--fT:serif,Georgia,"Times New Roman";--fN:serif,Georgia,"Times New Roman";
   --tex:radial-gradient(circle at 50% 100%,transparent 9px,currentColor 9px 10px,transparent 10px 14px,currentColor 14px 15px,transparent 15px) 0 0/32px 16px;--texO:.05}
@@ -1114,7 +1114,7 @@ html[data-ui=oriental]{--fT:serif,Georgia,"Times New Roman";--fN:serif,Georgia,"
 :where([data-ui=oriental]) :is(.card,.nav){box-shadow:inset 0 -1px 0 var(--brand)}
 :where([data-ui=oriental]) .bar{height:6px}
 :where([data-ui=oriental]) .bar i{border-radius:0 99px 99px 0}
-:where([data-ui=oriental]) h1::before{content:"";width:13px;height:13px;border-radius:2px;background:#c0392b}
+:where([data-ui=oriental]) h1 .tit::before{content:"";width:13px;height:13px;border-radius:2px;background:#c0392b}
 /* natureza */
 html[data-ui=natureza]{--tex:radial-gradient(ellipse 40px 18px at 50% 50%,currentColor,transparent 70%) 0 0/120px 80px,
   radial-gradient(ellipse 30px 14px at 50% 50%,currentColor,transparent 70%) 60px 40px/120px 80px;--texO:.05}
@@ -1168,7 +1168,7 @@ html[data-troca=guerreiro] #app.enter{animation:trGuerreiro .3s cubic-bezier(.3,
 html[data-troca=desenho] #app.enter{animation:trDesenho .3s ease-out}
 html[data-troca=seriado] #app.enter{animation:trSeriado .3s ease-out}
 html[data-anim=off] #app.enter::before,html[data-anim=off] #app.enter::after{display:none}
-html[data-anim=off] h1::before,html[data-anim=off] .hero .big::after{animation:none}
+html[data-anim=off] h1 .tit::before,html[data-anim=off] .hero .big::after{animation:none}
 html[data-troca=seriado] #app.enter::before,html[data-troca=seriado] #app.enter::after{content:"";position:fixed;left:0;right:0;height:50vh;background:#000;z-index:30;
   pointer-events:none;transform:scaleY(0);animation:trFaixa .3s ease-in-out}
 html[data-troca=seriado] #app.enter::before{top:0;transform-origin:top}
@@ -1191,7 +1191,7 @@ html[data-troca=seriado] #app.enter::after{bottom:0;transform-origin:bottom}
 @keyframes trSeriado{0%,50%{opacity:0}}
 @keyframes trFaixa{0%{transform:scaleY(0)}45%,55%{transform:scaleY(1)}100%{transform:scaleY(0)}}
 @media (prefers-reduced-motion:reduce){html[data-troca] #app.enter{animation:none}html[data-troca=seriado] #app.enter::before,html[data-troca=seriado] #app.enter::after{display:none}
-  [data-ui] h1::before,[data-ui] .hero .big::after{animation:none}}
+  [data-ui] h1 .tit::before,[data-ui] .hero .big::after{animation:none}}
 /* ---------- Abertura com as imagens do tema (aberturaImg, em js/arte.js) ----------
    Camadas: cenário, objeto, personagem e o nome do app. O roteiro é o mesmo (cenário 0-0,4 s, objeto 0,3-1 s,
    personagem 0,5-1,2 s, nome 0,9-1,5 s, saída) e cada estilo (data-e) dá o jeito de cada parte. Só transform e opacity;
